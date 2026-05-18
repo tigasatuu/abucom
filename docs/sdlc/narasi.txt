@@ -1,0 +1,115 @@
+Saya adalah seorang pelaku usaha UMKM yang bergerak di bidang layanan jasa percetakan. Saat ini, saya mengelola dan menjalankan seluruh operasional usaha ini secara mandiri.
+
+# Jenis Produk dan Barang yang Tersedia:
+
+1. **Produk Percetakan (Produksi Sendiri):**
+   Produk unggulan saya meliputi cetak stempel flash, cetak foto, pembuatan buku yasin, undangan pernikahan, cetak baliho, fotocopy, pengetikan, print data, cetak stiker, hingga pembuatan nama dada dan jasa percetakan kustom lainnya.
+
+2. **Alat Tulis Kantor (Retail):**
+   Selain jasa cetak, saya juga menyediakan stok barang retail seperti kertas HVS, kertas foto, kertas undangan, tinta, pulpen, hekter, berbagai jenis map (snelhechter, biasa, warna), lakban, selotip, pensil, dan perlengkapan kantor lainnya.
+
+3. **Layanan Digital dan PPOB:**
+   Untuk menambah keramaian tempat usaha, saya juga melayani penjualan pulsa handphone, pulsa listrik (token), paket data, serta pembayaran berbagai tagihan listrik.
+
+4. **Jasa Keuangan:**
+   Saya melayani jasa transfer uang antar bank dan tarik tunai bagi pelanggan yang membutuhkan.
+
+5. **Jasa Teknis:**
+   Sebagai layanan tambahan, saya juga melayani perbaikan (service) printer serta jasa instalasi ulang sistem operasi pada komputer dan laptop.
+
+# Pengelolaan Modal dan Pinjaman:
+
+Dalam menjalankan usaha ini, saya memiliki dua jenis sumber pendanaan:
+*   **Pinjaman Tanpa Bunga:** Dana ini berasal dari sahabat, kerabat, teman, keluarga, dan orang tua. Sifatnya sangat fleksibel namun tidak menentu; mereka bisa meminta uang tersebut kembali kapan saja jika ada keperluan mendadak tanpa pemberitahuan sebelumnya. Ada yang menarik sebagian lalu meminjamkan lagi, ada yang menarik total kemudian meminjamkan kembali saat uang mereka sedang tidak terpakai, dan ada juga yang menarik seluruhnya secara permanen.
+*   **Pinjaman Berbunga:** Saya juga memiliki kewajiban setoran bulanan kepada Bank BRI dan Bank Mandiri atas pinjaman modal yang saya ambil.
+
+# Kondisi Operasional Saat Ini:
+
+Jujur saja, saat ini saya merasa sangat stres, burnout, dan pusing. Masalah utamanya adalah semua layanan saya kerjakan sendiri, mulai dari menyambut pelanggan yang datang hingga mereka pulang. Di sisi lain, saya juga harus selalu siaga (standby) dan memberikan respon cepat (fast response) terhadap pesanan yang masuk melalui WhatsApp. Singkatnya, semua beban kerja ada di pundak saya sendiri.
+
+Karena alasan inilah, saya berencana untuk merekrut karyawan guna membantu operasional sehari-hari.
+
+# Rencana Struktur Organisasi dan Budaya Kerja:
+
+Untuk mendukung operasional yang lebih profesional, saya telah merancang struktur organisasi dasar yang terdiri dari 6 posisi kunci (saat ini masing-masing diisi oleh satu orang):
+1. **Kepala Percetakan**: Bertanggung jawab atas koordinasi seluruh operasional.
+2. **staf Pramuniaga**: Melayani pelanggan di garda depan dan menjelaskan produk/layanan.
+3. **staf Kasir**: Menangani transaksi pembayaran dan rekonsiliasi uang fisik.
+4. **staf Desainer**: Fokus pada proses desain pesanan produk unggulan.
+5. **staf Produksi Cetak**: Mengeksekusi proses cetak dan finishing produk.
+6. **staf yang melayani fotocopy dan print dokumen.
+7. **staf Gudang**: Mengelola stok bahan baku, barang retail, dan pengadaan.
+
+Meskipun memiliki jabatan spesifik, budaya kerja yang saya terapkan adalah **kerjasama tim dan saling melengkapi (cross-functional)**. Artinya, setiap karyawan dituntut untuk saling mengisi celah pekerjaan; jika bagian produksi sedang sangat sibuk, rekan dari bagian lain yang sedang luang wajib ikut membantu agar operasional tetap berjalan lancar.
+
+# Detail Pekerjaan dan Alur Kerja (Workflow):
+
+Berikut adalah gambaran bagaimana saya menjalankan setiap bagian pekerjaan secara manual selama ini menggunakan Excel:
+
+1. **Pada Produk Percetakan:**
+   Saya harus melayani pelanggan, mendesain pesanan, mengambil bahan baku di gudang, melakukan proses cetak, mengemas/mengepak hasil, hingga menyerahkannya ke pelanggan. Setelah itu, saya harus mencatat transaksi di Excel, menghitung dan mengurangi stok bahan baku, memastikan stok tetap tersedia, membuat daftar belanja jika stok menipis, melakukan pengadaan (belanja), hingga mencatat kembali bahan baku yang baru masuk ke dalam database stok.
+
+2. **Pada Penjualan ATK:**
+   Prosesnya meliputi melayani pembeli, mengecek harga di Excel, menghitung total belanjaan, memberikan uang kembalian, dan mengurangi stok di Excel secara manual. Saya juga harus rutin memeriksa fisik barang di gudang, merapikannya, dan melakukan pengadaan stok yang mulai habis dengan menentukan harga jual baru berdasarkan harga beli terbaru.
+
+3. **Pada Layanan Pulsa dan PPOB:**
+   Saya menggunakan dua akun berbeda. Akun pertama untuk pulsa HP dan data, akun kedua untuk token dan tagihan listrik. Saya harus selalu memastikan saldo di setiap akun mencukupi. Biasanya saya melakukan deposit minimal Rp 500.000 jika saldo sudah mendekati Rp 150.000. Setiap transaksi ini tetap harus saya catat kembali di Excel untuk laporan keuangan.
+
+4. **Pada Layanan Jasa Keuangan:**
+   Saya memiliki banyak akun digital (Agen Bank Mandiri, Dana, Gopay, LinkAja, ShopeePay, dan OVO). Strategi saya adalah memilih akun yang memberikan biaya admin paling murah bagi pelanggan sesuai jenis layanannya. Saya harus menjaga saldo di setiap akun berdasarkan tingkat keramaian (traffic) masing-masing. Setiap mutasi wajib dicatat di Excel.
+
+5. **Pada Jasa Service dan Install:**
+   Memperbaiki printer atau instalasi laptop tetap mengikuti prosedur pencatatan transaksi manual di Excel untuk kebutuhan laporan.
+
+6. **Administrasi Pinjaman dan SDM:**
+   *   Untuk pinjaman tanpa bunga, saya mencatat detail siapa peminjamnya, kapan dipinjam/diambil, dan sisa saldonya agar transparan.
+   *   Untuk pinjaman bank, saya mencatat riwayat setoran, sisa tenor, dan tanggal jatuh tempo agar tidak terlambat membayar.
+   *   Untuk rencana karyawan, saya perlu mengelola data pelamar, proses seleksi, status kerja (tetap/kontrak), penilaian kinerja, serta sistem penggajian yang mencakup pengelolaan **Kasbon (pinjaman karyawan)** dengan fitur potong gaji otomatis saat periode penggajian tiba.
+
+7. **Pekerjaan Administratif Lainnya:**
+   Saya juga mengelola pengeluaran rutin (air, listrik, internet), anggaran biaya tak terduga (kerusakan mesin/transport teknisi), pencatatan aset (printer, PC, CCTV, dll), hingga tabungan khusus untuk pengadaan alat baru di masa depan. Mengingat data lama di Excel saat ini posisinya sangat berserakan di berbagai file, saya berencana untuk melakukan **input data awal secara manual** langsung ke dalam aplikasi agar database sistem yang baru menjadi lebih rapi dan bersih.
+
+# Harapan untuk Aplikasi Baru:
+
+Saya ingin semua pekerjaan di atas diotomatisasi dalam satu aplikasi agar laporan keuangan dan stok menjadi akurat, sehingga saya bisa fokus pada strategi pengembangan usaha. Harapan spesifik saya adalah:
+
+*   **Kebijakan Harga dan Pembayaran:** Aplikasi harus mendukung sistem pembayaran fleksibel, yaitu **Uang Muka (DP)** di awal dan pelunasan saat pengambilan barang. Sistem juga harus mampu mengelola berbagai skema harga, mulai dari harga retail, **harga grosir** (berdasarkan kuantitas), hingga **harga spesial untuk mitra** yang ikut membantu mempromosikan usaha saya.
+*   **Sistem Penggajian Otomatis:** Aplikasi bisa menentukan skema gaji secara cerdas. Jika pendapatan bersih mencapai target tertentu, gunakan gaji bulanan tetap. Jika tidak mencapai target, gunakan skema persentase dari pendapatan bersih.
+*   **Sistem Poin Karyawan (Insentif):** Saya ingin ada tambahan penghasilan bagi karyawan berdasarkan beban kerja. 
+    *   1 Poin (Rp 500): Untuk transaksi rutin/mudah (ATK, Pulsa, Transfer kecil).
+    *   3 Poin (Rp 1.500): Untuk jasa dasar (Fotocopy, Print, Pengetikan, Transfer besar).
+    *   5 Poin (Rp 2.500): Untuk produk kustom (Stempel, Foto, Stiker, Nama Dada).
+    *   10 Poin (Rp 5.000): Untuk pekerjaan berat/teknis (Baliho, Buku Yasin, Undangan, Service, Install).
+*   **Kehadiran dan Laporan:** Pelacakan kehadiran harus terhubung ke gaji. Laporan harus lengkap (harian hingga tahunan) dan ada fitur rekonsiliasi kas (pencocokan uang fisik di laci dengan sistem).
+*   **Analisis Laba/Rugi:** Saya ingin tahu layanan mana yang paling menguntungkan dan mana yang merugi.
+*   **Keamanan:** Harus ada *Audit Trail* (catatan aktivitas siapa melakukan apa dan kapan) untuk mencegah kecurangan.
+*   **Sistem Manajemen Antrian (Job Tracking):** Saya ingin setiap pesanan memiliki status yang jelas (Antri, Proses Desain, Produksi, Selesai, Diambil). Ini penting agar tidak ada pesanan pelanggan yang terlewat atau lupa dikerjakan.
+*   **Pencatatan Limbah Produksi (Waste Management):** Aplikasi harus bisa mencatat jika ada bahan baku yang rusak atau salah cetak. Dengan begitu, selisih stok di gudang dan di aplikasi tetap akurat.
+*   **Arsip Desain Pelanggan:** Saya ingin ada fitur untuk mencatat lokasi penyimpanan file desain pelanggan, sehingga jika mereka datang lagi untuk cetak ulang, saya atau karyawan bisa menemukannya dengan cepat.
+*   **Manajemen Hak Akses (Privasi):** Mengingat ada data sensitif seperti rincian pinjaman bank dan tabungan pribadi, saya ingin sistem bisa membedakan hak akses antara "Pemilik" dan "Karyawan". Karyawan hanya boleh melihat data yang berkaitan dengan pekerjaan mereka saja.
+*   **Manajemen Supplier dan Hutang Usaha:** Saya ingin aplikasi bisa mencatat data vendor/supplier bahan baku, riwayat harga beli (untuk mencari harga termurah), serta mencatat jika saya memiliki hutang pembelian barang ke supplier.
+*   **Sistem Pembatalan dan Retur:** Harus ada alur yang jelas jika pelanggan membatalkan pesanan (pengembalian DP) atau jika ada barang yang dikembalikan karena rusak/salah cetak (retur), agar pencatatan uang dan stok tetap sinkron.
+*   **Database Pelanggan (CRM):** Saya ingin menyimpan data kontak pelanggan (nama/WA) agar mudah menghubungi mereka dan melihat riwayat pesanan mereka untuk kebutuhan promosi di masa depan.
+*   **Stock Opname (Rekonsiliasi Stok):** Selain uang di laci, saya ingin sistem menyediakan fitur untuk mencocokkan stok barang fisik di gudang dengan stok yang tercatat di aplikasi secara berkala guna meminimalisir kehilangan.
+*   **Manajemen Aset:** Pengelolaan aset dan pengeluaran rutin harus terintegrasi.
+*   **Sistem HPP dan Manajemen Komposisi (BOM):** Aplikasi harus mampu menghitung Harga Pokok Penjualan (HPP) secara otomatis berdasarkan **komposisi bahan baku (Bill of Materials)** untuk setiap produk dan jasa. Sistem harus mengakomodir produk yang menggunakan beberapa jenis bahan sekaligus (contoh: satu stempel terdiri dari gagang, tinta, kertas buffalo, dan karet flash). Khusus untuk bahan baku lembaran atau cairan, sistem wajib mampu menghitung pemakaian stok berdasarkan **satuan dimensi (panjang x lebar)** atau volume, sehingga pengurangan stok bahan baku benar-benar akurat sesuai dengan ukuran pesanan pelanggan. Selain itu, sistem harus mendukung integrasi stok yang fleksibel jika ada barang retail (ATK) yang diambil untuk kebutuhan produksi.
+*   **Manajemen Satuan dan Atribut Barang:** Sistem harus mampu mengelola berbagai jenis satuan ukur (Unit of Measure) dan spesifikasi teknis yang unik untuk setiap kategori barang. Misalnya, sistem harus bisa membedakan stok kertas (dalam rim/lembar/dimensi), tinta (dalam volume/warna/berat), hingga barang retail lainnya. Pencatatan stok harus fleksibel dan mendukung angka desimal jika diperlukan, agar penghitungan sisa bahan baku menjadi sangat presisi.
+*   **Skalabilitas & Kesiapan Multi-Cabang:** Walaupun pada tahap awal aplikasi ini hanya akan dijalankan pada satu unit usaha (lokal), arsitektur database dan logika program harus dirancang agar **siap untuk ekspansi multi-cabang (Multi-Branch Ready)**. Setiap entitas data (transaksi, stok, karyawan, aset, keuangan) harus memiliki identifikasi unit/cabang yang jelas, sehingga di masa depan sistem ini dapat dikembangkan menjadi aplikasi terpusat yang mampu mengelola hingga ribuan cabang di seluruh Indonesia dengan laporan konsolidasi yang akurat.
+*   **Mandat Inovasi & Best Practice:** Saya mewajibkan tim AI pengembang untuk secara aktif melakukan analisis terhadap standar industri percetakan dan retail modern. Jika ditemukan fitur, logika alur kerja, atau metode keamanan yang belum saya sebutkan namun secara signifikan dapat meningkatkan kualitas sistem, efisiensi operasional, atau perlindungan data, maka tim AI **wajib** mengusulkannya dan memasukkannya ke dalam setiap dokumen perencanaan (fase SDLC) sebagai bagian dari penyempurnaan sistem ini.
+
+# Kebutuhan Teknis dan Tim:
+
+**Spesifikasi Sistem:**
+*   Tahap Awal: Tampilan CLI/Console.
+*   Bahasa: Python 3.14.2 ke atas (Wajib menggunakan paradigma *Functional Programming*).
+*   Library Utama: `mysql-connector-python`, `python-dotenv`, `bcrypt`, `pyjwt`.
+*   Sistem Operasi: Linux Debian 12 Bookworm dan Windows 11.
+
+**Susunan Tim Pengembang:**
+0. Junior Programmer: Saya sendiri.
+1. Gemini 3.1 Pro (High): Arsitektur kompleks & logika berat.
+2. Gemini 3.1 Pro (Low): Pengerjaan rutin & dokumentasi.
+3. Gemini 3 Flash: Review cepat & debugging ringan.
+4. Claude Sonnet 4.6 (Thinking): Deep coding & refactoring.
+5. Claude Opus 4.6 (Thinking): Strategi sistem & keamanan.
+6. GPT-OSS 120B (Medium): Pembuatan boilerplate & data dummy.
