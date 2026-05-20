@@ -102,23 +102,23 @@ Berikut adalah kerangka standar dokumen Project Charter yang harus digunakan. St
 
 ### Fase A: Persiapan dan Pembacaan Referensi
 
-- [ ] **A.1.** Baca dan pahami keseluruhan isi issue ini terlebih dahulu dari awal hingga akhir sebelum mulai mengerjakan apapun.
-- [ ] **A.2.** Buka dan baca **seluruh isi** file `docs/sdlc/narasi.txt` dari baris pertama sampai baris terakhir tanpa ada yang dilewati.
-- [ ] **A.3.** Rangkum **semua data dan informasi** yang terdapat di dalam `narasi.txt` ke dalam catatan kerja internal kamu. Pastikan setiap detail berikut ter-capture:
-  - [ ] A.3.1. Profil pemilik usaha dan jenis bidang usaha
-  - [ ] A.3.2. Semua jenis produk dan layanan (5 kategori: Percetakan, ATK, PPOB, Jasa Keuangan, Jasa Teknis)
-  - [ ] A.3.3. Detail pengelolaan modal dan pinjaman (tanpa bunga dan berbunga)
-  - [ ] A.3.4. Kondisi operasional saat ini (masalah burnout, bekerja sendiri)
-  - [ ] A.3.5. Rencana struktur organisasi (7 posisi) dan budaya kerja cross-functional
-  - [ ] A.3.6. Detail alur kerja (workflow) untuk setiap layanan (7 poin detail)
-  - [ ] A.3.7. Semua harapan fitur aplikasi (minimal 20 poin fitur yang disebutkan)
-  - [ ] A.3.8. Kebutuhan teknis (bahasa, library, OS, paradigma)
-  - [ ] A.3.9. Susunan tim pengembang (7 anggota: 1 junior programmer + 6 AI)
-  - [ ] A.3.10. Mandat inovasi & best practice
+- [x] **A.1.** Baca dan pahami keseluruhan isi issue ini terlebih dahulu dari awal hingga akhir sebelum mulai mengerjakan apapun.
+- [x] **A.2.** Buka dan baca **seluruh isi** file `docs/sdlc/narasi.txt` dari baris pertama sampai baris terakhir tanpa ada yang dilewati.
+- [x] **A.3.** Rangkum **semua data dan informasi** yang terdapat di dalam `narasi.txt` ke dalam catatan kerja internal kamu. Pastikan setiap detail berikut ter-capture:
+  - [x] A.3.1. Profil pemilik usaha dan jenis bidang usaha
+  - [x] A.3.2. Semua jenis produk dan layanan (5 kategori: Percetakan, ATK, PPOB, Jasa Keuangan, Jasa Teknis)
+  - [x] A.3.3. Detail pengelolaan modal dan pinjaman (tanpa bunga dan berbunga)
+  - [x] A.3.4. Kondisi operasional saat ini (masalah burnout, bekerja sendiri)
+  - [x] A.3.5. Rencana struktur organisasi (7 posisi) dan budaya kerja cross-functional
+  - [x] A.3.6. Detail alur kerja (workflow) untuk setiap layanan (7 poin detail)
+  - [x] A.3.7. Semua harapan fitur aplikasi (minimal 20 poin fitur yang disebutkan)
+  - [x] A.3.8. Kebutuhan teknis (bahasa, library, OS, paradigma)
+  - [x] A.3.9. Susunan tim pengembang (7 anggota: 1 junior programmer + 6 AI)
+  - [x] A.3.10. Mandat inovasi & best practice
 
 ### Fase B: Pemetaan Data ke Struktur Dokumen
 
-- [ ] **B.1.** Petakan data hasil rangkuman dari Fase A ke dalam setiap bagian kerangka dokumen Project Charter (lihat Bagian 3 di atas). Gunakan panduan pemetaan berikut:
+- [x] **B.1.** Petakan data hasil rangkuman dari Fase A ke dalam setiap bagian kerangka dokumen Project Charter (lihat Bagian 3 di atas). Gunakan panduan pemetaan berikut:
 
 | Bagian Dokumen                          | Sumber Data dari `narasi.txt`                                                                                     |
 |-----------------------------------------|-------------------------------------------------------------------------------------------------------------------|
@@ -137,91 +137,91 @@ Berikut adalah kerangka standar dokumen Project Charter yang harus digunakan. St
 | 13. Kriteria Keberhasilan               | Derivasi dari tujuan: otomatisasi berhasil, laporan akurat, stok sinkron, beban kerja berkurang.                   |
 | 14. Persetujuan dan Otorisasi           | **DATA TIDAK TERSEDIA** — tandai untuk diisi manual (nama, tanda tangan, tanggal).                                |
 
-- [ ] **B.2.** Pastikan **hanya data dan informasi yang relevan** dengan masing-masing bagian yang dimasukkan. Jangan mencampur informasi antar bagian. Contoh:
+- [x] **B.2.** Pastikan **hanya data dan informasi yang relevan** dengan masing-masing bagian yang dimasukkan. Jangan mencampur informasi antar bagian. Contoh:
   - Detail alur kerja operasional (workflow) masuk ke bagian **Latar Belakang** sebagai gambaran kondisi saat ini, **BUKAN** ke bagian Kebutuhan Fungsional.
   - Detail fitur aplikasi masuk ke bagian **Kebutuhan Bisnis Tingkat Tinggi**, **BUKAN** ke bagian Tujuan Proyek.
   - Spesifikasi teknis (Python, MySQL, library) masuk ke bagian **Ruang Lingkup → Platform & Teknologi**, **BUKAN** ke bagian Tim Proyek.
 
 ### Fase C: Penulisan Dokumen
 
-- [ ] **C.1.** Buat dokumen baru dengan mengikuti **persis** kerangka struktur pada Bagian 3 issue ini.
-- [ ] **C.2.** Tulis setiap bagian menggunakan bahasa Indonesia yang:
+- [x] **C.1.** Buat dokumen baru dengan mengikuti **persis** kerangka struktur pada Bagian 3 issue ini.
+- [x] **C.2.** Tulis setiap bagian menggunakan bahasa Indonesia yang:
   - Natural dan mengalir (bukan terjemahan kaku dari bahasa Inggris)
   - Tidak ambigu (setiap kalimat hanya memiliki satu makna yang jelas)
   - Tidak membingungkan (hindari jargon teknis tanpa penjelasan)
   - Mudah dipahami oleh junior programmer atau AI model lain
-- [ ] **C.3.** Untuk setiap bagian, tulis dengan ketentuan berikut:
+- [x] **C.3.** Untuk setiap bagian, tulis dengan ketentuan berikut:
 
 #### C.3.1. Bagian 1 — Informasi Umum Proyek
-- [ ] Tulis nama proyek yang deskriptif dan profesional (contoh format: "AbuCom — Sistem Manajemen Terpadu Usaha Percetakan")
-- [ ] Tulis deskripsi singkat proyek dalam 2-3 kalimat yang merangkum esensi proyek
-- [ ] Sponsor/Pemilik: Pemilik usaha UMKM percetakan (sesuai narasi)
-- [ ] Manajer Proyek: **[BELUM DITENTUKAN — ISI MANUAL]** (jika tidak ada data eksplisit di narasi)
-- [ ] Tanggal Mulai: `2026-05-20` (tanggal pembuatan issue ini)
-- [ ] Perkiraan Tanggal Selesai: **[BELUM DITENTUKAN — ISI MANUAL]**
-- [ ] Versi Dokumen: `1.0`
+- [x] Tulis nama proyek yang deskriptif dan profesional (contoh format: "AbuCom — Sistem Manajemen Terpadu Usaha Percetakan")
+- [x] Tulis deskripsi singkat proyek dalam 2-3 kalimat yang merangkum esensi proyek
+- [x] Sponsor/Pemilik: Pemilik usaha UMKM percetakan (sesuai narasi)
+- [x] Manajer Proyek: **[BELUM DITENTUKAN — ISI MANUAL]** (jika tidak ada data eksplisit di narasi)
+- [x] Tanggal Mulai: `2026-05-20` (tanggal pembuatan issue ini)
+- [x] Perkiraan Tanggal Selesai: **[BELUM DITENTUKAN — ISI MANUAL]**
+- [x] Versi Dokumen: `1.0`
 
 #### C.3.2. Bagian 2 — Latar Belakang dan Justifikasi
-- [ ] Tulis kondisi saat ini berdasarkan narasi: usaha UMKM percetakan yang dikelola seorang diri
-- [ ] Jelaskan semua jenis layanan yang dijalankan (5 kategori) untuk menggambarkan kompleksitas operasional
-- [ ] Tulis permasalahan utama: stres, burnout, semua dikerjakan manual dengan Excel, data berserakan
-- [ ] Jelaskan dampak jika tidak ditangani: kualitas layanan menurun, kesalahan pencatatan, kehilangan pelanggan, kesehatan pemilik terganggu
+- [x] Tulis kondisi saat ini berdasarkan narasi: usaha UMKM percetakan yang dikelola seorang diri
+- [x] Jelaskan semua jenis layanan yang dijalankan (5 kategori) untuk menggambarkan kompleksitas operasional
+- [x] Tulis permasalahan utama: stres, burnout, semua dikerjakan manual dengan Excel, data berserakan
+- [x] Jelaskan dampak jika tidak ditangani: kualitas layanan menurun, kesalahan pencatatan, kehilangan pelanggan, kesehatan pemilik terganggu
 
 #### C.3.3. Bagian 3 — Tujuan Proyek
-- [ ] Tulis tujuan umum: mengotomatisasi seluruh operasional usaha dalam satu aplikasi terpadu
-- [ ] Tulis minimal 5 tujuan spesifik yang SMART, diekstrak dari harapan di narasi (contoh: "Mengotomatisasi pencatatan transaksi dan pengurangan stok secara real-time untuk menghilangkan kesalahan pencatatan manual")
+- [x] Tulis tujuan umum: mengotomatisasi seluruh operasional usaha dalam satu aplikasi terpadu
+- [x] Tulis minimal 5 tujuan spesifik yang SMART, diekstrak dari harapan di narasi (contoh: "Mengotomatisasi pencatatan transaksi dan pengurangan stok secara real-time untuk menghilangkan kesalahan pencatatan manual")
 
 #### C.3.4. Bagian 4 — Ruang Lingkup Proyek
-- [ ] Daftar In-Scope: semua modul/fitur yang disebutkan di narasi (kelompokkan per area: Penjualan & Transaksi, Inventaris & Stok, Keuangan, SDM, Produksi, CRM, dll.)
-- [ ] Daftar Platform & Teknologi: Python 3.14.2+, Functional Programming, MySQL, CLI/Console, Linux Debian 12 & Windows 11, library wajib
-- [ ] Daftar Out-of-Scope: GUI/Web (tahap awal), Mobile App, integrasi marketplace, payment gateway online, fitur e-commerce
+- [x] Daftar In-Scope: semua modul/fitur yang disebutkan di narasi (kelompokkan per area: Penjualan & Transaksi, Inventaris & Stok, Keuangan, SDM, Produksi, CRM, dll.)
+- [x] Daftar Platform & Teknologi: Python 3.14.2+, Functional Programming, MySQL, CLI/Console, Linux Debian 12 & Windows 11, library wajib
+- [x] Daftar Out-of-Scope: GUI/Web (tahap awal), Mobile App, integrasi marketplace, payment gateway online, fitur e-commerce
 
 #### C.3.5. Bagian 5 — Deskripsi Produk / Deliverables
-- [ ] Produk utama: Aplikasi CLI berbasis Python dengan database MySQL
-- [ ] Daftar deliverables per fase SDLC: dokumen perencanaan, dokumen desain, source code, dokumentasi teknis, panduan pengguna, laporan pengujian
+- [x] Produk utama: Aplikasi CLI berbasis Python dengan database MySQL
+- [x] Daftar deliverables per fase SDLC: dokumen perencanaan, dokumen desain, source code, dokumentasi teknis, panduan pengguna, laporan pengujian
 
 #### C.3.6. Bagian 6 — Stakeholder Proyek
-- [ ] Identifikasi stakeholder: Pemilik Usaha (sponsor + user), Calon Karyawan (7 posisi — end user), Pelanggan (indirect), Supplier (indirect), Bank BRI & Mandiri (indirect)
-- [ ] Buat tabel RACI sederhana untuk peran stakeholder utama
+- [x] Identifikasi stakeholder: Pemilik Usaha (sponsor + user), Calon Karyawan (7 posisi — end user), Pelanggan (indirect), Supplier (indirect), Bank BRI & Mandiri (indirect)
+- [x] Buat tabel RACI sederhana untuk peran stakeholder utama
 
 #### C.3.7. Bagian 7 — Tim Proyek dan Struktur Organisasi
-- [ ] Salin persis susunan tim pengembang dari narasi (baris 108-115)
-- [ ] Tambahkan kolom peran/tanggung jawab untuk masing-masing anggota tim berdasarkan deskripsi di narasi
-- [ ] Gunakan format tabel untuk kejelasan
+- [x] Salin persis susunan tim pengembang dari narasi (baris 108-115)
+- [x] Tambahkan kolom peran/tanggung jawab untuk masing-masing anggota tim berdasarkan deskripsi di narasi
+- [x] Gunakan format tabel untuk kejelasan
 
 #### C.3.8. Bagian 8 — Kebutuhan Bisnis Tingkat Tinggi
-- [ ] Kebutuhan Fungsional: Daftar **semua** fitur yang disebutkan di bagian "Harapan untuk Aplikasi Baru" (baris 74-98 narasi). Kelompokkan secara logis (contoh: Manajemen Transaksi, Manajemen Inventaris, Manajemen Keuangan, Manajemen SDM, Manajemen Produksi, CRM, Keamanan & Audit, dll.)
-- [ ] Kebutuhan Non-Fungsional: Ekstrak dari narasi — skalabilitas multi-cabang, keamanan (audit trail, hak akses), performa, arsitektur multi-platform (Linux + Windows), mandat inovasi & best practice
-- [ ] Pastikan **tidak ada satu pun fitur** dari narasi yang terlewat
+- [x] Kebutuhan Fungsional: Daftar **semua** fitur yang disebutkan di bagian "Harapan untuk Aplikasi Baru" (baris 74-98 narasi). Kelompokkan secara logis (contoh: Manajemen Transaksi, Manajemen Inventaris, Manajemen Keuangan, Manajemen SDM, Manajemen Produksi, CRM, Keamanan & Audit, dll.)
+- [x] Kebutuhan Non-Fungsional: Ekstrak dari narasi — skalabilitas multi-cabang, keamanan (audit trail, hak akses), performa, arsitektur multi-platform (Linux + Windows), mandat inovasi & best practice
+- [x] Pastikan **tidak ada satu pun fitur** dari narasi yang terlewat
 
 #### C.3.9. Bagian 9 — Asumsi dan Batasan
-- [ ] Asumsi minimal 5 poin (contoh: pemilik akan melakukan input data awal manual, karyawan akan direkrut sebelum/bersamaan go-live, koneksi internet tersedia, dll.)
-- [ ] Batasan minimal 5 poin (contoh: tahap awal hanya CLI, budget UMKM terbatas, satu cabang di tahap awal, tim pengembang berbasis AI, paradigma wajib Functional Programming, dll.)
+- [x] Asumsi minimal 5 poin (contoh: pemilik akan melakukan input data awal manual, karyawan akan direkrut sebelum/bersamaan go-live, koneksi internet tersedia, dll.)
+- [x] Batasan minimal 5 poin (contoh: tahap awal hanya CLI, budget UMKM terbatas, satu cabang di tahap awal, tim pengembang berbasis AI, paradigma wajib Functional Programming, dll.)
 
 #### C.3.10. Bagian 10 — Risiko Awal
-- [ ] Identifikasi minimal 5 risiko beserta tingkat dampak dan rencana mitigasi awal
-- [ ] Gunakan format tabel: No | Risiko | Probabilitas | Dampak | Mitigasi
-- [ ] Contoh risiko: single point of failure (pemilik satu-satunya operator), migrasi data Excel yang berserakan, ketergantungan pada AI sebagai developer, kompleksitas fitur yang sangat luas untuk UMKM
+- [x] Identifikasi minimal 5 risiko beserta tingkat dampak dan rencana mitigasi awal
+- [x] Gunakan format tabel: No | Risiko | Probabilitas | Dampak | Mitigasi
+- [x] Contoh risiko: single point of failure (pemilik satu-satunya operator), migrasi data Excel yang berserakan, ketergantungan pada AI sebagai developer, kompleksitas fitur yang sangat luas untuk UMKM
 
 #### C.3.11. Bagian 11 — Milestone dan Jadwal Tingkat Tinggi
-- [ ] **Tulis:** `**[BELUM DITENTUKAN — ISI MANUAL]**`
-- [ ] Tambahkan catatan: "Milestone dan jadwal detail akan ditentukan setelah fase perencanaan selesai dan seluruh dokumen pada fase ini telah divalidasi."
-- [ ] Sediakan template tabel kosong: No | Milestone | Target Tanggal | Status — agar mudah diisi nanti
+- [x] **Tulis:** `**[BELUM DITENTUKAN — ISI MANUAL]**`
+- [x] Tambahkan catatan: "Milestone dan jadwal detail akan ditentukan setelah fase perencanaan selesai dan seluruh dokumen pada fase ini telah divalidasi."
+- [x] Sediakan template tabel kosong: No | Milestone | Target Tanggal | Status — agar mudah diisi nanti
 
 #### C.3.12. Bagian 12 — Estimasi Anggaran Tingkat Tinggi
-- [ ] **Tulis:** `**[BELUM DITENTUKAN — ISI MANUAL]**`
-- [ ] Tambahkan catatan: "Estimasi anggaran akan dihitung berdasarkan kebutuhan infrastruktur (server, database), lisensi, dan kebutuhan operasional pengembangan."
-- [ ] Sediakan template tabel kosong: No | Komponen Biaya | Estimasi (Rp) | Keterangan — agar mudah diisi nanti
+- [x] **Tulis:** `**[BELUM DITENTUKAN — ISI MANUAL]**`
+- [x] Tambahkan catatan: "Estimasi anggaran akan dihitung berdasarkan kebutuhan infrastruktur (server, database), lisensi, dan kebutuhan operasional pengembangan."
+- [x] Sediakan template tabel kosong: No | Komponen Biaya | Estimasi (Rp) | Keterangan — agar mudah diisi nanti
 
 #### C.3.13. Bagian 13 — Kriteria Keberhasilan Proyek
-- [ ] Tulis minimal 5 kriteria keberhasilan yang terukur (contoh: "Seluruh transaksi tercatat otomatis tanpa intervensi Excel", "Selisih stok fisik vs sistem < 1%", "Laporan keuangan harian dapat dihasilkan dalam < 5 detik")
+- [x] Tulis minimal 5 kriteria keberhasilan yang terukur (contoh: "Seluruh transaksi tercatat otomatis tanpa intervensi Excel", "Selisih stok fisik vs sistem < 1%", "Laporan keuangan harian dapat dihasilkan dalam < 5 detik")
 
 #### C.3.14. Bagian 14 — Persetujuan dan Otorisasi
-- [ ] **Tulis:** `**[BELUM DITENTUKAN — ISI MANUAL]**`
-- [ ] Sediakan template tabel: Nama | Jabatan | Tanda Tangan | Tanggal
+- [x] **Tulis:** `**[BELUM DITENTUKAN — ISI MANUAL]**`
+- [x] Sediakan template tabel: Nama | Jabatan | Tanda Tangan | Tanggal
 
 #### C.3.15. Bagian 15 — Referensi Dokumen
-- [ ] Tulis daftar semua file referensi yang digunakan dalam pembuatan dokumen ini dengan format:
+- [x] Tulis daftar semua file referensi yang digunakan dalam pembuatan dokumen ini dengan format:
 
 ```markdown
 | # | Nama File     | Lokasi                    | Keterangan                              |
@@ -231,25 +231,25 @@ Berikut adalah kerangka standar dokumen Project Charter yang harus digunakan. St
 
 ### Fase D: Review dan Validasi Mandiri
 
-- [ ] **D.1.** Baca ulang **seluruh** dokumen yang sudah ditulis dari awal hingga akhir.
-- [ ] **D.2.** Validasi checklist berikut:
-  - [ ] D.2.1. Semua 15 bagian kerangka dokumen sudah terisi (tidak ada bagian yang kosong tanpa keterangan)
-  - [ ] D.2.2. Setiap data dan informasi yang ada di `narasi.txt` sudah ter-capture di bagian yang tepat
-  - [ ] D.2.3. Tidak ada informasi yang dicampur atau salah penempatan antar bagian
-  - [ ] D.2.4. Tidak ada data yang dikarang/dihallusinasi (semua berasal dari `narasi.txt` atau ditandai `[BELUM DITENTUKAN — ISI MANUAL]`)
-  - [ ] D.2.5. Bahasa Indonesia yang digunakan natural, tidak ambigu, dan mudah dipahami
-  - [ ] D.2.6. Bagian yang datanya tidak tersedia sudah ditandai dengan `**[BELUM DITENTUKAN — ISI MANUAL]**`
-  - [ ] D.2.7. Bagian 15 (Referensi Dokumen) sudah diisi lengkap
-  - [ ] D.2.8. Dokumen ini layak dijadikan referensi dan input untuk dokumen fase SDLC selanjutnya (SRS, desain sistem, dll.)
-  - [ ] D.2.9. Kualitas dokumen lengkap dan tidak menimbulkan pertanyaan lanjutan yang menghambat fase berikutnya
-- [ ] **D.3.** Jika ditemukan kekurangan, perbaiki langsung sebelum melanjutkan ke Fase E.
+- [x] **D.1.** Baca ulang **seluruh** dokumen yang sudah ditulis dari awal hingga akhir.
+- [x] **D.2.** Validasi checklist berikut:
+  - [x] D.2.1. Semua 15 bagian kerangka dokumen sudah terisi (tidak ada bagian yang kosong tanpa keterangan)
+  - [x] D.2.2. Setiap data dan informasi yang ada di `narasi.txt` sudah ter-capture di bagian yang tepat
+  - [x] D.2.3. Tidak ada informasi yang dicampur atau salah penempatan antar bagian
+  - [x] D.2.4. Tidak ada data yang dikarang/dihallusinasi (semua berasal dari `narasi.txt` atau ditandai `[BELUM DITENTUKAN — ISI MANUAL]`)
+  - [x] D.2.5. Bahasa Indonesia yang digunakan natural, tidak ambigu, dan mudah dipahami
+  - [x] D.2.6. Bagian yang datanya tidak tersedia sudah ditandai dengan `**[BELUM DITENTUKAN — ISI MANUAL]**`
+  - [x] D.2.7. Bagian 15 (Referensi Dokumen) sudah diisi lengkap
+  - [x] D.2.8. Dokumen ini layak dijadikan referensi dan input untuk dokumen fase SDLC selanjutnya (SRS, desain sistem, dll.)
+  - [x] D.2.9. Kualitas dokumen lengkap dan tidak menimbulkan pertanyaan lanjutan yang menghambat fase berikutnya
+- [x] **D.3.** Jika ditemukan kekurangan, perbaiki langsung sebelum melanjutkan ke Fase E.
 
 ### Fase E: Penulisan ke Target File
 
-- [ ] **E.1.** Tuangkan **seluruh** hasil penulisan dokumen Project Charter ke target file: `docs/sdlc/01_planning/01_project_charter.md`
-- [ ] **E.2.** Pastikan file ditulis dalam format Markdown yang valid dan rapi.
-- [ ] **E.3.** Pastikan tidak ada karakter rusak, encoding error, atau formatting yang broken.
-- [ ] **E.4.** Verifikasi file berhasil ditulis dengan cara membaca ulang file target dan memastikan isinya lengkap dan sesuai.
+- [x] **E.1.** Tuangkan **seluruh** hasil penulisan dokumen Project Charter ke target file: `docs/sdlc/01_planning/01_project_charter.md`
+- [x] **E.2.** Pastikan file ditulis dalam format Markdown yang valid dan rapi.
+- [x] **E.3.** Pastikan tidak ada karakter rusak, encoding error, atau formatting yang broken.
+- [x] **E.4.** Verifikasi file berhasil ditulis dengan cara membaca ulang file target dan memastikan isinya lengkap dan sesuai.
 
 ---
 
@@ -257,10 +257,10 @@ Berikut adalah kerangka standar dokumen Project Charter yang harus digunakan. St
 
 Berikut instruksi tambahan yang merupakan kaidah standar pembuatan Project Charter yang belum tercantum di atas:
 
-- [ ] **T.1. Bahasa Dokumen Konsisten:** Gunakan bahasa Indonesia di seluruh dokumen. Untuk istilah teknis yang tidak memiliki padanan umum (contoh: "audit trail", "RACI", "deliverables"), tuliskan dalam bahasa Inggris dengan penjelasan singkat dalam kurung saat pertama kali muncul.
-- [ ] **T.2. Traceability:** Setiap kebutuhan bisnis yang dituliskan di Bagian 8 harus bisa ditelusuri kembali ke pernyataan asli di `narasi.txt`. Tambahkan referensi baris jika memungkinkan (contoh: "*ref: narasi.txt, baris 76*").
-- [ ] **T.3. Mandat Inovasi:** Masukkan poin "Mandat Inovasi & Best Practice" dari narasi (baris 98) sebagai bagian dari kebutuhan non-fungsional. Ini adalah instruksi eksplisit dari pemilik usaha yang mewajibkan pengembang untuk mengusulkan fitur tambahan berdasarkan standar industri.
-- [ ] **T.4. Header Dokumen:** Tambahkan metadata header di bagian paling atas dokumen sebelum judul utama, berisi:
+- [x] **T.1. Bahasa Dokumen Konsisten:** Gunakan bahasa Indonesia di seluruh dokumen. Untuk istilah teknis yang tidak memiliki padanan umum (contoh: "audit trail", "RACI", "deliverables"), tuliskan dalam bahasa Inggris dengan penjelasan singkat dalam kurung saat pertama kali muncul.
+- [x] **T.2. Traceability:** Setiap kebutuhan bisnis yang dituliskan di Bagian 8 harus bisa ditelusuri kembali ke pernyataan asli di `narasi.txt`. Tambahkan referensi baris jika memungkinkan (contoh: "*ref: narasi.txt, baris 76*").
+- [x] **T.3. Mandat Inovasi:** Masukkan poin "Mandat Inovasi & Best Practice" dari narasi (baris 98) sebagai bagian dari kebutuhan non-fungsional. Ini adalah instruksi eksplisit dari pemilik usaha yang mewajibkan pengembang untuk mengusulkan fitur tambahan berdasarkan standar industri.
+- [x] **T.4. Header Dokumen:** Tambahkan metadata header di bagian paling atas dokumen sebelum judul utama, berisi:
   ```
   ---
   dokumen    : Project Charter
@@ -271,13 +271,13 @@ Berikut instruksi tambahan yang merupakan kaidah standar pembuatan Project Chart
   penyusun   : [Persona AI yang mengerjakan]
   ---
   ```
-- [ ] **T.5. Changelog:** Tambahkan tabel riwayat perubahan dokumen di bawah metadata header:
+- [x] **T.5. Changelog:** Tambahkan tabel riwayat perubahan dokumen di bawah metadata header:
   ```
   | Versi | Tanggal    | Perubahan        | Oleh                  |
   |-------|------------|------------------|-----------------------|
   | 1.0   | 2026-05-20 | Pembuatan awal   | [Persona AI]          |
   ```
-- [ ] **T.6. Glossary:** Jika ada istilah domain spesifik dari industri percetakan (contoh: "flash stamp", "baliho", "nama dada", "finishing") yang mungkin tidak dipahami oleh pembaca teknis, tambahkan bagian Glosarium singkat sebelum Referensi Dokumen.
+- [x] **T.6. Glossary:** Jika ada istilah domain spesifik dari industri percetakan (contoh: "flash stamp", "baliho", "nama dada", "finishing") yang mungkin tidak dipahami oleh pembaca teknis, tambahkan bagian Glosarium singkat sebelum Referensi Dokumen.
 
 ---
 
@@ -298,14 +298,14 @@ Berikut instruksi tambahan yang merupakan kaidah standar pembuatan Project Chart
 
 Issue ini dianggap selesai jika **SEMUA** kondisi berikut terpenuhi:
 
-- [ ] File `docs/sdlc/01_planning/01_project_charter.md` berisi dokumen Project Charter lengkap.
-- [ ] Seluruh 15 bagian kerangka dokumen sudah terisi.
-- [ ] Semua data dari `narasi.txt` yang relevan sudah termuat di bagian yang tepat.
-- [ ] Data yang tidak tersedia ditandai dengan `**[BELUM DITENTUKAN — ISI MANUAL]**`.
-- [ ] Bahasa Indonesia natural dan tidak ambigu.
-- [ ] Bagian Referensi Dokumen (Bagian 15) sudah terisi lengkap.
-- [ ] Dokumen layak dijadikan input untuk fase SDLC selanjutnya tanpa memerlukan klarifikasi tambahan.
-- [ ] Checklist seluruh Fase A sampai E sudah tercentang (`[x]`).
+- [x] File `docs/sdlc/01_planning/01_project_charter.md` berisi dokumen Project Charter lengkap.
+- [x] Seluruh 15 bagian kerangka dokumen sudah terisi.
+- [x] Semua data dari `narasi.txt` yang relevan sudah termuat di bagian yang tepat.
+- [x] Data yang tidak tersedia ditandai dengan `**[BELUM DITENTUKAN — ISI MANUAL]**`.
+- [x] Bahasa Indonesia natural dan tidak ambigu.
+- [x] Bagian Referensi Dokumen (Bagian 15) sudah terisi lengkap.
+- [x] Dokumen layak dijadikan input untuk fase SDLC selanjutnya tanpa memerlukan klarifikasi tambahan.
+- [x] Checklist seluruh Fase A sampai E sudah tercentang (`[x]`).
 
 ---
 
