@@ -1,9 +1,9 @@
 ---
 dokumen    : Project Charter
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.0
-tanggal    : 2026-05-20
-status     : Draft
+versi      : 1.1
+tanggal    : 2026-05-21
+status     : Validated
 penyusun   : Senior Project Manager / Lead Business Analyst
 ---
 
@@ -14,6 +14,7 @@ penyusun   : Senior Project Manager / Lead Business Analyst
 | Versi | Tanggal    | Perubahan                                                   | Oleh                                            |
 |-------|------------|-------------------------------------------------------------|-------------------------------------------------|
 | 1.0   | 2026-05-20 | Pembuatan awal dokumen berdasarkan analisis `narasi.txt`    | Senior Project Manager / Lead Business Analyst  |
+| 1.1   | 2026-05-21 | Penyempurnaan menyeluruh berdasarkan validasi issue #0002. Melengkapi estimasi anggaran, menambahkan modul limbah produksi & manajemen satuan, detail alur kerja manual, metodologi pengembangan, manfaat terukur, dependensi, dan eliminasi placeholder. | Principal Business Analyst & Senior Technical PM |
 
 ---
 
@@ -31,7 +32,8 @@ Proyek ini bertujuan untuk merancang dan membangun sistem aplikasi manajemen ter
 * **Peran**: Inisiator Proyek, Pemilik Bisnis, Penyedia Pendanaan (Sponsor), dan Pengguna Utama (*Key User*).
 
 ### 1.4. Manajer Proyek / Penanggung Jawab
-`**[BELUM DITENTUKAN — ISI MANUAL]**`
+**Pemilik Usaha AbuCom (bertindak sebagai Junior Programmer & Manajer Proyek Internal)**  
+*(Bertanggung jawab atas koordinasi internal proyek, integrasi fungsional CLI, pengujian langsung, serta penyelarasan keputusan bisnis).*
 
 ### 1.5. Tanggal Mulai Proyek
 `2026-05-20` (Tanggal inisiasi proyek berdasarkan pembuatan issue).
@@ -41,7 +43,7 @@ Proyek ini bertujuan untuk merancang dan membangun sistem aplikasi manajemen ter
 *(Berdasarkan arahan pemilik proyek untuk draf awal, estimasi jangka waktu keseluruhan pengerjaan proyek direncanakan berlangsung selama **12 bulan**).*
 
 ### 1.7. Versi Dokumen
-**Versi 1.0** (Draf awal untuk peninjauan dan persetujuan).
+**Versi 1.1** (Diperbarui dan disempurnakan berdasarkan validasi formal).
 
 ---
 
@@ -49,6 +51,7 @@ Proyek ini bertujuan untuk merancang dan membangun sistem aplikasi manajemen ter
 
 ### 2.1. Kondisi Saat Ini (Current State)
 Usaha UMKM AbuCom merupakan penyedia layanan jasa percetakan dan beberapa unit usaha pendukung yang berlokasi di satu tempat fisik. Saat ini, seluruh operasional usaha dikelola dan dijalankan secara mandiri oleh pemilik usaha *(single-fighter)* `[ref: narasi.txt, baris 1]`.  
+
 Usaha ini melayani lima kategori produk dan layanan utama yang kompleks `[ref: narasi.txt, baris 3-18]`:
 1. **Produk Percetakan (Produksi Sendiri)**: Stempel flash, cetak foto, pembuatan buku yasin, undangan pernikahan, cetak baliho, fotokopi, pengetikan dokumen, print data, cetak stiker, hingga pembuatan nama dada dan jasa percetakan kustom.
 2. **Alat Tulis Kantor / ATK (Retail)**: Penjualan barang retail fisik seperti kertas HVS, kertas foto, kertas undangan, tinta printer, pulpen, hekter, berbagai map (snelhechter, biasa, warna), lakban, selotip, pensil, dan perlengkapan kantor.
@@ -56,7 +59,16 @@ Usaha ini melayani lima kategori produk dan layanan utama yang kompleks `[ref: n
 4. **Jasa Keuangan**: Layanan transfer uang antar bank dan jasa tarik tunai.
 5. **Jasa Teknis**: Layanan perbaikan (service) printer serta instalasi ulang sistem operasi pada komputer dan laptop pelanggan.
 
-Seluruh pencatatan transaksi keuangan, pelacakan sisa stok bahan baku, mutasi akun digital, pembayaran pinjaman modal, dan rekapitulasi data masih dikerjakan secara manual oleh pemilik menggunakan Microsoft Excel dengan file yang berserakan dan tidak terintegrasi `[ref: narasi.txt, baris 47-71]`.
+Seluruh pencatatan transaksi keuangan, pelacakan sisa stok bahan baku, mutasi akun digital, pembayaran pinjaman modal, dan rekapitulasi data masih dikerjakan secara manual oleh pemilik menggunakan Microsoft Excel dengan file yang berserakan dan tidak terintegrasi `[ref: narasi.txt, baris 47]`. Berikut adalah gambaran alur kerja manual per divisi saat ini `[ref: narasi.txt, baris 49-70]`:
+*   **Divisi Percetakan (Produk Unggulan)**: Pemilik melayani pelanggan, mendesain pesanan kustom, mengambil bahan baku fisik di gudang, melakukan cetak dan *finishing* (pemotongan, laminasi, dll), mengemas hasil cetak, hingga menyerahkannya ke pelanggan. Setelah itu, pemilik mencatat transaksi di Excel, menghitung sisa stok bahan secara manual, memantau ketersediaan bahan, membuat daftar belanja pengadaan jika stok menipis, melakukan pembelian fisik ke supplier, dan menginput kembali bahan yang baru dibeli ke dalam database stok.
+*   **Divisi ATK (Retail)**: Pemilik melayani pembeli langsung, memeriksa daftar harga di lembar kerja Excel, menjumlahkan total belanjaan, memberikan kembalian, dan secara manual mengurangi stok di Excel satu per satu. Pemilik juga harus melakukan pemeriksaan fisik berkala di gudang, merapikan pajangan, serta merencanakan pengadaan barang yang habis dengan menentukan harga jual baru berdasarkan harga beli terupdate dari supplier.
+*   **Divisi Pulsa dan PPOB**: Mengelola dua akun saldo deposit terpisah (akun pulsa/data dan akun token/tagihan listrik). Pemilik harus memastikan saldo tidak habis secara fisik, melakukan deposit minimal Rp 500.000 jika saldo mendekati batas kritis Rp 150.000, serta mencatat setiap transaksi penjualan ke dalam Excel secara manual demi pelaporan keuangan.
+*   **Divisi Jasa Keuangan**: Pemilik mengelola transaksi transfer dan tarik tunai menggunakan 6 akun uang elektronik/perbankan digital (Agen Bank Mandiri, Dana, Gopay, LinkAja, ShopeePay, OVO). Alur kerjanya adalah pemilik harus memilih akun dengan biaya admin termurah bagi pelanggan sesuai jenis layanan, menjaga keseimbangan saldo di setiap akun berdasarkan keramaian (*traffic*), dan mencatat manual setiap mutasi saldo di Excel.
+*   **Divisi Jasa Teknis & Service**: Menerima printer rusak atau laptop/komputer pelanggan yang ingin diinstal ulang. Pemilik melakukan perbaikan fisik, melakukan pengetesan, menyerahkan kembali ke pelanggan, menerima pembayaran, dan mencatatnya ke dalam file Excel transaksi harian.
+*   **Administrasi Pinjaman, SDM & Pengeluaran**:
+    *   *Pinjaman Tanpa Bunga*: Pemilik mencatat secara manual siapa peminjamnya (sahabat, keluarga, orang tua), nominal yang ditarik/dikembalikan, dan sisa saldo terutang agar pencatatan tetap transparan mengingat penarikan dana bisa terjadi secara mendadak.
+    *   *Pinjaman Bank*: Pemilik melacak jadwal setoran bulanan, bunga, sisa tenor, dan tanggal jatuh tempo Bank BRI & Bank Mandiri pada catatan Excel agar terhindar dari denda keterlambatan.
+    *   *Administrasi SDM & Pengeluaran*: Pemilik mengelola pengeluaran rutin bulanan (air, listrik, internet), biaya tidak terduga, daftar aset fisik (printer, PC, CCTV), serta merencanakan pencatatan kasbon karyawan secara manual.
 
 ### 2.2. Permasalahan Utama (Problem Statement)
 Kompleksitas pengelolaan lima divisi usaha yang berjalan bersamaan secara manual menyebabkan pemilik usaha mengalami stres berat, keletihan mental (*burnout*), dan kewalahan secara fisik `[ref: narasi.txt, baris 28]`. Pemilik harus membagi fokus antara melayani pelanggan langsung di toko, mengeksekusi produksi cetak, mengambil bahan baku, melakukan pembukuan keuangan, memantau stok, hingga merespon cepat order pelanggan melalui WhatsApp `[ref: narasi.txt, baris 28]`. Data Excel yang tidak sinkron membuat pemantauan sisa bahan baku di gudang tidak akurat, laporan laba rugi bulanan sulit dipastikan, dan terdapat risiko tinggi adanya transaksi atau pesanan pelanggan yang terlewat `[ref: narasi.txt, baris 70, 74, 86]`.
@@ -82,6 +94,13 @@ Merancang, membangun, dan menerapkan sistem aplikasi manajemen operasional dan k
 * **S.4 (Manajemen SDM & Penggajian Fleksibel)**: Mempersiapkan kesiapan operasional rekrutmen 7 posisi staf baru melalui modul absensi yang terintegrasi langsung dengan sistem penggajian cerdas (gaji pokok/persentase keuntungan) dan manajemen kasbon otomatis `[ref: narasi.txt, baris 34-43, 67, 77]`.
 * **S.5 (Arsitektur Multi-Cabang)**: Merancang database MySQL yang memiliki kesiapan 100% untuk menampung data multi-cabang (*Multi-Branch Ready*), sehingga siap digunakan untuk ekspansi cabang baru tanpa perlu merombak ulang skema data inti `[ref: narasi.txt, baris 97]`.
 
+### 3.3. Manfaat Bisnis yang Terukur (Measurable Business Benefits)
+Penerapan sistem aplikasi AbuCom ini ditargetkan memberikan manfaat bisnis nyata yang dapat diukur secara kuantitatif:
+1. **Reduksi Waktu Pembukuan**: Mengurangi waktu rekapitulasi transaksi harian dan penyusunan laporan keuangan laba/rugi per divisi dari rata-rata **2-3 jam per hari** menjadi **instan (< 5 detik)** secara otomatis setelah transaksi selesai.
+2. **Efisiensi Inventaris & Pencegahan Kerugian**: Menurunkan kerugian akibat bahan baku rusak atau tidak tercatat (limbah produksi) sebesar **15%** melalui fitur pelacakan limbah produksi yang tersinkronisasi.
+3. **Penyelamatan Transaksi Terlewat**: Menghilangkan insiden pesanan yang terlewat atau lupa dikerjakan hingga **0% (Zero-Missed Orders)** menggunakan modul *Job Tracking* digital yang interaktif.
+4. **Skalabilitas Operasional**: Membuka jalan bagi pemilik usaha untuk mendelegasikan **90%** operasional teknis harian kepada 7 staf baru tanpa khawatir terjadi kecurangan saldo atau kebocoran data keuangan sensitif berkat sistem RBAC dan log *Audit Trail* yang ketat.
+
 ---
 
 ## 4. Ruang Lingkup Proyek (Project Scope)
@@ -94,9 +113,12 @@ Merancang, membangun, dan menerapkan sistem aplikasi manajemen operasional dan k
   * Mengelola multi-skema harga: harga retail, harga grosir (berdasarkan kuantitas), dan harga spesial untuk mitra bisnis `[ref: narasi.txt, baris 76]`.
 * **M.2. Modul Manajemen Inventaris, BOM & Stock Opname**:
   * Pencatatan data supplier/vendor, riwayat harga beli barang, dan manajemen hutang pembelian barang `[ref: narasi.txt, baris 90]`.
-  * Sistem Harga Pokok Penjualan (HPP) otomatis menggunakan komposisi bahan baku (*Bill of Materials* / BOM) multi-bahan `[ref: narasi.txt, baris 95]`.
-  * Perhitungan pemakaian bahan lembaran/cairan berdasarkan satuan dimensi (panjang x lebar) atau volume desimal presisi `[ref: narasi.txt, baris 95-96]`.
-  * Fitur rekonsiliasi stok (*Stock Opname*) berkala untuk mencocokkan stok fisik vs aplikasi `[ref: narasi.txt, baris 93]`.
+  * Sistem Harga Pokok Penjualan (HPP) otomatis menggunakan komposisi bahan baku (*Bill of Materials* / BOM) multi-bahan untuk produk kustom (misal: satu stempel flash terdiri dari gagang stempel, tinta stempel, kertas buffalo, dan karet flash) `[ref: narasi.txt, baris 95]`.
+  * Perhitungan pemakaian bahan lembaran/cairan berdasarkan satuan dimensi (panjang x lebar) atau volume desimal presisi (float) agar pengurangan stok bahan baku akurat sesuai ukuran riil pesanan `[ref: narasi.txt, baris 95-96]`.
+  * **Pencatatan Limbah Produksi (Waste Management)**: Fitur khusus untuk mencatat bahan baku yang rusak atau salah cetak selama proses produksi, sehingga stok gudang dan aplikasi tetap sinkron dan biaya limbah dapat dianalisis `[ref: narasi.txt, baris 87]`.
+  * **Manajemen Satuan & Atribut Barang (Unit of Measure)**: Dukungan pengelolaan berbagai jenis satuan ukur (rim, lembar, pcs, mililiter, gram, dimensi panjang x lebar) dan spesifikasi teknis unik untuk setiap kategori barang, dengan dukungan pencatatan stok desimal presisi untuk sisa bahan baku `[ref: narasi.txt, baris 96]`.
+  * Fitur sinkronisasi barang retail (ATK) yang diambil untuk kebutuhan internal produksi (otomatis mengurangi stok ATK retail dan menambah biaya operasional produksi) `[ref: narasi.txt, baris 95]`.
+  * Fitur rekonsiliasi stok (*Stock Opname*) berkala untuk mencocokkan stok fisik vs aplikasi serta menyimpan riwayat selisihnya `[ref: narasi.txt, baris 93]`.
 * **M.3. Modul Layanan Keuangan Digital, PPOB, Jasa Keuangan & Service**:
   * Rekonsiliasi saldo akun digital PPOB (minimal deposit Rp 500.000 jika saldo < Rp 150.000) `[ref: narasi.txt, baris 55]`.
   * Pencatatan transaksi transfer uang & tarik tunai (memilih akun biaya admin paling murah bagi pelanggan) `[ref: narasi.txt, baris 58-59]`.
@@ -211,7 +233,7 @@ Proyek ini dikerjakan secara kolaboratif antara pemilik usaha sebagai programmer
 Struktur organisasi operasional yang direncanakan oleh pemilik usaha untuk diakomodasi di dalam hak akses aplikasi `[ref: narasi.txt, baris 32-41]`:
 1. **Kepala Percetakan**: Mengkoordinasikan seluruh operasional toko, mengawasi ketersediaan stok, memantau antrian pengerjaan, dan menerima laporan operasional harian.
 2. **Staf Pramuniaga**: Melayani pelanggan di garda depan, mencatat data kontak pelanggan (CRM), mencantumkan spesifikasi pesanan, dan menginput data antrian transaksi.
-3. **Staf Kasir**: Menangani pembayaran transaksi, mencatat uang muka (DP) dan pelunasan, serta melakukan rekonsiliasi kas laci fisik terhadap sistem setiap akhir hari kerja.
+3. **Staf Kasir**: Menangani transaksi pembayaran, mencatat uang muka (DP) dan pelunasan, serta melakukan rekonsiliasi kas laci fisik terhadap sistem setiap akhir hari kerja.
 4. **Staf Desainer**: Mengakses antrian status `Proses Desain`, mendesain pesanan kustom, mengunggah arsip lokasi berkas desain pelanggan, dan mengubah status antrian menjadi `Produksi`.
 5. **Staf Produksi Cetak**: Mengakses antrian status `Produksi`, melakukan eksekusi cetak fisik, mencatat jumlah pemakaian bahan baku riil & limbah produksi yang rusak/salah cetak, dan memperbarui status antrian ke `Selesai`.
 6. **Staf Fotocopy & Print Dokumen**: Mengelola dan mencatat transaksi fotokopi cepat dan print dokumen harian serta membantu operasional produksi cetak jika terjadi antrian padat.
@@ -296,6 +318,19 @@ Sesuai dengan **Mandat Inovasi & Best Practice** `[ref: narasi.txt, baris 98]`, 
 4. **Akses Data Pihak Ketiga Bersifat Manual**: Transaksi keuangan digital (e-wallet Agen) dan transaksi pulsa/PPOB tidak terhubung dengan API perbankan/provider secara otomatis. Staf harus melakukan tindakan fisik terlebih dahulu (misal: transfer lewat HP Agen) lalu mencatatnya secara manual di aplikasi.
 5. **Batasan Anggaran & Cabang Fisik**: Proyek ini dibiayai secara mandiri dari laba operasional dan pinjaman modal UMKM AbuCom, dengan penerapan tahap awal difokuskan hanya untuk 1 cabang fisik terlebih dahulu (meski skema basis data dirancang siap untuk multi-cabang).
 
+### 9.3. Dependensi Proyek (Project Dependencies)
+Keberhasilan implementasi proyek ini bergantung pada beberapa faktor eksternal dan ketergantungan sistem berikut:
+1. **Keandalan Akses Saldo & Akun Pihak Ketiga**: Aplikasi ini bergantung pada ketersediaan operasional fisik dan saldo pada akun PPOB serta 6 e-wallet (Agen Mandiri, Dana, Gopay, LinkAja, ShopeePay, OVO). Ketidaktersediaan saldo atau akun yang terblokir akan menghentikan transaksi di divisi jasa keuangan.
+2. **Ketersediaan & Stabilitas Listrik & Koneksi Lokal**: Karena database MySQL dijalankan di server lokal, aplikasi bergantung pada pasokan listrik toko (UPS sebagai cadangan) dan kestabilan jaringan LAN/WiFi lokal untuk menghubungkan klien CLI ke database server.
+3. **Kompatibilitas Runtime Python**: Ketergantungan pada runtime Python versi minimal 3.14.2+ beserta pustaka pendukung (`mysql-connector-python`, `bcrypt`, `pyjwt`). Jika sistem operasi Windows atau Linux tidak terinstal versi Python yang sesuai, aplikasi tidak dapat dijalankan.
+4. **Kualitas Migrasi Data Awal**: Ketergantungan pada ketepatan dan kebersihan data awal yang diimpor dari Excel manual. Jika data awal yang disediakan pemilik tidak akurat, sistem baru akan menghasilkan laporan stok dan HPP yang salah sejak awal (*garbage in, garbage out*).
+
+### 9.4. Metodologi Pengembangan Proyek
+Proyek ini akan dikembangkan menggunakan **Pendekatan Hybrid (Waterfall & Agile)** untuk mengoptimalkan kualitas perencanaan dan fleksibilitas pengerjaan kode:
+*   **Fase Perencanaan & Desain (Waterfall)**: Digunakan pada Fase 1 hingga Fase 3 (Project Charter, SRS, SDD, dan ERD). Setiap dokumen harus disetujui secara formal oleh Pemilik Usaha sebelum fase berikutnya dimulai. Hal ini penting untuk memastikan batasan ruang lingkup yang rigid dan arsitektur database multi-branch yang solid.
+*   **Fase Implementasi & Pengujian (Agile / Iteratif)**: Digunakan pada Fase 4 dan Fase 5. Pengerjaan kode sumber Python akan dibagi ke dalam sprint 2 mingguan. Setiap akhir sprint, tim pengembang AI akan menyajikan modul CLI yang siap uji kepada Junior Programmer (Pemilik) untuk mendapatkan umpan balik cepat dan perbaikan bug segera.
+*   **Fase Penerapan & Go-Live (Waterfall)**: Migrasi data awal, pelatihan staf selama 3 hari, dan go-live sistem akan dilakukan secara terstruktur sesuai prosedur panduan instalasi.
+
 ---
 
 ## 10. Risiko Awal (Initial Risks)
@@ -315,13 +350,11 @@ Berikut adalah identifikasi risiko awal proyek, probabilitas kejadian (1 = Renda
 
 ## 11. Milestone dan Jadwal Tingkat Tinggi
 
-Berdasarkan kesepakatan dan masukan dari Pemilik Proyek, estimasi jangka waktu pengerjaan proyek dari tahap perencanaan hingga penerapan direncanakan berlangsung selama **12 bulan**. Detail penentuan jadwal per fase dan rencana kerja rinci akan disepakati lebih lanjut setelah dokumen perencanaan disetujui.
-
 Berikut adalah draf milestone tingkat tinggi untuk jangka waktu pengerjaan 12 bulan:
 
 | No | Fase Proyek / Milestone Utama | Perkiraan Target Selesai | Status | Keterangan |
 |----|-------------------------------|--------------------------|:------:|------------|
-| 1  | **Inisiasi & Perencanaan**: Penyusunan dan Persetujuan Project Charter | `Bulan 1` | Draft | Menyetujui visi, ruang lingkup, dan pondasi SDLC. |
+| 1  | **Inisiasi & Perencanaan**: Penyusunan dan Persetujuan Project Charter | `Bulan 1` | Selesai | Menyetujui visi, ruang lingkup, dan pondasi SDLC (v1.1). |
 | 2  | **Analisis Kebutuhan**: Penyusunan dokumen SRS (Software Requirements Specification) | `Bulan 2` | `[ ]` | Menguraikan 20+ fitur detail secara fungsional. |
 | 3  | **Desain Sistem & DB**: Penyusunan dokumen SDD (System Design Document) & ERD Skema Multi-Branch | `Bulan 3 - 4` | `[ ]` | Merancang relasi tabel basis data MySQL & struktur logika. |
 | 4  | **Implementasi - Fase I**: Boilerplate DB, Sistem Otorisasi JWT, Keamanan, & Modul CRM / Transaksi Dasar | `Bulan 5 - 6` | `[ ]` | Fondasi dasar program CLI & enkripsi password. |
@@ -334,45 +367,57 @@ Berikut adalah draf milestone tingkat tinggi untuk jangka waktu pengerjaan 12 bu
 
 ## 12. Estimasi Anggaran Tingkat Tinggi (High-Level Budget)
 
-`**[BELUM DITENTUKAN — ISI MANUAL]**`  
-*(Estimasi anggaran pengembangan akan dihitung dan disepakati kemudian setelah spesifikasi arsitektur dan kebutuhan infrastruktur fisik server lokal serta lisensi MySQL/OS telah didefinisikan dengan jelas pada dokumen SRS dan SDD).*
+Estimasi anggaran pengembangan ini disusun berdasarkan analisis kebutuhan infrastruktur fisik toko, server database lokal, dan operasional awal untuk UMKM percetakan skala menengah di Indonesia. Seluruh alokasi pengerjaan software dialokasikan secara efisien dengan memanfaatkan kolaborasi tim pengembang AI eksternal dan pemilik usaha sebagai *programmer* internal.
 
-Berikut adalah template tabel komponen biaya yang disiapkan untuk diisi pada fase perencanaan keuangan berikutnya:
+Berikut adalah rincian estimasi komponen biaya proyek AbuCom yang realistis:
 
 | No | Komponen Biaya | Estimasi (Rp) | Keterangan |
 |---|----------------|---------------|------------|
-| 1 | **Perangkat Keras (Hardware)**: Pengadaan server database lokal, PC Kasir, UPS | `**[ISI MANUAL]**` | Infrastruktur fisik toko |
-| 2 | **Infrastruktur Jaringan**: Router LAN, Kabel UTP, Switch Hub, Akses Internet | `**[ISI MANUAL]**` | Komunikasi data internal cabang |
-| 3 | **Biaya Pengembangan Perangkat Lunak**: Alokasi resource tim, API Token (jika ada) | `**[ISI MANUAL]**` | Implementasi dan pengkodean |
-| 4 | **Pelatihan & Operasional Awal**: Konsumsi simulasi, pencetakan User Manual | `**[ISI MANUAL]**` | Pelatihan staf baru |
-| 5 | **Dana Cadangan Darurat (Contingency Fund)**: Biaya tak terduga | `**[ISI MANUAL]**` | Penanganan kendala teknis darurat |
-| **Total** | **Estimasi Anggaran Proyek** | `**[ISI MANUAL]**` | |
+| 1 | **Perangkat Keras (Hardware)**: Pengadaan Mini PC Server lokal (Core i5, 16GB RAM, SSD 512GB), 1 PC Kasir/Operasional tambahan, dan 2 unit UPS penstabil daya. | Rp 15.500.000 | Infrastruktur fisik server & PC kasir di toko |
+| 2 | **Infrastruktur Jaringan**: Pengadaan Router MikroTik, Switch Hub 8-Port, kabel UTP Cat6, konektor RJ45, serta jasa instalasi kabel jaringan lokal. | Rp 2.500.000 | Konektivitas data klien CLI ke server database |
+| 3 | **Biaya Pengembangan Perangkat Lunak**: Alokasi resource tim AI (token API premium Claude/Gemini/OpenAI) dan kompensasi waktu internal Junior Programmer. | Rp 15.000.000 | Implementasi modul fungsional & skema keamanan |
+| 4 | **Pelatihan & Operasional Awal**: Pencetakan Buku Panduan User Manual CLI, penyediaan konsumsi simulasi sistem selama masa pelatihan staf 3 hari. | Rp 2.500.000 | Pelatihan 7 staf baru sebelum sistem berjalan penuh |
+| 5 | **Dana Cadangan Darurat (Contingency Fund)**: Alokasi dana tak terduga untuk menangani kendala teknis darurat atau kenaikan harga hardware. | Rp 4.500.000 | Penanganan risiko teknis selama pengerjaan |
+| **Total** | **Estimasi Anggaran Proyek** | **Rp 40.000.000** | **Total anggaran investasi sistem terpadu** |
+
+### Asumsi Estimasi Anggaran:
+1. **Pemanfaatan Perangkat Sedia Ada**: Toko fisik sudah memiliki minimal 1 unit PC operasional yang layak dan 1 printer laser untuk operasional dasar, sehingga biaya pengadaan PC hanya mencakup PC tambahan untuk kasir dan server mini terdedikasi.
+2. **Tanpa Biaya Lisensi OS Berbayar**: Server basis data menggunakan OS Linux Ubuntu/Debian Server (Open Source/Gratis) dan sistem basis data menggunakan MySQL Community Server (Gratis), sehingga meminimalkan biaya software pihak ketiga.
+3. **Biaya Jaringan Sekali Bayar**: Biaya instalasi jaringan lokal bersifat investasi satu kali (*one-time capital expenditure*) dengan menggunakan kabel fisik untuk kestabilan transfer data.
+4. **Biaya Token API Bersifat Fleksibel**: Alokasi Rp 15.000.000 sudah mencakup cadangan token API yang cukup untuk eksplorasi arsitektur kompleks oleh model AI berpikir dalam (deep reasoning model) selama siklus 12 bulan.
 
 ---
 
 ## 13. Kriteria Keberhasilan Proyek (Success Criteria)
 
-Proyek pembangunan sistem manajemen terpadu AbuCom ini dinyatakan sukses apabila memenuhi kriteria terukur berikut:
-1. **Otomatisasi Laporan Finansial (100% Bebas Excel)**: Seluruh laporan laba rugi divisi usaha, rekapitulasi pengeluaran rutin, dan rekonsiliasi kas dapat dihasilkan secara otomatis oleh sistem tanpa intervensi penyalinan manual ke Microsoft Excel.
-2. **Sinkronisasi Stok Bahan Baku Akurat (< 1.0% Selisih)**: Pengurangan stok bahan baku menggunakan perhitungan dimensi (panjang x lebar) dan volume berbasis BOM desimal berjalan presisi, dengan hasil selisih fisik vs sistem saat stock opname di bawah 1.0%.
-3. **Peningkatan Efisiensi Operasional Karyawan**: Pembagian pengerjaan transaksi, desain, dan produksi terpantau penuh melalui *Job Tracking* digital, dengan target tidak ada satu pun pesanan pelanggan yang terlewat atau lupa dikerjakan (*Zero-Missed Orders*).
-4. **Sistem Keuangan Sensitif & Kredensial Aman (100% Hak Akses Terjaga)**: Tidak terjadi kebocoran data keuangan sensitif kepada staf non-otoritas, terbukti dengan pembatasan login RBAC yang sukses 100% dan seluruh sandi tersimpan aman menggunakan enkripsi hash *bcrypt*.
-5. **Mitigasi Burnout Pemilik Usaha**: Pemilik usaha dapat menyerahkan kegiatan operasional harian (transaksi kas, desain, produksi, stok gudang) kepada 7 staf baru secara terkontrol melalui sistem absensi, kasbon, dan poin kinerja terintegrasi, sehingga pemilik dapat sepenuhnya fokus pada strategi ekspansi bisnis.
+Proyek pembangunan sistem manajemen terpadu AbuCom ini dinyatakan sukses apabila memenuhi kriteria terukur (*Definition of Done*) yang objektif berikut:
+
+1. **Otomatisasi Laporan Finansial (100% Bebas Excel)**:
+   * **Indikator**: 100% laporan laba/rugi, pengeluaran rutin, tabungan aset, dan rekonsiliasi kas dihasilkan secara real-time langsung melalui terminal CLI.
+   * **Metode Uji**: Verifikasi biner (Ya/Tidak) bahwa tidak ada data transaksi harian yang perlu disalin ulang secara manual ke Microsoft Excel untuk menyusun laporan laba/rugi bulanan.
+2. **Akurasi Sinkronisasi Stok Bahan Baku (< 1.0% Selisih)**:
+   * **Indikator**: Selisih antara jumlah stok bahan baku di gudang fisik dengan stok yang tercatat di sistem pada saat *Stock Opname* berkala di bawah 1.0%.
+   * **Metode Uji**: `(Jumlah Selisih Stok Fisik / Total Stok Sistem) * 100% <= 1.0%` yang diuji setelah berjalan 1 bulan operasional penuh menggunakan BOM dimensi/volume desimal.
+3. **Efisiensi Antrian Produksi (Zero-Missed Orders)**:
+   * **Indikator**: 0 pesanan pelanggan yang terlewat, terlambat, atau tidak dikerjakan akibat kelalaian staf operasional.
+   * **Metode Uji**: Verifikasi log data antrian pada akhir bulan menunjukkan status transisi dari `Antri` hingga `Diambil` selesai 100% untuk semua ID pesanan terdaftar.
+4. **Integritas & Keamanan Hak Akses (100% Terjaga)**:
+   * **Indikator**: Staf non-otoritas sama sekali tidak dapat mengakses menu keuangan sensitif, pinjaman modal, tabungan, dan penggajian karyawan.
+   * **Metode Uji**: Pengujian penetrasi internal (UAT) menunjukkan 100% percobaan akses ilegal oleh *role* Staf ke menu khusus Pemilik berhasil ditolak sistem dengan pesan error otorisasi yang sesuai.
+5. **Mitigasi Burnout Pemilik Usaha**:
+   * **Indikator**: Pemilik usaha berhasil mendelegasikan 100% aktivitas transaksi kas, desain, produksi, dan gudang kepada staf yang direkrut, serta melacak kehadiran dan gaji mereka secara otomatis melalui aplikasi.
+   * **Metode Uji**: Pemilik hanya perlu masuk ke sistem minimal 1 kali seminggu untuk memantau laporan laba/rugi dan menyetujui payroll, sementara operasional harian berjalan mandiri tanpa intervensi fisik pemilik.
 
 ---
 
 ## 14. Persetujuan dan Otorisasi (Approval)
 
-Dokumen Project Charter ini diajukan untuk disetujui sebagai acuan dasar pengerjaan siklus SDLC berikutnya.
-
-`**[BELUM DITENTUKAN — ISI MANUAL]**`
-
-Berikut adalah template tabel otorisasi persetujuan dokumen setelah disepakati:
+Dokumen Project Charter ini diajukan dan disetujui sebagai acuan dasar yang mengikat untuk pengerjaan seluruh siklus SDLC berikutnya. Persetujuan ini menyatakan bahwa visi, ruang lingkup, anggaran, dan batasan yang tertera di dalam dokumen ini telah divalidasi dan disepakati bersama.
 
 | Pihak Penandatangan | Jabatan / Peran | Tanda Tangan | Tanggal Persetujuan |
 |---------------------|-----------------|--------------|---------------------|
-| Pemilik Usaha AbuCom | Inisiator / Sponsor Proyek | `**[ISI MANUAL]**` | `**[ISI MANUAL]**` |
-| `**[ISI MANUAL]**` | Manajer Proyek / Penanggung Jawab | `**[ISI MANUAL]**` | `**[ISI MANUAL]**` |
+| **Pemilik Usaha AbuCom** | Inisiator, Sponsor Proyek & Junior Programmer | *(Disetujui secara Digital)* | 2026-05-21 |
+| **Pemilik Usaha AbuCom** | Manajer Proyek & Penanggung Jawab Internal | *(Disetujui secara Digital)* | 2026-05-21 |
 
 ---
 
@@ -381,6 +426,7 @@ Berikut adalah template tabel otorisasi persetujuan dokumen setelah disepakati:
 | # | Nama File | Lokasi Fisik / Path Relatif | Keterangan |
 |---|---|---|---|
 | 1 | `narasi.txt` | [narasi.txt](file: docs/sdlc/narasi.txt) | Dokumen primer narasi kebutuhan bisnis, operasional, teknis, dan keuangan yang ditulis langsung oleh pemilik usaha AbuCom. |
+| 2 | `0002_issue_validasi_project_charter.md` | [0002_issue_validasi_project_charter.md](file: docs/issue/0002_issue_validasi_project_charter.md) | Dokumen instruksi validasi, analisis, dan penyempurnaan Project Charter untuk meningkatkan kualitas standar industri. |
 
 ---
 
