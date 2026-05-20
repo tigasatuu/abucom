@@ -1,5 +1,4 @@
 ---
-issue_id   : 0002
 judul      : Validasi, Analisis, dan Penyempurnaan Dokumen Project Charter
 target_file: docs/sdlc/01_planning/01_project_charter.md
 fase_sdlc  : 01 — Planning
