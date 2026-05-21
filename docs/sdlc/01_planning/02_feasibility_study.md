@@ -1,9 +1,9 @@
 ---
 dokumen    : Feasibility Study (Studi Kelayakan Proyek)
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.0
+versi      : 1.1
 tanggal    : 2026-05-21
-status     : Draft
+status     : Validated
 penyusun   : Senior Business Analyst & Feasibility Consultant
 ---
 
@@ -14,6 +14,7 @@ penyusun   : Senior Business Analyst & Feasibility Consultant
 | Versi | Tanggal    | Perubahan        | Oleh                                          |
 |-------|------------|------------------|-----------------------------------------------|
 | 1.0   | 2026-05-21 | Pembuatan awal   | Senior Business Analyst & Feasibility Consultant |
+| 1.1   | 2026-05-21 | Validasi, Analisis, dan Penyempurnaan Dokumen Feasibility Study berdasarkan issue #0004. Melengkapi data gap narasi & charter, memperbaiki parameter UMR, menambahkan break-even analysis & NPV, serta memperbarui riwayat perubahan. | Senior Business Analyst & Feasibility Consultant |
 
 ---
 
@@ -64,6 +65,12 @@ Ruang lingkup aplikasi yang dievaluasi mencakup 9 modul fungsional utama [ref: 0
 *   **Calon Staf Karyawan (7 Posisi)**: Pengguna operasional harian sistem (Kepala Percetakan, Pramuniaga, Kasir, Desainer, Produksi Cetak, Fotocopy/Print, Staf Gudang) [ref: 01_project_charter.md, Seksi 7.2].
 *   **Kreditur**: Bank Mandiri & Bank BRI (pinjaman berbunga) serta Sahabat/Kerabat/Keluarga (pinjaman tanpa bunga) [ref: 01_project_charter.md, Seksi 6.1].
 
+### 3.5. Asumsi dan Batasan Studi Kelayakan
+Untuk menjaga kredibilitas dan keandalan analisis evaluasi ini, ditetapkan beberapa asumsi dan batasan analisis:
+*   **Asumsi Keuangan**: Nilai CAPEX Rp 40.000.000 terkunci dan tidak mengalami fluktuasi harga >10% sebelum pengadaan. Manfaat finansial tangible dihitung dengan asumsi stabilitas volume pesanan bulanan rata-rata seperti tahun operasional berjalan [ref: 01_project_charter.md, Seksi 12].
+*   **Asumsi Organisasional**: Proses rekrutmen untuk 7 staf baru selesai tepat waktu sebelum go-live [ref: 01_project_charter.md, Seksi 9.1 #1].
+*   **Batasan Teknis**: Evaluasi didasarkan pada antarmuka CLI yang dijalankan secara lokal client-server via LAN Cat6 di 1 cabang fisik, dengan pembatasan mutlak tidak menggunakan OOP pada logika bisnis inti program Python [ref: 01_project_charter.md, Seksi 9.2 #1, #2].
+
 ---
 
 ## 4. Analisis Kelayakan Teknis (Technical Feasibility)
@@ -94,20 +101,40 @@ Ruang lingkup aplikasi yang dievaluasi mencakup 9 modul fungsional utama [ref: 0
 
 ### 4.2. Evaluasi Kompleksitas Fitur Utama
 
-#### 4.2.1. Modul BOM Dimensi Desimal & HPP Otomatis
-Perhitungan HPP otomatis yang melibatkan multi-bahan (BOM) dengan satuan dimensi panjang x lebar (misal: pemakaian bahan stempel atau kertas baliho) serta volume desimal (tinta cairan) merupakan logika matematika berat [ref: narasi.txt, baris 95-96]. Dalam paradigma FP, perhitungan ini harus diselesaikan melalui fungsi murni (*pure functions*) rekursif atau operasi fungsional iteratif (`map`, `filter`, `reduce`). Evaluasi menunjukkan bahwa Python mendukung presisi desimal mengambang (*float* atau modul `decimal` bawaan) yang memadai untuk menghitung sisa bahan baku di gudang secara akurat [ref: 01_project_charter.md, Seksi 8.1 F-2.2].
+#### 4.2.1. Modul Manajemen Transaksi & Kebijakan Harga (M.1)
+*   **Detail & Kompleksitas**: Logika penanganan pembayaran bertahap (DP di awal, pelunasan di akhir) dikombinasikan dengan 3 skema harga yang berbeda (retail, grosir terhitung otomatis berbasis kuantitas, dan mitra khusus) [ref: 01_project_charter.md, Seksi 8.1 F-1.2, F-1.3]. Pemrosesan ini melibatkan kalkulasi multi-kondisi. Dalam FP murni, logika ini harus disusun menggunakan *pattern matching* atau percabangan fungsional murni tanpa mengubah status *state* order awal secara mutasi langsung.
 *   **Penilaian**: **Layak**.
 
-#### 4.2.2. Modul Penggajian Cerdas & Sistem Poin
-Logika kondisional untuk menentukan slip gaji otomatis (Gaji Tetap jika target laba tercapai, atau Gaji Persentase Laba jika target tidak tercapai) dikombinasikan dengan sistem poin kinerja berbasis kategori beban transaksi (1 s.d. 10 poin per aktivitas) sepenuhnya berada dalam batas kapabilitas pemrograman Python [ref: 01_project_charter.md, Seksi 8.1 F-4.2, F-4.4]. Skema data dapat disimpan dalam tabel relasional dengan integritas data yang dijamin oleh foreign key MySQL [ref: 01_project_charter.md, Seksi 4.1.2].
+#### 4.2.2. Modul Manajemen Inventaris, BOM & Stock Opname (M.2)
+*   **Detail & Kompleksitas**: Perhitungan HPP otomatis yang melibatkan multi-bahan (BOM) dengan satuan dimensi panjang x lebar (misal: pemakaian bahan stempel atau kertas baliho) serta volume desimal (tinta cairan) merupakan logika matematika berat [ref: narasi.txt, baris 95-96]. Dalam paradigma FP, perhitungan ini harus diselesaikan melalui fungsi murni (*pure functions*) rekursif atau operasi fungsional iteratif (`map`, `filter`, `reduce`). Evaluasi menunjukkan bahwa Python mendukung presisi desimal mengambang (*float* atau modul `decimal` bawaan) yang memadai untuk menghitung sisa bahan baku di gudang secara akurat [ref: 01_project_charter.md, Seksi 8.1 F-2.2]. Fitur sinkronisasi barang retail untuk produksi internal dan stock opname diakomodasi melalui relasi tabel.
 *   **Penilaian**: **Layak**.
 
-#### 4.2.3. Modul Multi-Branch Ready
-Kompleksitas arsitektur basis data multi-cabang dicapai secara elegan dengan menambahkan kolom `cabang_id` di setiap tabel utama (transaksi, stok, keuangan, SDM) [ref: 01_project_charter.md, Seksi 4.1.1 M.9]. Hal ini sangat mudah diimplementasikan di MySQL tanpa menambah beban komputasi secara signifikan pada fase satu cabang saat ini [ref: 01_project_charter.md, Seksi 9.2 #5].
+#### 4.2.3. Modul Layanan Keuangan Digital, PPOB, Jasa Keuangan & Service (M.3)
+*   **Detail & Kompleksitas**: Mengingat tidak ada integrasi API pihak ketiga secara otomatis (sesuai batasan luar ruang lingkup) [ref: 01_project_charter.md, Seksi 4.2], kompleksitas modul ini berada pada tingkat rendah ke sedang. Sistem hanya mencatat mutasi manual dari tindakan fisik yang dilakukan pemilik/karyawan. Fitur penentu rekomendasi akun digital termurah dari 6 e-wallet (Mandiri, Dana, Gopay, LinkAja, ShopeePay, OVO) diselesaikan menggunakan pencarian data statis terindeks [ref: 01_project_charter.md, Seksi 8.1 F-3.2]. Peringatan deposit PPOB otomatis diatur pada limit Rp 150.000 [ref: 01_project_charter.md, Seksi 8.1 F-3.1].
 *   **Penilaian**: **Layak**.
 
-#### 4.2.4. Modul Keamanan (RBAC, Audit Trail, Bcrypt, JWT)
-Mekanisme pengamanan hak akses menu Pemilik vs Karyawan di tingkat aplikasi CLI (RBAC) [ref: 01_project_charter.md, Seksi 8.2 N-2.1], enkripsi kata sandi menggunakan pustaka `bcrypt` [ref: 01_project_charter.md, Seksi 8.2 N-2.3], dan pencatatan log *Audit Trail* ke tabel terpisah MySQL [ref: 01_project_charter.md, Seksi 8.2 N-2.2] sepenuhnya siap diimplementasikan secara standar industri keamanan perangkat lunak.
+#### 4.2.4. Modul Manajemen SDM, Penggajian & Poin Karyawan (M.4)
+*   **Detail & Kompleksitas**: Modul penggajian cerdas melibatkan kondisi target laba bersih usaha (gaji tetap vs persentase laba) digabung dengan akumulasi poin insentif beban kerja (1, 3, 5, atau 10 poin per aktivitas transaksi staf) [ref: 01_project_charter.md, Seksi 8.1 F-4.2, F-4.4]. Skema kasbon terpotong otomatis juga diintegrasikan [ref: 01_project_charter.md, Seksi 8.1 F-4.3]. Struktur logika kondisional ini sepenuhnya berada dalam batas kapabilitas pemrograman Python dengan integrasi *foreign key* MySQL yang dijamin kepatuhan ACID.
+*   **Penilaian**: **Layak**.
+
+#### 4.2.5. Modul Sistem Manajemen Antrian & Pelacakan Desain (M.5)
+*   **Detail & Kompleksitas**: Sistem antrian harus memantau transisi 5 status pekerjaan secara sekuensial (`Antri` -> `Proses Desain` -> `Produksi` -> `Selesai` -> `Diambil`) [ref: 01_project_charter.md, Seksi 8.1 F-5.1]. Karena status berubah secara dinamis, FP murni menuntut pemrosesan perubahan data melalui pengembalian record baru yang memuat status terupdate (imutabilitas record database). Fitur arsip lokasi berkas desain diselesaikan melalui penyimpanan path direktori lokal.
+*   **Penilaian**: **Layak**.
+
+#### 4.2.6. Modul Administrasi Pinjaman, Aset, & Pengeluaran Rutin (M.6)
+*   **Detail & Kompleksitas**: Pencatatan pinjaman modal tanpa bunga yang sangat fleksibel (penarikan, pengembalian, sisa saldo) dan pelacakan pinjaman bank (BRI/Mandiri) yang meliputi tenor, bunga, dan notifikasi jatuh tempo bulanan [ref: 01_project_charter.md, Seksi 8.1 F-6.1, F-6.2]. Ditambah perhitungan depresiasi aset tetap dan tabungan alat. Logika ini bersifat komputasi linier standar dan mudah diimplementasikan pada database relasional.
+*   **Penilaian**: **Layak**.
+
+#### 4.2.7. Modul Keamanan, Audit Trail & Hak Akses (M.7)
+*   **Detail & Kompleksitas**: Mekanisme pengamanan hak akses menu Pemilik vs Karyawan di tingkat aplikasi CLI (RBAC) [ref: 01_project_charter.md, Seksi 8.2 N-2.1], enkripsi kata sandi menggunakan pustaka `bcrypt` [ref: 01_project_charter.md, Seksi 8.2 N-2.3], dan pencatatan log *Audit Trail* ke tabel terpisah MySQL [ref: 01_project_charter.md, Seksi 8.2 N-2.2] sepenuhnya siap diimplementasikan secara standar industri keamanan perangkat lunak.
+*   **Penilaian**: **Layak**.
+
+#### 4.2.8. Modul Pembatalan, Retur & CRM (M.8)
+*   **Detail & Kompleksitas**: Alur pembatalan transaksi dengan pengembalian DP atau retur barang retail rusak [ref: 01_project_charter.md, Seksi 8.1 F-1.4]. Kompleksitas modul ini terletak pada konsistensi sinkronisasi kas dan stok secara bersamaan saat retur/batal terjadi. Keandalan database MySQL (*transactional COMMIT/ROLLBACK*) menjamin integritas data dalam modul ini. Pencatatan CRM pelanggan menyimpan kontak WA dan log riwayat pesanan [ref: 01_project_charter.md, Seksi 8.1 F-5.3].
+*   **Penilaian**: **Layak**.
+
+#### 4.2.9. Modul Skalabilitas Multi-Cabang (M.9)
+*   **Detail & Kompleksitas**: Kompleksitas arsitektur basis data multi-cabang dicapai secara elegan dengan menambahkan kolom `cabang_id` di setiap tabel utama (transaksi, stok, keuangan, SDM) [ref: 01_project_charter.md, Seksi 4.1.1 M.9]. Hal ini sangat mudah diimplementasikan di MySQL tanpa menambah beban komputasi secara signifikan pada fase satu cabang saat ini [ref: 01_project_charter.md, Seksi 9.2 #5].
 *   **Penilaian**: **Layak**.
 
 ### 4.3. Evaluasi Kapabilitas Tim Pengembang
@@ -132,6 +159,7 @@ Kebutuhan fisik infrastruktur untuk mendukung topologi Client-Server lokal di to
 
 ### 4.6. Kesimpulan Kelayakan Teknis
 $$\color{orange}{\textbf{LAYAK DENGAN CATATAN (FEASIBLE WITH CONDITIONS)}}$$
+
 Teknologi yang dipilih (Python CLI + MySQL) sangat matang dan andal untuk mengotomatisasi sistem operasional AbuCom. Catatan utama terletak pada disiplin penerapan paradigma *Functional Programming* murni untuk menghindari efek samping pengolahan data serta penanganan visual antarmuka CLI agar tetap ramah digunakan oleh staf operasional [ref: 01_project_charter.md, Seksi 8.2 N-2.4, 9.2 #2].
 
 ---
@@ -176,6 +204,7 @@ Junior Programmer (Pemilik) akan memegang peran utama sebagai administrator tekn
 
 ### 5.7. Kesimpulan Kelayakan Operasional
 $$\color{orange}{\textbf{LAYAK DENGAN CATATAN (FEASIBLE WITH CONDITIONS)}}$$
+
 Sistem ini sangat mendesak dan layak untuk membebaskan pemilik dari masalah *burnout* operasional harian. Catatan penting keberhasilan operasional terletak pada **disiplin rekrutmen staf tepat waktu** dan **efektivitas pelatihan simulasi 3 hari** untuk memastikan seluruh staf baru mampu mengoperasikan terminal CLI tanpa kebingungan teknis [ref: 01_project_charter.md, Seksi 10 Risiko #1, #6].
 
 ---
@@ -224,19 +253,45 @@ Penerapan aplikasi ini ditargetkan memberikan penghematan dan peningkatan profit
 | **Manfaat Finansial** | Rp 0 | Rp 56.400.000 | Rp 56.400.000 |
 | **Arus Kas Bersih (Net Benefit)** | **(Rp 40.000.000)** | **Rp 50.400.000** | **Rp 50.400.000** |
 
-### 6.6. Estimasi Return on Investment (ROI)
+### 6.6. Net Present Value (NPV)
+`*[ESTIMASI — menggunakan tingkat diskonto 10%]*`
+NPV dihitung untuk mengevaluasi kelayakan investasi dengan memperhitungkan nilai waktu dari uang (*time value of money*). Tingkat diskonto wajar untuk suku bunga kredit mikro di Indonesia ditetapkan sebesar **10% per tahun**. Proyeksi NPV atas investasi pengembangan sistem dengan operasional 2 tahun pertama adalah sebagai berikut:
+*   Tahun 0 (Aliran Kas): (Rp 40.000.000)
+*   Tahun 1 (Present Value dari Rp 50.400.000): Rp 45.818.182
+*   Tahun 2 (Present Value dari Rp 50.400.000): Rp 41.652.893
+*   Total Present Value dari Manfaat Bersih: Rp 87.471.075
+
+$$\text{NPV} = \text{Total PV of Benefits} - \text{CAPEX}$$
+$$\text{NPV} = \text{Rp 87.471.075} - \text{Rp 40.000.000} = \text{Rp 47.471.075}$$
+
+Karena nilai **NPV > 0 (positif Rp 47.471.075)**, proyek ini dinilai sangat menguntungkan dan secara finansial **Sangat Layak** untuk dijalankan.
+
+### 6.7. Estimasi Return on Investment (ROI)
 `*[ESTIMASI]*`
 Formula ROI Sederhana pada akhir Tahun 1:
+
 $$\text{ROI} = \frac{\text{Net Benefit Tahun 1} - \text{CAPEX}}{\text{CAPEX}} \times 100\%$$
 $$\text{ROI} = \frac{\text{Rp 50.400.000} - \text{Rp 40.000.000}}{\text{Rp 40.000.000}} \times 100\% = 26.0\%$$
+
 Proyek memberikan tingkat pengembalian investasi sebesar **26.0%** pada tahun pertama, yang tergolong sangat sehat untuk investasi digital UMKM.
 
-### 6.7. Estimasi Payback Period (Periode Pengembalian Modal)
+### 6.8. Estimasi Payback Period (Periode Pengembalian Modal)
 `*[ESTIMASI]*`
+
 $$\text{Payback Period} = \frac{\text{Total CAPEX}}{\text{Net Benefit Bulanan}} = \frac{\text{Rp 40.000.000}}{\text{Rp 4.200.000 / bulan}} = 9.5 \text{ Bulan}$$
+
 Seluruh modal investasi awal sebesar Rp 40.000.000 diproyeksikan akan **kembali penuh dalam waktu 9,5 bulan** pasca Go-Live aplikasi.
 
-### 6.8. Analisis Sensitivitas (Proyeksi 3 Skenario)
+### 6.9. Analisis Titik Impas (Break-Even Point - BEP)
+`*[ESTIMASI]*`
+Kalkulasi Break-Even Point (BEP) proyek ini dianalisis berdasarkan dua skenario parameter bisnis:
+1.  **BEP Berdasarkan Waktu Operasional**: Titik impas akumulasi investasi awal (CAPEX Rp 40.000.000) dan biaya operasional (OPEX Rp 500.000/bulan) dicapai pada **bulan ke-9,5** masa operasional Go-Live.
+2.  **BEP Berdasarkan Volume Transaksi Percetakan Kustom**:
+    *   Asumsi margin keuntungan rata-rata per transaksi percetakan kustom (undangan, stempel, stiker, baliho) adalah **Rp 50.000 / transaksi**.
+    *   *BEP Pengembalian CAPEX*: Untuk menutup investasi awal Rp 40.000.000, sistem harus memproses akumulasi **800 transaksi** percetakan kustom.
+    *   *BEP Biaya Operasional (OPEX)*: Untuk menutup biaya operasional bulanan Rp 500.000, sistem harus memproses minimal **10 transaksi** percetakan kustom per bulan. Target ini sangat mudah dicapai mengingat volume transaksi harian AbuCom yang tinggi.
+
+### 6.10. Analisis Sensitivitas (Proyeksi 3 Skenario)
 `*[ESTIMASI]*`
 
 *   **Skenario A: Best Case (Semua Lancar)**
@@ -249,13 +304,13 @@ Seluruh modal investasi awal sebesar Rp 40.000.000 diproyeksikan akan **kembali 
     *   Asumsi: Manfaat finansial turun (hanya Rp 3.000.000/bulan akibat adopsi lambat), OPEX naik Rp 700.000/bulan, dana cadangan Rp 4.500.000 terpakai habis di awal.
     *   *Payback Period*: **19 Bulan** (Tetap di bawah 2 tahun, masih tergolong layak).
 
-### 6.9. Sumber Pendanaan dan Kemampuan Finansial
+### 6.11. Sumber Pendanaan dan Kemampuan Finansial
 1.  **Laba Operasional Usaha**: Dana internal dialokasikan bertahap untuk mendukung operasional [ref: 01_project_charter.md, Seksi 9.2 #5].
 2.  **Pinjaman Bank BRI & Mandiri**: Menyediakan likuiditas tetap, namun memiliki beban setoran bulanan tetap [ref: narasi.txt, baris 24, 66].
 3.  **Pinjaman Tanpa Bunga Kerabat/Keluarga**: Sumber pendanaan yang sangat fleksibel tanpa bunga [ref: narasi.txt, baris 23].
     *   *Kerentanan*: Dana ini dapat ditarik mendadak, baik sebagian maupun total [ref: narasi.txt, baris 23]. Jika ditarik secara permanen di tengah jalan, hal ini dapat mengancam kelangsungan kas pengembangan proyek [ref: 01_project_charter.md, Seksi 10 Risiko #3].
 
-### 6.10. Risiko Finansial dan Mitigasi
+### 6.12. Risiko Finansial dan Mitigasi
 
 | No | Risiko Finansial | Probabilitas | Dampak | Rencana Mitigasi |
 |----|------------------|:------------:|:------:|------------------|
@@ -263,9 +318,10 @@ Seluruh modal investasi awal sebesar Rp 40.000.000 diproyeksikan akan **kembali 
 | 2  | **Kenaikan Harga Hardware Lokal**: Harga Mini PC Server atau PC Kasir naik tajam di pasar Indonesia sebelum sempat dibeli. | 3 | 2 | Lakukan pembelian perangkat keras utama (Mini PC Server & UPS) di Bulan ke-5 (Awal Fase Implementasi) untuk mengunci harga [ref: 01_project_charter.md, Seksi 11 #4]. |
 | 3  | **Beban Bunga Bank Mengganggu Operasional**: Aliran kas tersedot untuk membayar setoran bulanan Bank BRI/Mandiri di tengah penurunan omzet sementara. | 2 | 4 | Buat modul pencatatan pengingat jatuh tempo setoran bank bulanan untuk menghindari denda keterlambatan pembayaran [ref: 01_project_charter.md, Seksi 8.1 F-6.2]. |
 
-### 6.11. Kesimpulan Kelayakan Ekonomi
+### 6.13. Kesimpulan Kelayakan Ekonomi
 $$\color{orange}{\textbf{LAYAK DENGAN CATATAN (FEASIBLE WITH CONDITIONS)}}$$
-Secara finansial, proyek kustom CLI Python ini sangat menguntungkan dengan estimasi *Payback Period* yang cepat (9,5 bulan) dan ROI tinggi (26%). Catatan kelayakan terletak pada **pengelolaan likuiditas modal pinjaman tanpa bunga** yang harus dipisahkan dari modal kerja harian toko untuk mengantisipasi penarikan dana mendadak [ref: narasi.txt, baris 23].
+
+Secara finansial, proyek kustom CLI Python ini sangat menguntungkan dengan estimasi *Payback Period* yang cepat (9,5 bulan), ROI tinggi (26%), dan NPV yang sangat positif (Rp 47.471.075). Catatan kelayakan terletak pada **pengelolaan likuiditas modal pinjaman tanpa bunga** yang harus dipisahkan dari modal kerja harian toko untuk mengantisipasi penarikan dana mendadak [ref: narasi.txt, baris 23].
 
 ---
 
@@ -285,7 +341,7 @@ Telah disusun jadwal tingkat tinggi yang terbagi menjadi 8 milestone besar selam
 ### 7.2. Evaluasi Kerealistisan Jadwal per Fase
 *   **Durasi Keseluruhan (12 Bulan)**: Sangat longgar dan realistis untuk skala aplikasi internal UMKM. Rata-rata pengembangan aplikasi sejenis hanya membutuhkan waktu 4-6 bulan. Alokasi 12 bulan memberikan ruang yang sangat aman bagi pemilik usaha yang bertindak sebagai Junior Programmer di tengah kesibukan mengelola toko [ref: 01_project_charter.md, Seksi 7.1 Anggota 0].
 *   **Bulan 7-9 (Implementasi Fase II - Persediaan & SDM)**: Alokasi 3 bulan dinilai sangat realistis untuk menyelesaikan logika terberat (BOM desimal dan skema penggajian otomatis) karena modul-modul ini dikerjakan secara paralel oleh Claude Sonnet 4.6 (spesialis *deep coding*) dan Gemini 3.1 Pro [ref: 01_project_charter.md, Seksi 7.1].
-*   **Bulan 11 (Testing & UAT)**: Alokasi 1 bulan sangat memadai untuk melakukan pengujian manual CLI secara menyeluruh oleh Junior Programmer dan calon staf baru [ref: 01_project_charter.md, Seksi 11 #7].
+*   **Bulan 11 (Testing & UAT)**: Alokasi 1 month sangat memadai untuk melakukan pengujian manual CLI secara menyeluruh oleh Junior Programmer dan calon staf baru [ref: 01_project_charter.md, Seksi 11 #7].
 
 ### 7.3. Identifikasi Jalur Kritis (Critical Path)
 Jalur kritis proyek (keterlambatan pada fase ini akan menunda go-live proyek) meliputi:
@@ -306,6 +362,7 @@ Jalur kritis proyek (keterlambatan pada fase ini akan menunda go-live proyek) me
 
 ### 7.6. Kesimpulan Kelayakan Jadwal
 $$\color{green}{\textbf{LAYAK (FEASIBLE)}}$$
+
 Dengan alokasi total durasi 12 bulan yang didukung metodologi pengembangan Hybrid (Waterfall-Agile) [ref: 01_project_charter.md, Seksi 9.4], serta bantuan intensif dari 6 asisten AI spesialis, jadwal proyek ini dinilai **Sangat Layak** dan aman untuk dicapai tanpa mengganggu kestabilan fisik pemilik usaha.
 
 ---
@@ -314,11 +371,11 @@ Dengan alokasi total durasi 12 bulan yang didukung metodologi pengembangan Hybri
 
 ### 8.1. Kepatuhan Regulasi dan Perizinan Usaha
 `*[BERDASARKAN PENGETAHUAN UMUM — perlu validasi hukum jika diperlukan]*`
-Sebagai unit usaha UMKM di Indonesia yang bergerak di bidang percetakan, retail, dan jasa perbaikan, AbuCom tidak memerlukan izin lisensi perangkat lunak khusus dari instansi pemerintah untuk mengoperasikan sistem internal. Namun, pemilik wajib memastikan usaha fisiknya terdaftar secara legal melalui Nomor Induk Berusaha (NIB) pada sistem OSS (Online Single Submission) Kementerian Investasi RI untuk menjaga legalitas operasional saat melakukan rekrutmen staf secara resmi.
+Sebagai unit usaha UMKM di Indonesia yang bergerak di bidang percetakan, retail, dan jasa perbaikan, AbuCom tidak memerlukan izin lisensi perangkat lunak khusus dari instansi pemerintah untuk mengoperasikan sistem internal. Namun, pemilik wajib memastikan usaha fisiknya terdaftar secara legal melalui **Nomor Induk Berusaha (NIB)** pada sistem **OSS (Online Single Submission)** Kementerian Investasi RI [ref: 0004_issue_validasi_feasibility_study.md, Seksi 8.1]. Kepemilikan NIB merupakan kewajiban hukum mutlak bagi kepatuhan perizinan berusaha retail & industri mikro di Indonesia guna menjaga legalitas saat melakukan operasional dan rekrutmen staf secara resmi.
 *   **Penilaian**: **Layak**.
 
 ### 8.2. Kepatuhan Perlindungan Data Pribadi (UU PDP No. 27 Tahun 2022)
-Aplikasi AbuCom menyimpan data sensitif pelanggan (Nama, Nomor WhatsApp, Riwayat Transaksi) dalam modul CRM [ref: 01_project_charter.md, Seksi 8.1 F-5.3], data riwayat kasbon karyawan [ref: 01_project_charter.md, Seksi 8.1 F-4.1], serta data keuangan pinjaman bank pemilik [ref: 01_project_charter.md, Seksi 8.1 F-6.2]. Sesuai UU PDP di Indonesia, kebocoran data pelanggan dapat memicu sanksi hukum berat.
+Aplikasi AbuCom menyimpan data sensitif pelanggan (Nama, Nomor WhatsApp, Riwayat Transaksi) dalam modul CRM [ref: 01_project_charter.md, Seksi 8.1 F-5.3], data riwayat kasbon karyawan [ref: 01_project_charter.md, Seksi 8.1 F-4.1], serta data keuangan pinjaman bank pemilik [ref: 01_project_charter.md, Seksi 8.1 F-6.2]. Sesuai ketentuan **UU PDP No. 27 Tahun 2022** di Indonesia, pemilik bertindak sebagai pengendali data pribadi pelanggan dan wajib memastikan keamanannya dari kebocoran yang berpotensi memicu sanksi denda hukum administrasi maupun pidana.
 *   **Evaluasi Kelayakan**: Sistem telah merancang fitur pengamanan standar industri yang memadai untuk mematuhi UU PDP:
     *   Enkripsi satu arah *bcrypt* untuk kata sandi akun karyawan [ref: 01_project_charter.md, Seksi 8.2 N-2.3].
     *   *JSON Web Token* (JWT) untuk mengamankan session data CLI [ref: 01_project_charter.md, Seksi 8.2 N-2.3].
@@ -334,9 +391,12 @@ Seluruh komponen perangkat lunak yang dipilih aman dari tuntutan pelanggaran hak
 *   **Penilaian**: **Layak** (Bebas biaya lisensi tahunan, mengeliminasi risiko pembajakan software).
 
 ### 8.4. Aspek Ketenagakerjaan
-`**[BELUM DITENTUKAN — ISI MANUAL sesuai UMR daerah setempat]**`
-Rencana rekrutmen 7 staf baru wajib mematuhi regulasi ketenagakerjaan dasar di Indonesia (UU Cipta Kerja).
-*   **Tantangan**: Pemilik harus menetapkan skema kontrak kerja yang jelas (PKWT/PKWTT) serta menghitung kelayakan upah bulanan staf baru berdasarkan UMR daerah setempat yang berlaku **[BELUM DITENTUKAN — ISI MANUAL]**.
+`*[BERDASARKAN PENGETAHUAN UMUM — regulasi ketenagakerjaan Indonesia]*`
+Rencana rekrutmen 7 staf baru wajib mematuhi regulasi ketenagakerjaan dasar di Indonesia yang diatur dalam undang-undang ketenagakerjaan (termasuk UU Cipta Kerja).
+*   **Tantangan**: Pemilik harus menetapkan skema kontrak kerja yang jelas, baik Perjanjian Kerja Waktu Tertentu (**PKWT** untuk staf kasir/gudang kontrak) maupun Perjanjian Kerja Waktu Tidak Tertentu (**PKWTT** untuk posisi tetap Kepala Percetakan) [ref: 0004_issue_validasi_feasibility_study.md, Seksi 8.4]. Pemilik juga harus menghitung standar upah bulanan wajar yang disesuaikan dengan parameter:
+
+    $$\text{Parameter Upah} = \text{*(UMR daerah operasional usaha — diisi oleh Pemilik Usaha berdasarkan Peraturan Gubernur/Bupati/Walikota setempat yang berlaku)*}$$
+
 *   **Dukungan Sistem**: Modul SDM dan penggajian cerdas AbuCom memfasilitasi administrasi yang transparan bagi pemenuhan hak karyawan (perhitungan absensi harian, pemotongan otomatis sisa kasbon, dan akumulasi bonus poin insentif beban kerja) [ref: 01_project_charter.md, Seksi 8.1 F-4.1, F-4.2, F-4.3].
 *   **Penilaian**: **Layak dengan Catatan** (Catatan: Pemilik wajib berkonsultasi mengenai standar kontrak kerja dasar untuk menghindari konflik ketenagakerjaan hukum di masa depan).
 
@@ -355,6 +415,7 @@ Struktur organisasi 7 posisi operasional didukung budaya kerjasama lintas divisi
 
 ### 8.7. Kesimpulan Kelayakan Hukum & Organisasional
 $$\color{orange}{\textbf{LAYAK DENGAN CATATAN (FEASIBLE WITH CONDITIONS)}}$$
+
 Proyek ini sepenuhnya aman dari sisi lisensi software open-source dan regulasi bisnis perizinan. Catatan kelayakan kritis terletak pada **disiplin kepatuhan UU PDP** terkait keamanan database pelanggan dari penyalinan ilegal, serta **kejelasan otorisasi sistem kasir** untuk mendukung budaya kerjasama tim tanpa memicu selisih pencatatan kas fisik [ref: 01_project_charter.md, Seksi 8.2 N-2.1, 8.2 N-2.2; ref: narasi.txt, baris 43].
 
 ---
@@ -417,9 +478,9 @@ Berikut adalah rangkuman evaluasi kelayakan komprehensif AbuCom berdasarkan hasi
 |----|-------------------|:----------------:|-----------------------------------|
 | 1  | **Kelayakan Teknis** | $$\color{orange}{\textbf{Layak dg Catatan}}$$ | Pustaka & runtime Python/MySQL sangat stabil [ref: 01_project_charter.md, Seksi 12 #2]. Diperlukan kedisiplinan integrasi asisten AI untuk memitigasi kerumitan state management dalam *Functional Programming* [ref: 01_project_charter.md, Seksi 7.1]. |
 | 2  | **Kelayakan Operasional** | $$\color{orange}{\textbf{Layak dg Catatan}}$$ | Sistem sangat dibutuhkan untuk mengatasi burnout pemilik [ref: narasi.txt, baris 28]. Rekrutmen 7 staf operasional harus diselesaikan tepat waktu sebelum Go-Live aplikasi [ref: 01_project_charter.md, Seksi 9.1 #1]. |
-| 3  | **Kelayakan Ekonomi** | $$\color{orange}{\textbf{Layak dg Catatan}}$$ | Potensi pengembalian modal investasi sangat cepat (~9,5 bulan) dengan ROI tinggi (26%) [ref: Seksi 6.6, 6.7]. Kas pengembangan proyek wajib dilindungi dari penarikan mendadak modal pinjaman tanpa bunga [ref: narasi.txt, baris 23]. |
+| 3  | **Kelayakan Ekonomi** | $$\color{orange}{\textbf{Layak dg Catatan}}$$ | Potensi pengembalian modal investasi sangat cepat (~9,5 bulan), ROI tinggi (26%), dan NPV positif (Rp 47.471.075) [ref: Seksi 6.6, 6.7]. Kas pengembangan proyek wajib dilindungi dari penarikan mendadak modal pinjaman tanpa bunga [ref: narasi.txt, baris 23]. |
 | 4  | **Kelayakan Jadwal** | $$\color{green}{\textbf{Layak}}$$ | Alokasi waktu keseluruhan 12 bulan sangat longgar dan realistis untuk diselesaikan secara kolaboratif bersama 6 asisten AI spesialis [ref: 01_project_charter.md, Seksi 7.1, 11]. |
-| 5  | **Kelayakan Hukum** | $$\color{orange}{\textbf{Layak dg Catatan}}$$ | 100% aman dari masalah biaya lisensi software komersial [ref: 01_project_charter.md, Seksi 12 #2]. Direktori backup database wajib dienkripsi kuat untuk mematuhi ketentuan UU PDP No. 27/2022 [ref: 01_project_charter.md, Seksi 8.3 N-3.1]. |
+| 5  | **Kelayakan Hukum** | $$\color{orange}{\textbf{Layak dg Catatan}}$$ | 100% aman dari masalah biaya lisensi software komersial [ref: 01_project_charter.md, Seksi 12 #2]. Penerapan NIB pada OSS dan kontrak kerja PKWT/PKWTT staf harus diatur legalitasnya. Direktori backup database wajib dienkripsi kuat untuk mematuhi ketentuan UU PDP No. 27/2022 [ref: 01_project_charter.md, Seksi 8.3 N-3.1]. |
 
 ---
 
@@ -431,20 +492,24 @@ Berdasarkan evaluasi komprehensif terhadap seluruh aspek teknis, operasional, fi
 ### 11.2. Prasyarat dan Catatan Penting Sebelum Melanjutkan
 Sebelum proyek melangkah secara formal ke Fase SDLC berikutnya (Requirements & SRS) [ref: 01_project_charter.md, Seksi 5.2 #2], pemilik usaha wajib memenuhi prasyarat kritis berikut:
 1.  **Penguncian Dana Contingency**: Pisahkan dana cadangan darurat sebesar **Rp 4.500.000** ke dalam rekening khusus terpisah untuk menjamin pengerjaan software tidak terganggu jika pinjaman tanpa bunga kerabat ditarik mendadak [ref: 01_project_charter.md, Seksi 12 #5; ref: narasi.txt, baris 23].
-2.  **Pemetaan UMR & Standar Upah**: Pemilik wajib menetapkan nominal upah bulanan staf baru disesuaikan dengan UMR daerah setempat yang berlaku untuk diintegrasikan dalam skema database penggajian cerdas **[BELUM DITENTUKAN — ISI MANUAL]** [ref: narasi.txt, baris 67].
+2.  **Pemetaan UMR & Standar Upah**: Pemilik wajib menetapkan nominal upah bulanan staf baru disesuaikan dengan regulasi upah setempat berdasarkan formula:
+    
+    $$\text{Standar Upah} = \text{*(UMR daerah operasional usaha — diisi oleh Pemilik Usaha berdasarkan Peraturan Gubernur/Bupati/Walikota setempat yang berlaku)*}$$
+    
+    untuk diintegrasikan dalam skema database penggajian cerdas [ref: narasi.txt, baris 67].
 3.  **Draft Skenario Uji Awal (BOM)**: Menyusun draf manual data dimensi bahan baku fisik (panjang x lebar stempel flash dan volume cairan tinta) guna keperluan validasi logika formula HPP saat masa coding dimulai [ref: narasi.txt, baris 95-96].
 
 ### 11.3. Langkah Selanjutnya (Next Steps)
 Setelah dokumen Feasibility Study ini disetujui secara digital oleh pemilik usaha:
 1.  Segera inisiasi Fase 2 (Requirements) untuk menyusun dokumen **SRS (Software Requirements Specification)** yang merinci 20+ detail kebutuhan fungsional secara formal [ref: 01_project_charter.md, Seksi 11 #2].
-2.  Lakukan proses pembersihan data awal ( cleansing ) pada catatan Excel yang berserakan agar siap diimpor saat sistem selesai dideploy [ref: narasi.txt, baris 70].
+2.  Lakukan proses pembersihan data awal (*cleansing*) pada catatan Excel yang berserakan agar siap diimpor saat sistem selesai dideploy [ref: narasi.txt, baris 70].
 3.  Persiapkan skedul rekrutmen staf pramuniaga dan gudang pada Bulan ke-9 pengembangan [ref: 01_project_charter.md, Seksi 11 #5].
 
 ---
 
 ## 12. Glosarium
 
-Berikut adalah glosarium istilah domain percetakan, retail, teknis, dan keuangan yang digunakan dalam analisis studi kelayakan ini untuk menyamakan pemahaman pembaca [ref: 01_project_charter.md, Glosarium]:
+Berikut adalah glosarium istilah domain percetakan, retail, teknis, hukum, dan keuangan yang digunakan dalam analisis studi kelayakan ini untuk menyamakan pemahaman pembaca [ref: 01_project_charter.md, Glosarium]:
 1.  **Stempel Flash**: Jenis stempel otomatis tanpa bantalan tinta eksternal, yang menggunakan karet khusus penyerap tinta warna yang disinari lampu kilat (flash) mesin stempel saat pembuatan.
 2.  **Baliho**: Media promosi cetak luar ruangan (outdoor) berskala besar, biasanya dicetak di atas bahan flexi menggunakan mesin printer format lebar (*wide-format printer*).
 3.  **Nama Dada**: Papan nama kecil (pin/tag name) yang biasanya dipasang di dada pakaian karyawan/pegawai, terbuat dari bahan akrilik, PVC, atau logam kuningan dengan lapisan resin bening.
@@ -467,6 +532,12 @@ Berikut adalah glosarium istilah domain percetakan, retail, teknis, dan keuangan
 20. **Analisis Sensitivitas**: Analisis simulasi keuangan proyeksi kelayakan ekonomi di bawah pengaruh fluktuasi parameter eksternal (Best Case, Base Case, Worst Case) [ref: Seksi 6.8].
 21. **Jalur Kritis (Critical Path)**: Rangkaian aktivitas proyek yang menentukan durasi tercepat penyelesaian keseluruhan proyek, di mana keterlambatan pada jalur ini akan otomatis menunda tanggal selesai proyek [ref: Seksi 7.3].
 22. **UU PDP (Undang-Undang Pelindungan Data Pribadi)**: Undang-Undang Republik Indonesia Nomor 27 Tahun 2022 yang mengatur mengenai hak subjek data pribadi, kewajiban pengelola data, dan sanksi hukum atas kebocoran data [ref: Seksi 8.2].
+23. **NPV (Net Present Value)**: Selisih antara nilai sekarang dari aliran kas masuk (manfaat) dengan nilai sekarang dari aliran kas keluar (CAPEX) pada periode waktu tertentu dengan memperhitungkan faktor diskonto [ref: Seksi 6.6].
+24. **BEP (Break-Even Point)**: Analisis titik impas untuk mengetahui tingkat volume transaksi atau masa operasional di mana total biaya investasi dan operasional sama dengan total pendapatan/manfaat [ref: Seksi 6.9].
+25. **NIB (Nomor Induk Berusaha)**: Identitas pelaku usaha resmi di Indonesia yang diterbitkan oleh Lembaga OSS setelah pelaku usaha melakukan pendaftaran usahanya [ref: Seksi 8.1].
+26. **OSS (Online Single Submission)**: Sistem perizinan berusaha terintegrasi secara elektronik yang dikelola oleh Kementerian Investasi/BKPM RI untuk memfasilitasi legalitas UMKM dan korporasi di Indonesia [ref: Seksi 8.1].
+27. **PKWT (Perjanjian Kerja Waktu Tertentu)**: Perjanjian kerja antara pekerja/buruh dengan pengusaha untuk mengadakan hubungan kerja dalam waktu tertentu atau untuk pekerja yang bersifat tidak tetap/kontrak [ref: Seksi 8.4].
+28. **PKWTT (Perjanjian Kerja Waktu Tidak Tertentu)**: Perjanjian kerja antara pekerja/buruh dengan pengusaha untuk mengadakan hubungan kerja yang bersifat tetap [ref: Seksi 8.4].
 
 ---
 
@@ -479,3 +550,4 @@ Berikut adalah daftar dokumen acuan primer dan sekunder yang digunakan dalam pen
 | 1 | `01_project_charter.md`       | `docs/sdlc/01_planning/01_project_charter.md`     | Dokumen Project Charter v1.1 — referensi utama data proyek yang tervalidasi.  |
 | 2 | `narasi.txt`                  | `docs/sdlc/narasi.txt`                            | Dokumen narasi asli pemilik usaha — referensi pendukung konteks operasional.  |
 | 3 | `0003_issue_feasibility_study.md` | `docs/issue/0003_issue_feasibility_study.md`  | Dokumen instruksi issue pembuatan Feasibility Study ini.                      |
+| 4 | `0004_issue_validasi_feasibility_study.md` | `docs/issue/0004_issue_validasi_feasibility_study.md` | Dokumen instruksi audit, validasi, dan perbaikan penulisan kelayakan ini. |

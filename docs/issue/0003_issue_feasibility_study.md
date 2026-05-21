@@ -7,7 +7,7 @@
 | **Dokumen Utama**| Feasibility Study (Studi Kelayakan Proyek)                            |
 | **Target File**  | `docs/sdlc/01_planning/02_feasibility_study.md`                       |
 | **Fase SDLC**    | 01 — Planning (Perencanaan)                                           |
-| **Status**       | Open                                                                  |
+| **Status**       | Resolved                                                              |
 | **Tanggal**      | 2026-05-21                                                            |
 
 ---
