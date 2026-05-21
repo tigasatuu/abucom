@@ -3,7 +3,7 @@ judul      : Validasi, Analisis, dan Penyempurnaan Dokumen Feasibility Study
 target_file: docs/sdlc/01_planning/02_feasibility_study.md
 fase_sdlc  : 01 — Planning
 prioritas  : Tinggi
-status     : Open
+status     : Resolved
 dibuat_oleh: Senior Business Analyst & Feasibility Consultant
 tanggal    : 2026-05-21
 ---
