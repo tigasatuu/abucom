@@ -14,7 +14,7 @@ penyusun   : Senior Project Manager / Lead Business Analyst
 | Versi | Tanggal    | Perubahan                                                   | Oleh                                            |
 |-------|------------|-------------------------------------------------------------|-------------------------------------------------|
 | 1.0   | 2026-05-20 | Pembuatan awal dokumen berdasarkan analisis `narasi.txt`    | Senior Project Manager / Lead Business Analyst  |
-| 1.1   | 2026-05-21 | Penyempurnaan menyeluruh berdasarkan validasi issue #0002. Melengkapi estimasi anggaran, menambahkan modul limbah produksi & manajemen satuan, detail alur kerja manual, metodologi pengembangan, manfaat terukur, dependensi, dan eliminasi placeholder. | Principal Business Analyst & Senior Technical PM |
+| 1.1   | 2026-05-21 | Penyempurnaan menyeluruh berdasarkan validasi. Melengkapi estimasi anggaran, menambahkan modul limbah produksi & manajemen satuan, detail alur kerja manual, metodologi pengembangan, manfaat terukur, dependensi, dan eliminasi placeholder. | Principal Business Analyst & Senior Technical PM |
 
 ---
 
@@ -50,16 +50,16 @@ Proyek ini bertujuan untuk merancang dan membangun sistem aplikasi manajemen ter
 ## 2. Latar Belakang dan Justifikasi Proyek
 
 ### 2.1. Kondisi Saat Ini (Current State)
-Usaha UMKM AbuCom merupakan penyedia layanan jasa percetakan dan beberapa unit usaha pendukung yang berlokasi di satu tempat fisik. Saat ini, seluruh operasional usaha dikelola dan dijalankan secara mandiri oleh pemilik usaha *(single-fighter)* `[ref: narasi.txt, baris 1]`.  
+Usaha UMKM AbuCom merupakan penyedia layanan jasa percetakan dan beberapa unit usaha pendukung yang berlokasi di satu tempat fisik. Saat ini, seluruh operasional usaha dikelola dan dijalankan secara mandiri oleh pemilik usaha *(single-fighter)*.  
 
-Usaha ini melayani lima kategori produk dan layanan utama yang kompleks `[ref: narasi.txt, baris 3-18]`:
+Usaha ini melayani lima kategori produk dan layanan utama yang kompleks:
 1. **Produk Percetakan (Produksi Sendiri)**: Stempel flash, cetak foto, pembuatan buku yasin, undangan pernikahan, cetak baliho, fotokopi, pengetikan dokumen, print data, cetak stiker, hingga pembuatan nama dada dan jasa percetakan kustom.
 2. **Alat Tulis Kantor / ATK (Retail)**: Penjualan barang retail fisik seperti kertas HVS, kertas foto, kertas undangan, tinta printer, pulpen, hekter, berbagai map (snelhechter, biasa, warna), lakban, selotip, pensil, dan perlengkapan kantor.
 3. **Layanan Digital & PPOB**: Penjualan pulsa HP, pulsa listrik (token), paket data, dan pembayaran tagihan listrik bulanan.
 4. **Jasa Keuangan**: Layanan transfer uang antar bank dan jasa tarik tunai.
 5. **Jasa Teknis**: Layanan perbaikan (service) printer serta instalasi ulang sistem operasi pada komputer dan laptop pelanggan.
 
-Seluruh pencatatan transaksi keuangan, pelacakan sisa stok bahan baku, mutasi akun digital, pembayaran pinjaman modal, dan rekapitulasi data masih dikerjakan secara manual oleh pemilik menggunakan Microsoft Excel dengan file yang berserakan dan tidak terintegrasi `[ref: narasi.txt, baris 47]`. Berikut adalah gambaran alur kerja manual per divisi saat ini `[ref: narasi.txt, baris 49-70]`:
+Seluruh pencatatan transaksi keuangan, pelacakan sisa stok bahan baku, mutasi akun digital, pembayaran pinjaman modal, dan rekapitulasi data masih dikerjakan secara manual oleh pemilik menggunakan Microsoft Excel dengan file yang berserakan dan tidak terintegrasi. Berikut adalah gambaran alur kerja manual per divisi saat ini:
 *   **Divisi Percetakan (Produk Unggulan)**: Pemilik melayani pelanggan, mendesain pesanan kustom, mengambil bahan baku fisik di gudang, melakukan cetak dan *finishing* (pemotongan, laminasi, dll), mengemas hasil cetak, hingga menyerahkannya ke pelanggan. Setelah itu, pemilik mencatat transaksi di Excel, menghitung sisa stok bahan secara manual, memantau ketersediaan bahan, membuat daftar belanja pengadaan jika stok menipis, melakukan pembelian fisik ke supplier, dan menginput kembali bahan yang baru dibeli ke dalam database stok.
 *   **Divisi ATK (Retail)**: Pemilik melayani pembeli langsung, memeriksa daftar harga di lembar kerja Excel, menjumlahkan total belanjaan, memberikan kembalian, dan secara manual mengurangi stok di Excel satu per satu. Pemilik juga harus melakukan pemeriksaan fisik berkala di gudang, merapikan pajangan, serta merencanakan pengadaan barang yang habis dengan menentukan harga jual baru berdasarkan harga beli terupdate dari supplier.
 *   **Divisi Pulsa dan PPOB**: Mengelola dua akun saldo deposit terpisah (akun pulsa/data dan akun token/tagihan listrik). Pemilik harus memastikan saldo tidak habis secara fisik, melakukan deposit minimal Rp 500.000 jika saldo mendekati batas kritis Rp 150.000, serta mencatat setiap transaksi penjualan ke dalam Excel secara manual demi pelaporan keuangan.
@@ -71,7 +71,7 @@ Seluruh pencatatan transaksi keuangan, pelacakan sisa stok bahan baku, mutasi ak
     *   *Administrasi SDM & Pengeluaran*: Pemilik mengelola pengeluaran rutin bulanan (air, listrik, internet), biaya tidak terduga, daftar aset fisik (printer, PC, CCTV), serta merencanakan pencatatan kasbon karyawan secara manual.
 
 ### 2.2. Permasalahan Utama (Problem Statement)
-Kompleksitas pengelolaan lima divisi usaha yang berjalan bersamaan secara manual menyebabkan pemilik usaha mengalami stres berat, keletihan mental (*burnout*), dan kewalahan secara fisik `[ref: narasi.txt, baris 28]`. Pemilik harus membagi fokus antara melayani pelanggan langsung di toko, mengeksekusi produksi cetak, mengambil bahan baku, melakukan pembukuan keuangan, memantau stok, hingga merespon cepat order pelanggan melalui WhatsApp `[ref: narasi.txt, baris 28]`. Data Excel yang tidak sinkron membuat pemantauan sisa bahan baku di gudang tidak akurat, laporan laba rugi bulanan sulit dipastikan, dan terdapat risiko tinggi adanya transaksi atau pesanan pelanggan yang terlewat `[ref: narasi.txt, baris 70, 74, 86]`.
+Kompleksitas pengelolaan lima divisi usaha yang berjalan bersamaan secara manual menyebabkan pemilik usaha mengalami stres berat, keletihan mental (*burnout*), dan kewalahan secara fisik. Pemilik harus membagi fokus antara melayani pelanggan langsung di toko, mengeksekusi produksi cetak, mengambil bahan baku, melakukan pembukuan keuangan, memantau stok, hingga merespon cepat order pelanggan melalui WhatsApp. Data Excel yang tidak sinkron membuat pemantauan sisa bahan baku di gudang tidak akurat, laporan laba rugi bulanan sulit dipastikan, dan terdapat risiko tinggi adanya transaksi atau pesanan pelanggan yang terlewat.
 
 ### 2.3. Dampak Jika Tidak Ditangani
 Jika kondisi ini terus berlanjut tanpa adanya otomatisasi sistem:
@@ -88,11 +88,11 @@ Jika kondisi ini terus berlanjut tanpa adanya otomatisasi sistem:
 Merancang, membangun, dan menerapkan sistem aplikasi manajemen operasional dan keuangan terpadu berbasis CLI (Command Line Interface) yang modular, aman, dan berkinerja tinggi guna mengotomatisasi seluruh alur bisnis AbuCom, meniadakan ketergantungan pada pencatatan Excel manual yang berserakan, serta menyajikan laporan stok dan keuangan yang akurat secara real-time demi mendukung fokus pemilik pada pengembangan strategis usaha.
 
 ### 3.2. Tujuan Spesifik (SMART Goals)
-* **S.1 (Otomatisasi Inventaris & Komposisi HPP)**: Mengurangi selisih antara stok barang fisik di gudang dengan catatan sistem hingga kurang dari 1.0% melalui fitur sinkronisasi otomatis menggunakan Bill of Materials (BOM) berdasarkan dimensi panjang x lebar atau volume secara presisi saat transaksi selesai `[ref: narasi.txt, baris 93, 95]`.
-* **S.2 (Keuangan Instan & Laba/Rugi Divisi)**: Menyajikan laporan keuangan laba/rugi, pengeluaran rutin, dan tabungan aset secara instan (waktu pemrosesan < 5 detik) untuk memudahkan analisis profitabilitas per divisi layanan (5 kategori usaha) `[ref: narasi.txt, baris 83-84]`.
-* **S.3 (Manajemen Antrian & Zero-Missed Orders)**: Mencapai tingkat *zero-missed orders* (tidak ada pesanan yang terlewat) melalui penerapan sistem pelacakan status pesanan (*job tracking*) digital dengan lima tahapan status terintegrasi `[ref: narasi.txt, baris 86]`.
-* **S.4 (Manajemen SDM & Penggajian Fleksibel)**: Mempersiapkan kesiapan operasional rekrutmen 7 posisi staf baru melalui modul absensi yang terintegrasi langsung dengan sistem penggajian cerdas (gaji pokok/persentase keuntungan) dan manajemen kasbon otomatis `[ref: narasi.txt, baris 34-43, 67, 77]`.
-* **S.5 (Arsitektur Multi-Cabang)**: Merancang database MySQL yang memiliki kesiapan 100% untuk menampung data multi-cabang (*Multi-Branch Ready*), sehingga siap digunakan untuk ekspansi cabang baru tanpa perlu merombak ulang skema data inti `[ref: narasi.txt, baris 97]`.
+* **S.1 (Otomatisasi Inventaris & Komposisi HPP)**: Mengurangi selisih antara stok barang fisik di gudang dengan catatan sistem hingga kurang dari 1.0% melalui fitur sinkronisasi otomatis menggunakan Bill of Materials (BOM) berdasarkan dimensi panjang x lebar atau volume secara presisi saat transaksi selesai.
+* **S.2 (Keuangan Instan & Laba/Rugi Divisi)**: Menyajikan laporan keuangan laba/rugi, pengeluaran rutin, dan tabungan aset secara instan (waktu pemrosesan < 5 detik) untuk memudahkan analisis profitabilitas per divisi layanan (5 kategori usaha).
+* **S.3 (Manajemen Antrian & Zero-Missed Orders)**: Mencapai tingkat *zero-missed orders* (tidak ada pesanan yang terlewat) melalui penerapan sistem pelacakan status pesanan (*job tracking*) digital dengan lima tahapan status terintegrasi.
+* **S.4 (Manajemen SDM & Penggajian Fleksibel)**: Mempersiapkan kesiapan operasional rekrutmen 7 posisi staf baru melalui modul absensi yang terintegrasi langsung dengan sistem penggajian cerdas (gaji pokok/persentase keuntungan) dan manajemen kasbon otomatis.
+* **S.5 (Arsitektur Multi-Cabang)**: Merancang database MySQL yang memiliki kesiapan 100% untuk menampung data multi-cabang (*Multi-Branch Ready*), sehingga siap digunakan untuk ekspansi cabang baru tanpa perlu merombak ulang skema data inti.
 
 ### 3.3. Manfaat Bisnis yang Terukur (Measurable Business Benefits)
 Penerapan sistem aplikasi AbuCom ini ditargetkan memberikan manfaat bisnis nyata yang dapat diukur secara kuantitatif:
@@ -109,46 +109,46 @@ Penerapan sistem aplikasi AbuCom ini ditargetkan memberikan manfaat bisnis nyata
 
 #### 4.1.1. Modul / Fitur Utama
 * **M.1. Modul Manajemen Transaksi & Kebijakan Harga**:
-  * Mendukung pembayaran bertahap: Uang Muka (DP) dan Pelunasan saat barang diambil `[ref: narasi.txt, baris 76]`.
-  * Mengelola multi-skema harga: harga retail, harga grosir (berdasarkan kuantitas), dan harga spesial untuk mitra bisnis `[ref: narasi.txt, baris 76]`.
+  * Mendukung pembayaran bertahap: Uang Muka (DP) dan Pelunasan saat barang diambil.
+  * Mengelola multi-skema harga: harga retail, harga grosir (berdasarkan kuantitas), dan harga spesial untuk mitra bisnis.
 * **M.2. Modul Manajemen Inventaris, BOM & Stock Opname**:
-  * Pencatatan data supplier/vendor, riwayat harga beli barang, dan manajemen hutang pembelian barang `[ref: narasi.txt, baris 90]`.
-  * Sistem Harga Pokok Penjualan (HPP) otomatis menggunakan komposisi bahan baku (*Bill of Materials* / BOM) multi-bahan untuk produk kustom (misal: satu stempel flash terdiri dari gagang stempel, tinta stempel, kertas buffalo, dan karet flash) `[ref: narasi.txt, baris 95]`.
-  * Perhitungan pemakaian bahan lembaran/cairan berdasarkan satuan dimensi (panjang x lebar) atau volume desimal presisi (float) agar pengurangan stok bahan baku akurat sesuai ukuran riil pesanan `[ref: narasi.txt, baris 95-96]`.
-  * **Pencatatan Limbah Produksi (Waste Management)**: Fitur khusus untuk mencatat bahan baku yang rusak atau salah cetak selama proses produksi, sehingga stok gudang dan aplikasi tetap sinkron dan biaya limbah dapat dianalisis `[ref: narasi.txt, baris 87]`.
-  * **Manajemen Satuan & Atribut Barang (Unit of Measure)**: Dukungan pengelolaan berbagai jenis satuan ukur (rim, lembar, pcs, mililiter, gram, dimensi panjang x lebar) dan spesifikasi teknis unik untuk setiap kategori barang, dengan dukungan pencatatan stok desimal presisi untuk sisa bahan baku `[ref: narasi.txt, baris 96]`.
-  * Fitur sinkronisasi barang retail (ATK) yang diambil untuk kebutuhan internal produksi (otomatis mengurangi stok ATK retail dan menambah biaya operasional produksi) `[ref: narasi.txt, baris 95]`.
-  * Fitur rekonsiliasi stok (*Stock Opname*) berkala untuk mencocokkan stok fisik vs aplikasi serta menyimpan riwayat selisihnya `[ref: narasi.txt, baris 93]`.
+  * Pencatatan data supplier/vendor, riwayat harga beli barang, dan manajemen hutang pembelian barang.
+  * Sistem Harga Pokok Penjualan (HPP) otomatis menggunakan komposisi bahan baku (*Bill of Materials* / BOM) multi-bahan untuk produk kustom (misal: satu stempel flash terdiri dari gagang stempel, tinta stempel, kertas buffalo, dan karet flash).
+  * Perhitungan pemakaian bahan lembaran/cairan berdasarkan satuan dimensi (panjang x lebar) atau volume desimal presisi (float) agar pengurangan stok bahan baku akurat sesuai ukuran riil pesanan.
+  * **Pencatatan Limbah Produksi (Waste Management)**: Fitur khusus untuk mencatat bahan baku yang rusak atau salah cetak selama proses produksi, sehingga stok gudang dan aplikasi tetap sinkron dan biaya limbah dapat dianalisis.
+  * **Manajemen Satuan & Atribut Barang (Unit of Measure)**: Dukungan pengelolaan berbagai jenis satuan ukur (rim, lembar, pcs, mililiter, gram, dimensi panjang x lebar) dan spesifikasi teknis unik untuk setiap kategori barang, dengan dukungan pencatatan stok desimal presisi untuk sisa bahan baku.
+  * Fitur sinkronisasi barang retail (ATK) yang diambil untuk kebutuhan internal produksi (otomatis mengurangi stok ATK retail dan menambah biaya operasional produksi).
+  * Fitur rekonsiliasi stok (*Stock Opname*) berkala untuk mencocokkan stok fisik vs aplikasi serta menyimpan riwayat selisihnya.
 * **M.3. Modul Layanan Keuangan Digital, PPOB, Jasa Keuangan & Service**:
-  * Rekonsiliasi saldo akun digital PPOB (minimal deposit Rp 500.000 jika saldo < Rp 150.000) `[ref: narasi.txt, baris 55]`.
-  * Pencatatan transaksi transfer uang & tarik tunai (memilih akun biaya admin paling murah bagi pelanggan) `[ref: narasi.txt, baris 58-59]`.
-  * Pencatatan transaksi service printer & install laptop/komputer `[ref: narasi.txt, baris 61]`.
+  * Rekonsiliasi saldo akun digital PPOB (minimal deposit Rp 500.000 jika saldo < Rp 150.000).
+  * Pencatatan transaksi transfer uang & tarik tunai (memilih akun biaya admin paling murah bagi pelanggan).
+  * Pencatatan transaksi service printer & install laptop/komputer.
 * **M.4. Modul Manajemen SDM, Penggajian & Poin Karyawan**:
-  * Manajemen data karyawan, absensi harian, dan pencatatan riwayat kasbon karyawan dengan fitur potong gaji otomatis `[ref: narasi.txt, baris 67]`.
-  * Penggajian otomatis cerdas (Gaji Tetap jika target laba bersih tercapai, atau Gaji Persentase Laba jika target tidak tercapai) `[ref: narasi.txt, baris 77]`.
-  * Sistem Poin Karyawan (Insentif): transaksi rutin (1 poin/Rp 500), jasa dasar (3 poin/Rp 1.500), produk kustom (5 poin/Rp 2.500), dan pekerjaan teknis/berat (10 poin/Rp 5.000) `[ref: narasi.txt, baris 78-82]`.
+  * Manajemen data karyawan, absensi harian, dan pencatatan riwayat kasbon karyawan dengan fitur potong gaji otomatis.
+  * Penggajian otomatis cerdas (Gaji Tetap jika target laba bersih tercapai, atau Gaji Persentase Laba jika target tidak tercapai).
+  * Sistem Poin Karyawan (Insentif): transaksi rutin (1 poin/Rp 500), jasa dasar (3 poin/Rp 1.500), produk kustom (5 poin/Rp 2.500), dan pekerjaan teknis/berat (10 poin/Rp 5.000).
 * **M.5. Modul Sistem Manajemen Antrian & Pelacakan Desain**:
-  * Pelacakan status pesanan (*job tracking*) dengan 5 status: `Antri`, `Proses Desain`, `Produksi`, `Selesai`, `Diambil` `[ref: narasi.txt, baris 86]`.
-  * Arsip Desain Pelanggan: Pencatatan lokasi penyimpanan file desain untuk memudahkan cetak ulang `[ref: narasi.txt, baris 88]`.
+  * Pelacakan status pesanan (*job tracking*) dengan 5 status: `Antri`, `Proses Desain`, `Produksi`, `Selesai`, `Diambil`.
+  * Arsip Desain Pelanggan: Pencatatan lokasi penyimpanan file desain untuk memudahkan cetak ulang.
 * **M.6. Modul Administrasi Pinjaman, Aset, & Pengeluaran Rutin**:
-  * Pencatatan pinjaman tanpa bunga (transparansi penarikan fleksibel) dan pinjaman bank (setoran bulanan, tenor, jatuh tempo Mandiri/BRI) `[ref: narasi.txt, baris 22-24, 65-66]`.
-  * Manajemen aset tetap, depresiasi, pengeluaran operasional rutin, biaya tak terduga, dan tabungan khusus pengadaan alat baru `[ref: narasi.txt, baris 70]`.
+  * Pencatatan pinjaman tanpa bunga (transparansi penarikan fleksibel) dan pinjaman bank (setoran bulanan, tenor, jatuh tempo Mandiri/BRI).
+  * Manajemen aset tetap, depresiasi, pengeluaran operasional rutin, biaya tak terduga, dan tabungan khusus pengadaan alat baru.
 * **M.7. Modul Keamanan, Audit Trail & Hak Akses**:
-  * Pembatasan hak akses (*Role-based Access Control*): Menu khusus "Pemilik" (keuangan sensitif, tabungan, pinjaman) dan menu "Karyawan" (hanya terkait operasional harian) `[ref: narasi.txt, baris 89]`.
-  * Catatan riwayat aktivitas (*Audit Trail*) mencatat siapa, melakukan apa, dan kapan `[ref: narasi.txt, baris 85]`.
-  * Dukungan input data awal secara manual dari data lama Excel yang berserakan `[ref: narasi.txt, baris 70]`.
+  * Pembatasan hak akses (*Role-based Access Control*): Menu khusus "Pemilik" (keuangan sensitif, tabungan, pinjaman) dan menu "Karyawan" (hanya terkait operasional harian).
+  * Catatan riwayat aktivitas (*Audit Trail*) mencatat siapa, melakukan apa, dan kapan.
+  * Dukungan input data awal secara manual dari data lama Excel yang berserakan.
 * **M.8. Modul Pembatalan, Retur & CRM**:
-  * Alur retur barang rusak/salah cetak serta pembatalan transaksi (pengembalian DP) agar stok dan kas tetap sinkron `[ref: narasi.txt, baris 91]`.
-  * Database Pelanggan (CRM): Pencatatan kontak nama/WA dan riwayat transaksi `[ref: narasi.txt, baris 92]`.
+  * Alur retur barang rusak/salah cetak serta pembatalan transaksi (pengembalian DP) agar stok dan kas tetap sinkron.
+  * Database Pelanggan (CRM): Pencatatan kontak nama/WA dan riwayat transaksi.
 * **M.9. Skalabilitas Multi-Cabang (*Multi-Branch Ready*)**:
-  * Penambahan pengenal ID unit/cabang di setiap tabel basis data transaksi, persediaan, aset, keuangan, dan SDM `[ref: narasi.txt, baris 97]`.
+  * Penambahan pengenal ID unit/cabang di setiap tabel basis data transaksi, persediaan, aset, keuangan, dan SDM.
 
 #### 4.1.2. Platform & Teknologi
-* **Bahasa Pemrograman**: Python 3.14.2 ke atas (Wajib menerapkan paradigma *Functional Programming*, menghindari OOP kelas di alur bisnis utama) `[ref: narasi.txt, baris 104]`.
-* **Sistem Database**: MySQL Server `[ref: narasi.txt, baris 104]`.
-* **Pustaka Utama**: `mysql-connector-python`, `python-dotenv`, `bcrypt`, `pyjwt` `[ref: narasi.txt, baris 105]`.
-* **Sistem Operasi**: Linux Debian 12 Bookworm dan Windows 11 `[ref: narasi.txt, baris 106]`.
-* **Tipe Antarmuka**: Console / Command Line Interface (CLI) `[ref: narasi.txt, baris 103]`.
+* **Bahasa Pemrograman**: Python 3.14.2 ke atas (Wajib menerapkan paradigma *Functional Programming*, menghindari OOP kelas di alur bisnis utama).
+* **Sistem Database**: MySQL Server.
+* **Pustaka Utama**: `mysql-connector-python`, `python-dotenv`, `bcrypt`, `pyjwt`.
+* **Sistem Operasi**: Linux Debian 12 Bookworm dan Windows 11.
+* **Tipe Antarmuka**: Console / Command Line Interface (CLI).
 
 ### 4.2. Di Luar Ruang Lingkup (Out-of-Scope)
 * Pembangunan Antarmuka Grafis (GUI) berbasis Desktop maupun aplikasi Web (untuk fase awal proyek).
@@ -217,7 +217,7 @@ Sistem aplikasi konsol CLI Python terintegrasi yang terhubung ke database relasi
 ## 7. Tim Proyek dan Struktur Organisasi
 
 ### 7.1. Susunan Tim Pengembang
-Proyek ini dikerjakan secara kolaboratif antara pemilik usaha sebagai programmer junior internal dan tim asisten AI spesialis `[ref: narasi.txt, baris 108-115]`:
+Proyek ini dikerjakan secara kolaboratif antara pemilik usaha sebagai programmer junior internal dan tim asisten AI spesialis:
 
 | Anggota Tim | Peran Utama | Deskripsi Spesialisasi dan Tanggung Jawab |
 |-------------|-------------|-------------------------------------------|
@@ -230,7 +230,7 @@ Proyek ini dikerjakan secara kolaboratif antara pemilik usaha sebagai programmer
 | **Anggota 6: GPT-OSS 120B (Medium)** | Boilerplate Generator & Dummy Data Specialist | Menyediakan struktur kode awal (*boilerplate*), skrip pembuatan tabel basis data, dan menyusun data dummy/seed SQL yang realistis untuk kebutuhan pengujian. |
 
 ### 7.2. Pembagian Peran dan Tanggung Jawab Tim Staf (Operasional Pasca Go-Live)
-Struktur organisasi operasional yang direncanakan oleh pemilik usaha untuk diakomodasi di dalam hak akses aplikasi `[ref: narasi.txt, baris 32-41]`:
+Struktur organisasi operasional yang direncanakan oleh pemilik usaha untuk diakomodasi di dalam hak akses aplikasi:
 1. **Kepala Percetakan**: Mengkoordinasikan seluruh operasional toko, mengawasi ketersediaan stok, memantau antrian pengerjaan, dan menerima laporan operasional harian.
 2. **Staf Pramuniaga**: Melayani pelanggan di garda depan, mencatat data kontak pelanggan (CRM), mencantumkan spesifikasi pesanan, dan menginput data antrian transaksi.
 3. **Staf Kasir**: Menangani transaksi pembayaran, mencatat uang muka (DP) dan pelunasan, serta melakukan rekonsiliasi kas laci fisik terhadap sistem setiap akhir hari kerja.
@@ -244,7 +244,7 @@ Struktur organisasi operasional yang direncanakan oleh pemilik usaha untuk diako
 ## 8. Kebutuhan Bisnis Tingkat Tinggi (High-Level Requirements)
 
 ### 8.1. Kebutuhan Fungsional Utama
-Kebutuhan fungsional dikelompokkan secara logis berdasarkan divisi operasional yang diekstrak dari harapan pemilik usaha `[ref: narasi.txt, baris 74-98]`:
+Kebutuhan fungsional dikelompokkan secara logis berdasarkan divisi operasional yang diekstrak dari harapan pemilik usaha:
 
 #### A. Manajemen Transaksi dan Kebijakan Harga (Sales & Pricing)
 * **F-1.1**: Sistem harus mampu mencatat transaksi penjualan produk cetak kustom, penjualan barang retail ATK, penjualan pulsa/PPOB, transaksi jasa keuangan, serta jasa teknis secara terpisah namun terintegrasi dalam satu database.
@@ -295,7 +295,7 @@ Kebutuhan fungsional dikelompokkan secara logis berdasarkan divisi operasional y
 * **N-2.6. Kecepatan Respons**: Pembuatan laporan keuangan tahunan dan rekonsiliasi stok harus diproses dalam waktu kurang dari 5 detik pada spesifikasi hardware standar.
 
 ### 8.3. Rekomendasi Inovasi & Best Practice `[REKOMENDASI]`
-Sesuai dengan **Mandat Inovasi & Best Practice** `[ref: narasi.txt, baris 98]`, tim pengembang AI merekomendasikan fitur tambahan berikut untuk diintegrasikan secara bertahap pada fase berikutnya:
+Sesuai dengan **Mandat Inovasi & Best Practice**, tim pengembang AI merekomendasikan fitur tambahan berikut untuk diintegrasikan secara bertahap pada fase berikutnya:
 * **N-3.1 [REKOMENDASI] Pembuatan Backup Data Otomatis berkala**: Sistem menyediakan fitur ekspor basis data otomatis ke format berkas SQL terkompresi (.zip/.tar.gz) secara berkala (harian atau mingguan) ke direktori lokal cadangan atau cloud penyimpanan untuk menghindari kehilangan data akibat kerusakan hardware.
 * **N-3.2 [REKOMENDASI] Notifikasi Template WhatsApp Ready**: Karena aplikasi ini berbasis CLI dan tidak berintegrasi langsung dengan API WhatsApp berbayar, sistem menyediakan fitur *generate* link teks template WhatsApp (menggunakan format `https://wa.me/` dengan isi pesan otomatis seperti pemberitahuan DP diterima, pesanan selesai siap diambil, dll.) yang dapat disalin-tempel oleh staf ke WhatsApp Web secara manual dengan cepat.
 * **N-3.3 [REKOMENDASI] Analisis Prediksi Re-Order Stok**: Sistem menganalisis rata-rata kecepatan pemakaian bahan baku (seperti kertas foto atau kertas undangan) dari riwayat transaksi bulanan dan memberikan notifikasi rekomendasi belanja stok kepada Staf Gudang 7 hari sebelum stok diperkirakan habis berdasarkan pola konsumsi usaha.
@@ -426,7 +426,6 @@ Dokumen Project Charter ini diajukan dan disetujui sebagai acuan dasar yang meng
 | # | Nama File | Lokasi Fisik / Path Relatif | Keterangan |
 |---|---|---|---|
 | 1 | `narasi.txt` | [narasi.txt](file: docs/sdlc/narasi.txt) | Dokumen primer narasi kebutuhan bisnis, operasional, teknis, dan keuangan yang ditulis langsung oleh pemilik usaha AbuCom. |
-| 2 | `0002_issue_validasi_project_charter.md` | [0002_issue_validasi_project_charter.md](file: docs/issue/0002_issue_validasi_project_charter.md) | Dokumen instruksi validasi, analisis, dan penyempurnaan Project Charter untuk meningkatkan kualitas standar industri. |
 
 ---
 
