@@ -1,9 +1,9 @@
 ---
 dokumen    : Stakeholder Register
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.0
-tanggal    : 2026-05-21
-status     : Draft
+versi      : 1.1
+tanggal    : 2026-05-22
+status     : Validated
 penyusun   : Senior Stakeholder Analyst & Project Governance Specialist
 ---
 
@@ -14,6 +14,7 @@ penyusun   : Senior Stakeholder Analyst & Project Governance Specialist
 | Versi | Tanggal | Perubahan | Oleh |
 |---|---|---|---|
 | 1.0 | 2026-05-21 | Pembuatan awal dokumen berdasarkan analisis Project Charter, Feasibility Study, dan Narasi Pemilik Usaha. | Senior Stakeholder Analyst & Project Governance Specialist |
+| 1.1 | 2026-05-22 | Validasi, analisis, dan penyempurnaan menyeluruh dokumen. Menambahkan Executive Summary, memetakan Hak Akses RBAC & Status Kerja PKWT/PKWTT secara eksplisit, merancang Matriks Pemetaan Modul vs Stakeholder, mengintegrasikan risiko baru (migrasi Excel & FP Python), menyempurnakan format data kosong (placeholder interaktif), menyelaraskan regulasi ketenagakerjaan & perbankan Indonesia, serta mengoreksi bahasa. | Senior Stakeholder Analyst & Project Governance Specialist |
 
 ---
 
@@ -31,6 +32,18 @@ Sebagai bagian integral dari fase *Planning* dalam siklus SDLC, dokumen ini bert
 * **Software Requirements Specification (SRS)**: Profil, hak akses (RBAC), dan kebutuhan stakeholder yang tercatat di sini menjadi input utama bagi pembatasan hak akses modul serta kebutuhan fungsional database pelanggan (CRM).
 * **System Design Document (SDD)**: Menentukan rancangan logis hak akses database dan log Audit Trail.
 * **User Acceptance Testing (UAT) & Deployment**: Menjadi acuan bagi penentuan aktor penguji skenario UAT dan target pelatihan operasional.
+
+---
+
+### 1.1. Ringkasan Eksekutif (Executive Summary)
+
+Berdasarkan analisis kritis dan validasi komprehensif terhadap tata kelola proyek AbuCom, diidentifikasi total **19 pemangku kepentingan (stakeholder)** yang terbagi secara proporsional ke dalam **14 stakeholder internal** dan **5 stakeholder eksternal**. Proyek ini menghadapi tantangan transisi yang unik dari model operasional manual berbasis Excel (*single-fighter*) menuju model organisasi digital terotomatisasi yang didukung oleh **7 staf operasional baru** dan **6 model AI spesialis**.
+
+Wawasan kritis dari tata kelola stakeholder proyek ini meliputi:
+* **Faktor Sukses Utama (Single Point of Failure):** Kesuksesan proyek sangat bergantung pada kesiapan fisik dan mental Pemilik Usaha (STK-001) yang bertindak sebagai Manajer Proyek Internal dan integrator kode. Mitigasi kelelahan (*burnout*) pemilik menjadi prioritas tertinggi.
+* **Tantangan Adopsi Visual CLI:** Penggunaan antarmuka teks CLI (Command Line Interface) menuntut kesiapan literasi digital yang tinggi dari staf baru. Hal ini dimitigasi melalui standardisasi kontrak kerja (PKWT/PKWTT) dan pelatihan simulasi terstruktur selama 3 hari.
+* **Pemisahan Likuiditas dan Pengendalian Finansial:** Risiko penarikan modal mendadak dari Kerabat & Keluarga (STK-019) dimitigasi secara ketat melalui pemisahan rekening Dana Cadangan Darurat sebesar **Rp 4.500.000** dan transparansi saldo piutang terotomatisasi di dalam sistem.
+* **Jembatan Konseptual Kebutuhan:** Dokumen ini menetapkan pemetaan Hak Akses RBAC (Role-Based Access Control) dan Matriks Pemetaan Modul vs Stakeholder untuk memastikan keselarasan penuh saat tim AI mentransisikan perencanaan ini ke fase SRS, SDD, dan pengujian UAT.
 
 ---
 
@@ -61,7 +74,7 @@ Berikut adalah daftar seluruh stakeholder proyek AbuCom yang diklasifikasikan ke
 
 | ID | Nama / Jabatan | Peran dalam Proyek | Kategori | Keterangan |
 |---|---|---|---|---|
-| **STK-015** | Pelanggan AbuCom | Penerima Manfaat Layanan (Beneficiary) | Indirect Stakeholder / Beneficiary | Pihak yang menggunakan jasa percetakan, ATK, PPOB, keuangan, dan service printer/PC. |
+| **STK-015** | Pelanggan AbuCom | Penerima Manfaat Layanan (Beneficiary) | Indirect Stakeholder / Beneficiary | Pihak yang menggunakan jasa percetakan, ATK, PPOB, jasa keuangan, dan service printer/PC. |
 | **STK-016** | Vendor & Supplier Bahan Baku / ATK | Penyedia Pasokan Bahan Baku dan ATK | Indirect Stakeholder / Supply Chain | Pihak ketiga yang menyuplai bahan stempel, kertas, tinta, dan barang retail ATK. |
 | **STK-017** | Bank BRI | Kreditur Modal Berbunga (Institusi) | Financial Stakeholder | Lembaga keuangan penyedia pinjaman modal usaha dengan setoran bulanan dan tenor tetap. |
 | **STK-018** | Bank Mandiri | Kreditur Modal Berbunga (Institusi) | Financial Stakeholder | Lembaga keuangan penyedia pinjaman modal usaha dengan setoran bulanan dan tenor tetap. |
@@ -81,10 +94,11 @@ Berikut adalah daftar seluruh stakeholder proyek AbuCom yang diklasifikasikan ke
 | **Kategori** | Internal |
 | **Tipe** | Individu |
 | **Peran dalam Proyek** | Inisiator, Sponsor Utama, Penyedia Pendanaan, Manajer Proyek Internal, Junior Programmer, Key User |
-| **Kontak / Identifikasi** | `*[DATA BELUM TERSEDIA — perlu diisi manual oleh Pemilik Usaha]*` |
+| **Kontak / Identifikasi** | `[DIISI OLEH PEMILIK USAHA — Contoh: Nama Lengkap Pemilik, Alamat Email, No. WhatsApp Aktif]` |
+| **Hak Akses RBAC** | `Role: pemilik` (Akses administratif penuh terhadap seluruh menu keuangan, tabungan alat, administrasi pinjaman bank/keluarga, penggajian karyawan/payroll, manajemen absensi, CRM, antrian, stock opname, database, serta log Audit Trail lengkap). |
 
 **Kebutuhan dan Ekspektasi Utama**:
-* Menghilangkan ketergantungan pada pencatatan manual Microsoft Excel yang tidak terintegrasi dan memicu kelelahan fisik/mental.
+* Menghilangkan ketergantungan pada pencatatan manual Microsoft Excel yang tidak terintegrasi dan memicu kelelahan fisik/mental (*burnout*).
 * Memiliki laporan keuangan laba/rugi, pengeluaran rutin, dan tabungan aset secara instan (<5 detik) dan akurat untuk memantau performa 5 divisi usaha.
 * Mengotomatisasi pemotongan stok bahan baku secara presisi menggunakan komposisi bahan (*Bill of Materials* / BOM) dengan dimensi desimal (panjang x lebar atau volume desimal) setelah transaksi selesai.
 * Pengamanan hak akses yang ketat (RBAC) agar data pinjaman bank, tabungan pribadi, dan modul payroll hanya dapat diakses oleh Pemilik Usaha.
@@ -111,7 +125,9 @@ Berikut adalah daftar seluruh stakeholder proyek AbuCom yang diklasifikasikan ke
 | **Kategori** | Internal |
 | **Tipe** | Individu |
 | **Peran dalam Proyek** | Pengguna Operasional (End-User) |
-| **Kontak / Identifikasi** | `*[DATA BELUM TERSEDIA — perlu diisi manual oleh Pemilik Usaha setelah proses rekrutmen selesai]*` |
+| **Kontak / Identifikasi** | `[DIISI OLEH PEMILIK USAHA SETELAH REKRUTMEN — Contoh: Nama Lengkap Staf, No. WhatsApp]` |
+| **Hak Akses RBAC** | `Role: kepala_percetakan` (Akses menengah: mengawasi dashboard antrian/job tracking, memantau persediaan barang di gudang, meluncurkan dan mereview Stock Opname, serta mencatat data absensi staf harian). |
+| **Status Ketenagakerjaan** | Karyawan Tetap (**PKWTT** — Perjanjian Kerja Waktu Tidak Tertentu) berdasarkan regulasi PP No. 35 Tahun 2021 ketenagakerjaan Indonesia. |
 
 **Kebutuhan dan Ekspektasi Utama**:
 * Memerlukan antarmuka CLI (Command Line Interface) yang logis, menu yang teratur, dan navigasi yang cepat.
@@ -141,7 +157,9 @@ Berikut adalah daftar seluruh stakeholder proyek AbuCom yang diklasifikasikan ke
 | **Kategori** | Internal |
 | **Tipe** | Individu |
 | **Peran dalam Proyek** | Pengguna Operasional (End-User) |
-| **Kontak / Identifikasi** | `*[DATA BELUM TERSEDIA — perlu diisi manual oleh Pemilik Usaha setelah proses rekrutmen selesai]*` |
+| **Kontak / Identifikasi** | `[DIISI OLEH PEMILIK USAHA SETELAH REKRUTMEN — Contoh: Nama Lengkap Staf, No. WhatsApp]` |
+| **Hak Akses RBAC** | `Role: pramuniaga` (Akses transaksi: mencatat transaksi penjualan ritel ATK, menginput order produk kustom ke antrian status `Antri`, mencari harga barang, dan mencatatkan data kontak pelanggan CRM). |
+| **Status Ketenagakerjaan** | Karyawan Kontrak (**PKWT** — Perjanjian Kerja Waktu Tertentu) berdasarkan regulasi PP No. 35 Tahun 2021. |
 
 **Kebutuhan dan Ekspektasi Utama**:
 * Memerlukan menu pencatatan transaksi yang cepat saat melayani pelanggan langsung di konter.
@@ -169,7 +187,9 @@ Berikut adalah daftar seluruh stakeholder proyek AbuCom yang diklasifikasikan ke
 | **Kategori** | Internal |
 | **Tipe** | Individu |
 | **Peran dalam Proyek** | Pengguna Operasional (End-User) |
-| **Kontak / Identifikasi** | `*[DATA BELUM TERSEDIA — perlu diisi manual oleh Pemilik Usaha setelah proses rekrutmen selesai]*` |
+| **Kontak / Identifikasi** | `[DIISI OLEH PEMILIK USAHA SETELAH REKRUTMEN — Contoh: Nama Lengkap Staf, No. WhatsApp]` |
+| **Hak Akses RBAC** | `Role: kasir` (Akses kasir: melayani transaksi pembayaran tunai/e-wallet, mencatat Down Payment (DP) dan pelunasan, melakukan rekonsiliasi kas laci kasir harian, serta memproses retur/pembatalan transaksi). |
+| **Status Ketenagakerjaan** | Karyawan Kontrak (**PKWT** — Perjanjian Kerja Waktu Tertentu) berdasarkan regulasi PP No. 35 Tahun 2021. |
 
 **Kebutuhan dan Ekspektasi Utama**:
 * Fitur pencatatan pembayaran yang fleksibel (DP di awal, pelunasan di akhir saat barang diambil).
@@ -198,7 +218,9 @@ Berikut adalah daftar seluruh stakeholder proyek AbuCom yang diklasifikasikan ke
 | **Kategori** | Internal |
 | **Tipe** | Individu |
 | **Peran dalam Proyek** | Pengguna Operasional (End-User) |
-| **Kontak / Identifikasi** | `*[DATA BELUM TERSEDIA — perlu diisi manual oleh Pemilik Usaha setelah proses rekrutmen selesai]*` |
+| **Kontak / Identifikasi** | `[DIISI OLEH PEMILIK USAHA SETELAH REKRUTMEN — Contoh: Nama Lengkap Staf, No. WhatsApp]` |
+| **Hak Akses RBAC** | `Role: desainer` (Akses desainer: melihat antrian dengan status `Proses Desain`, memperbarui status menjadi `Produksi`, dan menginput tautan/path direktori arsip berkas desain pelanggan). |
+| **Status Ketenagakerjaan** | Karyawan Kontrak (**PKWT** — Perjanjian Kerja Waktu Tertentu) berdasarkan regulasi PP No. 35 Tahun 2021. |
 
 **Kebutuhan dan Ekspektasi Utama**:
 * Akses langsung ke modul antrian pekerjaan dengan filter khusus status `Proses Desain`.
@@ -226,7 +248,9 @@ Berikut adalah daftar seluruh stakeholder proyek AbuCom yang diklasifikasikan ke
 | **Kategori** | Internal |
 | **Tipe** | Individu |
 | **Peran dalam Proyek** | Pengguna Operasional (End-User) |
-| **Kontak / Identifikasi** | `*[DATA BELUM TERSEDIA — perlu diisi manual oleh Pemilik Usaha setelah proses rekrutmen selesai]*` |
+| **Kontak / Identifikasi** | `[DIISI OLEH PEMILIK USAHA SETELAH REKRUTMEN — Contoh: Nama Lengkap Staf, No. WhatsApp]` |
+| **Hak Akses RBAC** | `Role: produksi_cetak` (Akses produksi: melihat antrian dengan status `Produksi`, memperbarui status menjadi `Selesai`, menginput pemakaian bahan baku riil desimal, dan mencatat limbah produksi/waste). |
+| **Status Ketenagakerjaan** | Karyawan Kontrak (**PKWT** — Perjanjian Kerja Waktu Tertentu) berdasarkan regulasi PP No. 35 Tahun 2021. |
 
 **Kebutuhan dan Ekspektasi Utama**:
 * Akses ke modul antrian status `Produksi` untuk melihat daftar pekerjaan cetak fisik yang siap diproses.
@@ -254,7 +278,9 @@ Berikut adalah daftar seluruh stakeholder proyek AbuCom yang diklasifikasikan ke
 | **Kategori** | Internal |
 | **Tipe** | Individu |
 | **Peran dalam Proyek** | Pengguna Operasional (End-User) |
-| **Kontak / Identifikasi** | `*[DATA BELUM TERSEDIA — perlu diisi manual oleh Pemilik Usaha setelah proses rekrutmen selesai]*` |
+| **Kontak / Identifikasi** | `[DIISI OLEH PEMILIK USAHA SETELAH REKRUTMEN — Contoh: Nama Lengkap Staf, No. WhatsApp]` |
+| **Hak Akses RBAC** | `Role: fotocopy_print` (Akses transaksional retail: mencatat penjualan fotokopi per lembar dan print dokumen cepat, serta membantu transaksi kasir/pramuniaga bila ditugaskan secara *cross-functional*). |
+| **Status Ketenagakerjaan** | Karyawan Kontrak (**PKWT** — Perjanjian Kerja Waktu Tertentu) berdasarkan regulasi PP No. 35 Tahun 2021. |
 
 **Kebutuhan dan Ekspektasi Utama**:
 * Antarmuka cepat untuk mencatat transaksi ritel cepat (fotokopi per lembar dan cetak dokumen hitam-putih/warna).
@@ -263,7 +289,7 @@ Berikut adalah daftar seluruh stakeholder proyek AbuCom yang diklasifikasikan ke
 **Potensi Pengaruh terhadap Proyek**:
 * **Rendah**. Pengguna operasional harian.
 
-**Potency Dampak Proyek terhadap Stakeholder**:
+**Potensi Dampak Proyek terhadap Stakeholder**:
 * Memudahkan pencatatan omzet harian dari transaksi retail cepat tanpa repot menulis di buku nota fisik.
 
 **Fase Keterlibatan Maksimal**:
@@ -281,7 +307,9 @@ Berikut adalah daftar seluruh stakeholder proyek AbuCom yang diklasifikasikan ke
 | **Kategori** | Internal |
 | **Tipe** | Individu |
 | **Peran dalam Proyek** | Pengguna Operasional (End-User) |
-| **Kontak / Identifikasi** | `*[DATA BELUM TERSEDIA — perlu diisi manual oleh Pemilik Usaha setelah proses rekrutmen selesai]*` |
+| **Kontak / Identifikasi** | `[DIISI OLEH PEMILIK USAHA SETELAH REKRUTMEN — Contoh: Nama Lengkap Staf, No. WhatsApp]` |
+| **Hak Akses RBAC** | `Role: gudang` (Akses inventaris: mencatat mutasi barang masuk/keluar, mendaftarkan data supplier/vendor, menginput riwayat harga beli, mencatat utang pembelian barang, dan melaksanakan stock opname fisik). |
+| **Status Ketenagakerjaan** | Karyawan Kontrak (**PKWT** — Perjanjian Kerja Waktu Tertentu) berdasarkan regulasi PP No. 35 Tahun 2021. |
 
 **Kebutuhan dan Ekspektasi Utama**:
 * Modul pencatatan data supplier, riwayat harga beli bahan baku dari supplier, dan pencatatan utang pembelian tempo.
@@ -292,7 +320,7 @@ Berikut adalah daftar seluruh stakeholder proyek AbuCom yang diklasifikasikan ke
 * **Sedang-Tinggi (Operasional)**: Keakuratan data gudang fisik vs database sistem dikelola oleh staf ini.
 
 **Potensi Dampak Proyek terhadap Stakeholder**:
-* Meniadakan proses pencatatan stok kartu gudang manual berbasis kertas yang rawan hilang dan basah.
+* Meniadaan proses pencatatan stok kartu gudang manual berbasis kertas yang rawan hilang dan basah.
 
 **Fase Keterlibatan Maksimal**:
 * Testing (UAT), Deployment (Input data awal), dan Operational.
@@ -309,7 +337,8 @@ Berikut adalah daftar seluruh stakeholder proyek AbuCom yang diklasifikasikan ke
 | **Kategori** | Internal |
 | **Tipe** | Kelompok / Model AI |
 | **Peran dalam Proyek** | Lead Architect & Heavy Logic Developer |
-| **Kontak / Identifikasi** | Terintegrasi melalui API/Interface Google AI Studio / Gemini |
+| **Kontak / Identifikasi** | Terintegrasi melalui API / Interface Google AI Studio |
+| **Hak Akses RBAC** | `Akses Sistem: Tidak Ada Akses Runtime (Pengembang Kode)` |
 
 **Kebutuhan dan Ekspektasi Utama**:
 * Memerlukan instruksi prompt yang terstruktur, parameter konteks proyek yang lengkap, dan batasan teknis yang didefinisikan dengan jelas.
@@ -336,7 +365,8 @@ Berikut adalah daftar seluruh stakeholder proyek AbuCom yang diklasifikasikan ke
 | **Kategori** | Internal |
 | **Tipe** | Kelompok / Model AI |
 | **Peran dalam Proyek** | Routine Coding & Documentation Specialist |
-| **Kontak / Identifikasi** | Terintegrasi melalui API/Interface Google AI Studio / Gemini |
+| **Kontak / Identifikasi** | Terintegrasi melalui API / Interface Google AI Studio |
+| **Hak Akses RBAC** | `Akses Sistem: Tidak Ada Akses Runtime (Pengembang Kode)` |
 
 **Kebutuhan dan Ekspektasi Utama**:
 * Memerlukan skema database yang valid dan dokumentasi terstruktur untuk menghasilkan dokumen formal SDLC yang sinkron.
@@ -362,7 +392,8 @@ Berikut adalah daftar seluruh stakeholder proyek AbuCom yang diklasifikasikan ke
 | **Kategori** | Internal |
 | **Tipe** | Kelompok / Model AI |
 | **Peran dalam Proyek** | Fast Reviewer & Debugger |
-| **Kontak / Identifikasi** | Terintegrasi melalui API/Interface Google AI Studio / Gemini |
+| **Kontak / Identifikasi** | Terintegrasi melalui API / Interface Google AI Studio |
+| **Hak Akses RBAC** | `Akses Sistem: Tidak Ada Akses Runtime (Pengembang Kode)` |
 
 **Kebutuhan dan Ekspektasi Utama**:
 * Memerlukan cuplikan kode spesifik yang bermasalah (*buggy snippet*) disertai pesan error runtime untuk analisis cepat.
@@ -388,7 +419,8 @@ Berikut adalah daftar seluruh stakeholder proyek AbuCom yang diklasifikasikan ke
 | **Kategori** | Internal |
 | **Tipe** | Kelompok / Model AI |
 | **Peran dalam Proyek** | Deep Coder & Refactoring Specialist |
-| **Kontak / Identifikasi** | Terintegrasi melalui API/Interface Anthropic |
+| **Kontak / Identifikasi** | Terintegrasi melalui API / Interface Anthropic Console |
+| **Hak Akses RBAC** | `Akses Sistem: Tidak Ada Akses Runtime (Pengembang Kode)` |
 
 **Kebutuhan dan Ekspektasi Utama**:
 * Ketersediaan struktur direktori proyek, aturan penulisan kode imutabel, dan data input representatif untuk kalkulasi mendalam.
@@ -414,7 +446,8 @@ Berikut adalah daftar seluruh stakeholder proyek AbuCom yang diklasifikasikan ke
 | **Kategori** | Internal |
 | **Tipe** | Kelompok / Model AI |
 | **Peran dalam Proyek** | System Strategist & Security Lead |
-| **Kontak / Identifikasi** | Terintegrasi melalui API/Interface Anthropic |
+| **Kontak / Identifikasi** | Terintegrasi melalui API / Interface Anthropic Console |
+| **Hak Akses RBAC** | `Akses Sistem: Tidak Ada Akses Runtime (Pengembang Kode)` |
 
 **Kebutuhan dan Ekspektasi Utama**:
 * Memerlukan kejelasan regulasi eksternal (UU PDP) dan pemetaan aset sensitif yang harus dilindungi di database MySQL.
@@ -440,7 +473,8 @@ Berikut adalah daftar seluruh stakeholder proyek AbuCom yang diklasifikasikan ke
 | **Kategori** | Internal |
 | **Tipe** | Kelompok / Model AI |
 | **Peran dalam Proyek** | Boilerplate Generator & Dummy Data Specialist |
-| **Kontak / Identifikasi** | Terintegrasi melalui Model Open Source lokal/server |
+| **Kontak / Identifikasi** | Terintegrasi melalui Model Open Source yang di-host lokal/server |
+| **Hak Akses RBAC** | `Akses Sistem: Tidak Ada Akses Runtime (Pengembang Kode)` |
 
 **Kebutuhan dan Ekspektasi Utama**:
 * Memerlukan skema relasi tabel (ERD) dan tipe data kolom MySQL yang telah disetujui Lead Architect.
@@ -466,11 +500,12 @@ Berikut adalah daftar seluruh stakeholder proyek AbuCom yang diklasifikasikan ke
 | **Kategori** | Eksternal |
 | **Tipe** | Kelompok / Institusi |
 | **Peran dalam Proyek** | Penerima Manfaat Layanan (Beneficiary) |
-| **Kontak / Identifikasi** | `*[DATA BELUM TERSEDIA — data kontak tersimpan di modul CRM setelah transaksi awal]*` |
+| **Kontak / Identifikasi** | `[DIISI OLEH SISTEM — Tersimpan otomatis dalam database CRM setelah transaksi awal. Contoh: Nama Pelanggan, No. WhatsApp]` |
+| **Hak Akses RBAC** | `Akses Sistem: Tidak Ada Akses Runtime` (Tidak memiliki hak akses terminal CLI langsung. Data transaksi dan arsip desain dikelola oleh staf operasional). |
 
 **Kebutuhan dan Ekspektasi Utama**:
 * Membutuhkan pelayanan yang cepat, estimasi penyelesaian pengerjaan pesanan yang akurat, dan kualitas produk cetak yang konsisten.
-* Menginginkan data pribadi mereka (nama dan nomor WhatsApp) aman dari penyalahgunaan atau kebocoran pihak luar (UU PDP).
+* Menginginkan data pribadi mereka (nama dan nomor WhatsApp) aman dari penyalahgunaan atau kebocoran pihak luar sesuai regulasi **UU PDP No. 27 Tahun 2022**.
 * Kemudahan melakukan cetak ulang (*re-order*) pesanan kustom masa lalu dengan cepat tanpa mendesain ulang dari awal.
 
 **Potensi Pengaruh terhadap Proyek**:
@@ -495,7 +530,8 @@ Berikut adalah daftar seluruh stakeholder proyek AbuCom yang diklasifikasikan ke
 | **Kategori** | Eksternal |
 | **Tipe** | Kelompok / Institusi |
 | **Peran dalam Proyek** | Penyedia Pasokan Bahan Baku dan ATK |
-| **Kontak / Identifikasi** | `*[DATA BELUM TERSEDIA — daftar supplier perlu diisi manual oleh Pemilik Usaha di modul inventaris]*` |
+| **Kontak / Identifikasi** | `[DIISI OLEH PEMILIK/STAF GUDANG — Diinput manual ke modul inventaris. Contoh: Nama Vendor, Person in Charge (PIC), No. WhatsApp]` |
+| **Hak Akses RBAC** | `Akses Sistem: Tidak Ada Akses Runtime` (Tidak memiliki hak akses terminal CLI langsung. Riwayat pemesanan dan pelunasan utang diinput oleh Staf Gudang). |
 
 **Kebutuhan dan Ekspektasi Utama**:
 * Mengharapkan pembayaran utang pembelian tepat waktu sesuai kesepakatan tenor tempo.
@@ -518,11 +554,13 @@ Berikut adalah daftar seluruh stakeholder proyek AbuCom yang diklasifikasikan ke
 |---|---|
 | **ID Stakeholder** | STK-017 |
 | **Nama / Jabatan** | Bank BRI |
-| **Organisasi / Afiliasi** | PT Bank Rakyat Indonesia (Persero) Tbk |
+| **Organisasi / Afiliasi** | PT Bank Rakyat Indonesia (Persero) Tbk (BUMN) |
 | **Kategori** | Eksternal |
 | **Tipe** | Institusi |
 | **Peran dalam Proyek** | Kreditur Modal Berbunga (Institusi) |
-| **Kontak / Identifikasi** | `*[DATA BELUM TERSEDIA — nomor kontrak pinjaman bank perlu diisi oleh Pemilik Usaha]*` |
+| **Kontak / Identifikasi** | `[DIISI OLEH PEMILIK USAHA — Diinput ke modul administrasi. Contoh: No. Kontrak Kredit, Nominal Plafon Bulanan, CS Bank]` |
+| **Hak Akses RBAC** | `Akses Sistem: Tidak Ada Akses Runtime` (Akses dibatasi penuh secara privat. Laporan cicilan dibukukan oleh Pemilik). |
+| **Konteks Regulasi** | Lembaga keuangan negara pemberi Kredit Usaha Rakyat (KUR) mikro berbunga flat dengan agunan legalitas usaha NIB (Nomor Induk Berusaha). |
 
 **Kebutuhan dan Ekspektasi Utama**:
 * Menuntut pembayaran cicilan setoran bulanan pokok dan bunga tepat waktu sebelum tanggal jatuh tempo.
@@ -545,11 +583,13 @@ Berikut adalah daftar seluruh stakeholder proyek AbuCom yang diklasifikasikan ke
 |---|---|
 | **ID Stakeholder** | STK-018 |
 | **Nama / Jabatan** | Bank Mandiri |
-| **Organisasi / Afiliasi** | PT Bank Mandiri (Persero) Tbk |
+| **Organisasi / Afiliasi** | PT Bank Mandiri (Persero) Tbk (BUMN) |
 | **Kategori** | Eksternal |
 | **Tipe** | Institusi |
 | **Peran dalam Proyek** | Kreditur Modal Berbunga (Institusi) |
-| **Kontak / Identifikasi** | `*[DATA BELUM TERSEDIA — nomor kontrak pinjaman bank perlu diisi oleh Pemilik Usaha]*` |
+| **Kontak / Identifikasi** | `[DIISI OLEH PEMILIK USAHA — Diinput ke modul administrasi. Contoh: No. Kontrak Kredit, Nominal Plafon Bulanan, CS Bank]` |
+| **Hak Akses RBAC** | `Akses Sistem: Tidak Ada Akses Runtime` (Akses dibatasi penuh secara privat. Laporan cicilan dibukukan oleh Pemilik). |
+| **Konteks Regulasi** | Lembaga perbankan komersial BUMN penyedia pinjaman komersial dengan tenor tetap dan ketentuan denda keterlambatan bulanan yang rigid. |
 
 **Kebutuhan dan Ekspektasi Utama**:
 * Menuntut pembayaran cicilan setoran bulanan pokok dan bunga tepat waktu sebelum tanggal jatuh tempo.
@@ -576,7 +616,9 @@ Berikut adalah daftar seluruh stakeholder proyek AbuCom yang diklasifikasikan ke
 | **Kategori** | Eksternal |
 | **Tipe** | Individu / Kelompok |
 | **Peran dalam Proyek** | Pemberi Pinjaman Tanpa Bunga |
-| **Kontak / Identifikasi** | `*[DATA BELUM TERSEDIA — catatan nama/kontak kerabat perlu diisi manual oleh Pemilik Usaha]*` |
+| **Kontak / Identifikasi** | `[DIISI OLEH PEMILIK USAHA — Diinput secara privat ke modul keuangan keluarga. Contoh: Hubungan, Nama Lengkap, No. WhatsApp]` |
+| **Hak Akses RBAC** | `Akses Sistem: Tidak Ada Akses Runtime` (Tidak memiliki akses login. Riwayat penarikan dana diinput mandiri oleh Pemilik). |
+| **Konteks Budaya** | Hubungan pinjaman informal yang berlandaskan kearifan lokal gotong royong dan azas kekeluargaan (*social contract*), bebas bunga finansial namun dibebani kewajiban moral transparansi penuh. |
 
 **Kebutuhan dan Ekspektasi Utama**:
 * Mengharapkan transparansi mutlak atas sisa saldo pinjaman mereka yang dititipkan pada pemilik usaha.
@@ -619,7 +661,7 @@ Klasifikasi didasarkan pada empat kuadran standar industri PMBOK:
 4. **Monitor (Kuadran D - Low Power / Low Interest)**: Dipantau dengan upaya minimal untuk melihat fluktuasi sikap.
 
 | ID | Stakeholder | Power (1-5) | Interest (1-5) | Kuadran | Strategi Tata Kelola |
-|---|---|---|---|---|---|
+|---|---|:---:|:---:|---|---|
 | **STK-001** | Pemilik Usaha AbuCom | 5 | 5 | Kuadran A | **Manage Closely** — Pembuat keputusan utama, integrator kode, pengendali anggaran. |
 | **STK-002** | Staf Kepala Percetakan | 2 | 4 | Kuadran C | **Keep Informed** — Koordinasikan pelacakan antrian, berikan panduan. |
 | **STK-003** | Staf Pramuniaga | 2 | 4 | Kuadran C | **Keep Informed** — Latih input transaksi cepat & CRM secara tepat. |
@@ -732,6 +774,8 @@ Berdasarkan matriks di atas, terdapat beberapa celah keterlibatan (*gap*) yang m
 
 ## 6. Kebutuhan dan Ekspektasi Stakeholder
 
+### 6.1. Rincian Kebutuhan & Ekspektasi Detail
+
 Tabel di bawah mengkonsolidasikan seluruh kebutuhan fungsional dan kriteria kepuasan masing-masing stakeholder terhadap proyek AbuCom.
 
 | ID | Stakeholder | Kebutuhan Utama | Ekspektasi terhadap Proyek | Kriteria Kepuasan |
@@ -749,12 +793,55 @@ Tabel di bawah mengkonsolidasikan seluruh kebutuhan fungsional dan kriteria kepu
 | **STK-011** | Gemini 3 Flash | Potongan kode error dan log runtime. | Uji sintaksis cepat & deteksi bug ringan. | Error teratasi dalam sprint berjalan. |
 | **STK-012** | Claude Sonnet 4.6 | Standardisasi FP Python yang disepakati. | Penulisan fungsi murni tanpa efek samping. | Pengujian unit testing fungsi matematika lolos 100%. |
 | **STK-013** | Claude Opus 4.6 | Kebijakan hak akses menu dan aturan UU PDP. | Sistem aman dari bypass kata sandi & manipulasi. | Enkripsi bcrypt & token JWT berjalan aman. |
-| **STK-014** | GPT-OSS 120B | Rancangan ERD MySQL. | Skrip inisialisasi tabel SQL bebas sintaks error. | database terbuat dengan data seed realistis. |
+| **STK-014** | GPT-OSS 120B | Rancangan ERD MySQL. | Skrip inisialisasi tabel SQL bebas sintaks error. | Database terbuat dengan data seed realistis. |
 | **STK-015** | Pelanggan AbuCom | Kecepatan cetak, arsip desain teratur, privasi data WA. | Pesanan selesai tepat waktu, data aman. | WA link template dikirim cepat saat pesanan siap. |
 | **STK-016** | Vendor & Supplier | Rekapitulasi transaksi pembelian, saldo utang usaha. | Pembayaran piutang tepat waktu. | Pembayaran dilakukan sesuai jatuh tempo utang tempo. |
 | **STK-017** | Bank BRI | Pembayaran cicilan bulanan tepat waktu. | Penurunan risiko kredit macet. | Setoran bulanan terbayar otomatis sebelum jatuh tempo. |
 | **STK-018** | Bank Mandiri | Pembayaran cicilan bulanan tepat waktu. | Penurunan risiko kredit macet. | Setoran bulanan terbayar otomatis sebelum jatuh tempo. |
 | **STK-019** | Kerabat & Keluarga | Laporan saldo pinjaman transparan & fleksibel. | Dana aman dan dapat ditarik saat darurat. | Keamanan relasi personal terjaga baik. |
+
+---
+
+### 6.2. Matriks Pemetaan Modul vs Stakeholder (Jembatan Kebutuhan)
+
+Matriks ini memetakan hubungan antara 19 pemangku kepentingan dengan 9 modul utama yang dirancang pada Project Charter, sebagai jembatan analisis menuju penyusunan dokumen SRS (Software Requirements Specification):
+
+*   **U (User)**: Stakeholder bertindak sebagai operator/pengguna langsung yang menginput atau memanipulasi data melalui modul CLI.
+*   **D (Impacted)**: Stakeholder tidak mengoperasikan modul secara langsung namun dipengaruhi oleh output, laporan, atau regulasi yang dihasilkan modul.
+*   **- (Not Involved)**: Stakeholder sama sekali tidak terlibat dalam pengoperasian atau dampak modul.
+
+| ID | Stakeholder | M.1 | M.2 | M.3 | M.4 | M.5 | M.6 | M.7 | M.8 | M.9 |
+|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **STK-001** | Pemilik Usaha AbuCom | **U** | **U** | **U** | **U** | **U** | **U** | **U** | **U** | **U** |
+| **STK-002** | Staf Kepala Percetakan | **U** | **U** | **-** | **U** | **U** | **-** | **-** | **U** | **D** |
+| **STK-003** | Staf Pramuniaga | **U** | **-** | **-** | **-** | **U** | **-** | **-** | **U** | **D** |
+| **STK-004** | Staf Kasir | **U** | **-** | **U** | **-** | **U** | **-** | **-** | **U** | **D** |
+| **STK-005** | Staf Desainer | **-** | **-** | **-** | **-** | **U** | **-** | **-** | **-** | **D** |
+| **STK-006** | Staf Produksi Cetak | **-** | **U** | **-** | **-** | **U** | **-** | **-** | **U** | **D** |
+| **STK-007** | Staf Fotocopy & Print | **U** | **-** | **-** | **-** | **U** | **-** | **-** | **U** | **D** |
+| **STK-008** | Staf Gudang | **-** | **U** | **-** | **-** | **-** | **-** | **-** | **U** | **D** |
+| **STK-009** | Gemini 3.1 Pro (High) | **D** | **D** | **D** | **D** | **D** | **D** | **D** | **D** | **D** |
+| **STK-010** | Gemini 3.1 Pro (Low) | **D** | **D** | **D** | **D** | **D** | **D** | **D** | **D** | **D** |
+| **STK-011** | Gemini 3 Flash | **D** | **D** | **D** | **D** | **D** | **D** | **D** | **D** | **D** |
+| **STK-012** | Claude Sonnet 4.6 | **D** | **D** | **D** | **D** | **D** | **D** | **D** | **D** | **D** |
+| **STK-013** | Claude Opus 4.6 | **D** | **D** | **D** | **D** | **D** | **D** | **D** | **D** | **D** |
+| **STK-014** | GPT-OSS 120B | **D** | **D** | **D** | **D** | **D** | **D** | **D** | **D** | **D** |
+| **STK-015** | Pelanggan AbuCom | **D** | **-** | **D** | **-** | **D** | **-** | **D** | **D** | **-** |
+| **STK-016** | Vendor & Supplier | **-** | **D** | **-** | **-** | **-** | **-** | **-** | **-** | **-** |
+| **STK-017** | Bank BRI | **-** | **-** | **-** | **-** | **-** | **D** | **-** | **-** | **-** |
+| **STK-018** | Bank Mandiri | **-** | **-** | **-** | **-** | **-** | **D** | **-** | **-** | **-** |
+| **STK-019** | Kerabat & Keluarga | **-** | **-** | **-** | **-** | **-** | **D** | **-** | **-** | **-** |
+
+*Keterangan Modul:*
+*   **M.1**: Manajemen Transaksi & Kebijakan Harga
+*   **M.2**: Manajemen Inventaris, BOM & Stock Opname
+*   **M.3**: Layanan Keuangan Digital, PPOB, Jasa Keuangan & Service
+*   **M.4**: Manajemen SDM, Penggajian & Poin Karyawan
+*   **M.5**: Sistem Manajemen Antrian & Pelacakan Desain
+*   **M.6**: Administrasi Pinjaman, Aset, & Pengeluaran Rutin
+*   **M.7**: Keamanan, Audit Trail & Hak Akses (RBAC)
+*   **M.8**: Pembatalan, Retur & CRM
+*   **M.9**: Skalabilitas Multi-Cabang (*Multi-Branch Ready*)
 
 ---
 
@@ -841,6 +928,8 @@ Berikut adalah risiko-risiko kritis yang berkaitan langsung dengan dinamika pema
 | **9.8** | **Konflik Selisih Kas PC Kasir Bersama**: Beberapa staf bergantian menggunakan PC Kasir sehingga terjadi selisih uang fisik tanpa diketahui penanggung jawabnya. | 4 | 4 | Wajibkan setiap kasir melakukan login dengan akun unik masing-masing sebelum melakukan transaksi. Sistem mencatat ID User aktif pada setiap baris log Audit Trail. |
 | **9.9** | **Kebocoran Data Database Pelanggan (STK-015)**: Staf menyalin file cadangan database (.sql) berisi data kontak WhatsApp pelanggan secara ilegal. | 2 | 5 | Kunci hak akses direktori penyimpanan backup database di Linux Debian 12 hanya untuk user root, serta terapkan enkripsi AES-256 pada file zip cadangan database. |
 | **9.10** | **Ketidakcocokan Kode Integrasi AI (STK-009 s.d. 014)**: Junior Programmer kesulitan menggabungkan kode fungsional yang dihasilkan dari model AI yang berbeda. | 3 | 4 | Disiplin menerapkan standardisasi struktur kode di bawah arahan Lead Architect AI, lakukan review sintaksis cepat menggunakan Gemini 3 Flash sebelum integrasi. |
+| **9.11** | **Ketidakakuratan Migrasi Data Excel Awal**: Data lama yang terfragmentasi, duplikat, atau formatnya tidak sesuai saat diinput manual, mengacaukan database relasional MySQL. | 4 | 4 | Junior Programmer menyusun modul pembersih data / filter validasi regex pada CLI untuk menyaring data kosong, format salah, atau data duplikat. |
+| **9.12** | **Hambatan Sintaksis Paradigma Functional Programming**: Junior Programmer kesulitan mengelola state dinamis aplikasi (seperti session token JWT atau status order) di Python tanpa menggunakan Class (OOP). | 3 | 4 | Memanfaatkan pustaka standar Python `functools`, operator generator, imutabilitas dictionary/tuple, serta bantuan intensif model AI deep coding Claude Sonnet 4.6. |
 
 ---
 
@@ -871,8 +960,8 @@ Berikut adalah penjelasan istilah-istilah khusus terkait manajemen stakeholder d
 10. **Key User / End-User**: Pengguna utama yang akan mengoperasikan sistem secara langsung dalam aktivitas harian bisnis pasca go-live.
 11. **Indirect Stakeholder**: Pemangku kepentingan yang tidak terlibat langsung dalam operasional proyek namun menerima dampak atau manfaat dari hasil akhir proyek (misal: Pelanggan).
 12. **Financial Stakeholder**: Pemangku kepentingan yang mempengaruhi proyek dari aspek ketersediaan likuiditas modal pendanaan (kreditur bank atau kerabat).
-13. **PKWT (Perjanjian Kerja Waktu Tertentu)**: Perjanjian kerja antara karyawan kontrak dengan pemilik usaha untuk jangka waktu tertentu.
-14. **PKWTT (Perjanjian Kerja Waktu Tidak Tertentu)**: Perjanjian kerja antara karyawan tetap dengan pemilik usaha yang tidak dibatasi oleh masa berlaku kontrak.
+13. **PKWT (Perjanjian Kerja Waktu Tertentu)**: Perjanjian kerja antara karyawan kontrak dengan pemilik usaha untuk jangka waktu tertentu sesuai dengan regulasi PP No. 35 Tahun 2021.
+14. **PKWTT (Perjanjian Kerja Waktu Tidak Tertentu)**: Perjanjian kerja antara karyawan tetap dengan pemilik usaha yang tidak dibatasi oleh masa berlaku kontrak sesuai dengan regulasi PP No. 35 Tahun 2021.
 15. **Cross-Functional**: Budaya kerjasama tim yang menuntut karyawan dari divisi yang berbeda untuk saling membantu mengisi kekosongan beban kerja demi kelancaran operasional.
 16. **Burnout**: Kondisi keletihan fisik, mental, dan emosional yang ekstrem akibat stres berkepanjangan (dalam konteks ini dialami pemilik usaha akibat mengelola 5 divisi sendirian secara manual).
 17. **Role-Based Access Control (RBAC)**: Mekanisme pembatasan hak akses menu aplikasi berdasarkan peran (*role*) yang diberikan kepada pengguna (misal: menu Pemilik vs menu Staf).
