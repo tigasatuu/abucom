@@ -1,9 +1,9 @@
 ---
 dokumen    : Tech Stack Decision
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.0
+versi      : 1.1
 tanggal    : 2026-05-22
-status     : Draft
+status     : Tervalidasi
 penyusun   : Senior Technical Architect & Technology Evaluation Specialist
 ---
 
@@ -14,6 +14,7 @@ penyusun   : Senior Technical Architect & Technology Evaluation Specialist
 | Versi | Tanggal    | Perubahan                                                   | Oleh                                            |
 |-------|------------|-------------------------------------------------------------|-------------------------------------------------|
 | 1.0   | 2026-05-22 | Pembuatan awal dokumen secara komprehensif berdasarkan analisis Project Charter v1.1, Feasibility Study v1.1, dan Stakeholder Register v1.1. | Senior Technical Architect & Technology Evaluation Specialist |
+| 1.1   | 2026-05-22 | Validasi, audit mendalam, dan penyempurnaan dokumen. Melengkapi format ADR lengkap pada pustaka utama beserta sub-bagian Risiko Teknis & Rencana Mitigasi secara eksplisit. Menambahkan arsitektur keamanan CLI lokal (SQL Injection, Rate Limiting, Input Validation), strategi requirements.txt, inisialisasi basis data (schema.sql & seed.sql), strategi pengujian fungsional (FP Unit Testing), koreksi typo, pelengkapan glosarium, dan validasi referensi dokumen. | Principal Software Architect & Technical Documentation Lead |
 
 ---
 
@@ -133,7 +134,7 @@ Seluruh keputusan arsitektur dalam dokumen ini dipandu oleh 7 prinsip teknis uta
   * Dukungan format data JSON asli (*Native JSON Data Type*) untuk mempermudah penyimpanan nilai data dinamis sebelum/sesudah perubahan pada tabel Audit Trail.
 * **Konfigurasi Kunci yang Direkomendasikan**:
   * **Character Set**: `utf8mb4` (Mendukung penyimpanan karakter Unicode universal secara lengkap).
-  * **Collation**: `utf8mb4_unicode_ci` (Akurasi penyortiran karakter teks multubahasa yang presisi).
+  * **Collation**: `utf8mb4_unicode_ci` (Akurasi penyortiran karakter teks multibahasa yang presisi).
   * **Storage Engine**: `InnoDB` (Wajib untuk semua tabel guna menjamin relasi *Foreign Key* dan integritas ACID).
   * **Transaction Isolation Level**: `REPEATABLE READ` (Mencegah masalah pembacaan data kotor /*dirty read* saat kasir menginput transaksi secara bersamaan).
 * **Strategi Desain Multi-Branch Ready**:
@@ -156,50 +157,53 @@ Seluruh keputusan arsitektur dalam dokumen ini dipandu oleh 7 prinsip teknis uta
 
 Penyusunan pustaka pihak ketiga dibatasi secara ketat demi menjamin reprodusibilitas dan keamanan sistem operasional AbuCom:
 
-### 5.1. Keputusan: mysql-connector-python
+### 5.1. Keputusan: mysql-connector-python (v8.4.0+)
 
 * **Status Keputusan**: **Disetujui [MANDATORY]**
-* **Justifikasi & Versi**:
+* **Justifikasi Pemilihan**:
   * Merupakan driver basis data resmi yang dikembangkan langsung oleh Oracle untuk Python. Driver ini ditulis 100% menggunakan kode Python murni (tanpa memerlukan kompilasi pustaka C eksternal saat instalasi), sehingga menjamin kemudahan instalasi di Windows dan Linux.
-  * Dipilih versi stabil terbaru (lisensi GPL).
-* **Alternatif yang Ditolak**:
-  * `PyMySQL`: Merupakan driver pure-Python pihak ketiga, namun performanya dinilai sedikit lebih lambat untuk penanganan data blob JSON dibandingkan connector resmi Oracle.
-  * `mysqlclient`: Merupakan driver berbasis C-binding yang sangat cepat, namun proses instalasinya di lingkungan sistem operasi Windows 11 menuntut instalasi Visual C++ Build Tools yang sangat rumit bagi junior programmer.
+* **Versi Spesifik**:
+  * Ditentukan menggunakan versi **8.4.0+** untuk memastikan kompatibilitas penuh dengan server database MySQL 8.4 LTS.
+* **Risiko Teknis & Rencana Mitigasi**:
+  * **Risiko**: Gangguan koneksi database lokal via jaringan LAN toko (kabel longgar/gangguan switch) yang memicu kegagalan transaksi di tengah jalan (*lost connection*).
+  * **Mitigasi**: Implementasikan fungsi pembungkus koneksi database transaksional fungsional yang dilengkapi mekanisme percobaan ulang otomatis (*reconnection retry mechanism* dengan *exponential backoff*) dan *pooling connection* bawaan driver.
 
-### 5.2. Keputusan: python-dotenv
+### 5.2. Keputusan: python-dotenv (v1.0.1+)
 
 * **Status Keputusan**: **Disetujui [MANDATORY]**
-* **Justifikasi & Versi**:
+* **Justifikasi Pemilihan**:
   * Memfasilitasi prinsip keamanan arsitektur *12-Factor App* dengan memisahkan kredensial sensitif (kata sandi database, secret key JWT) dari kode sumber program. Kredensial disimpan secara aman di file berkas lokal `.env` yang dikecualikan dari version control Git.
-  * Dipilih versi stabil (lisensi BSD).
-* **Alternatif yang Ditolak**:
-  * Penginputan kredensial manual via input CLI saat program dijalankan (sangat lambat dan mengganggu produktivitas operasional kasir).
-  * Penggunaan variabel lingkungan bawaan sistem operasi (menyulitkan deployment lintas OS karena perbedaan cara setting env di Windows dan Linux).
+* **Versi Spesifik**:
+  * Ditentukan menggunakan versi **1.0.1+**.
+* **Risiko Teknis & Rencana Mitigasi**:
+  * **Risiko**: Kelalaian mengunggah berkas konfigurasi rahasia `.env` ke repositori publik Git atau file `.env` hilang sehingga program tidak dapat diinisialisasi.
+  * **Mitigasi**: Masukkan `.env` ke dalam file `.gitignore` sejak inisiasi repositori. Sediakan file `.env.example` tanpa nilai asli sebagai templat. Tulis skrip verifikasi otomatis pada startup sistem untuk mendeteksi keberadaan file `.env` beserta kelengkapan variabelnya sebelum meluncurkan CLI utama.
 
-### 5.3. Keputusan: bcrypt
+### 5.3. Keputusan: bcrypt (v4.1.0+)
 
 * **Status Keputusan**: **Disetujui [MANDATORY]**
-* **Justifikasi, Versi & Lisensi**:
+* **Justifikasi Pemilihan**:
   * bcrypt merupakan standar emas industri keamanan enkripsi kata sandi satu arah (*one-way cryptographic hash*). bcrypt menggunakan algoritma *Blowfish* yang secara bawaan menyertakan *salt* unik untuk setiap sandi pengguna guna mencegah serangan kamus (*dictionary/rainbow table attack*).
-  * Dipilih versi stabil dengan lisensi Apache 2.0.
-* **Cost Factor yang Direkomendasikan**:
-  * Direkomendasikan menggunakan **Cost Factor = 12**. Nilai ini memberikan keseimbangan optimal antara tingkat keamanan enkripsi yang sangat tinggi terhadap serangan brute-force dengan kecepatan waktu verifikasi login di terminal kasir (<0.5 detik).
-* **Perbandingan Hashing & Justifikasi bcrypt Dipilih**:
-  * `argon2`: Merupakan pemenang kompetisi password hashing terbaru yang sangat aman terhadap serangan hardware khusus (GPU/ASIC). Namun, argon2 memiliki konsumsi memori dan CPU yang sangat tinggi, yang berpotensi membebinkan kinerja Mini PC Server lokal.
-  * `scrypt` / `pbkdf2`: Pilihan yang baik, namun optimalisasi performa scrypt di lingkungan sistem operasi Windows 11 terkadang kurang stabil jika dijalankan tanpa kompilasi C eksternal. bcrypt menjadi pilihan paling seimbang, stabil, dan teruji secara luas untuk skala hardware UMKM.
+* **Versi Spesifik**:
+  * Ditentukan menggunakan versi **4.1.0+**.
+* **Cost Factor & Parameter Rekomendasi**:
+  * Ditentukan menggunakan parameter **Cost Factor = 12**. Nilai ini memberikan keseimbangan optimal antara tingkat keamanan enkripsi yang sangat tinggi terhadap serangan brute-force dengan kecepatan waktu verifikasi login di terminal kasir (<0.5 detik).
+* **Risiko Teknis & Rencana Mitigasi**:
+  * **Risiko**: Konsumsi CPU 100% yang membebani daya komputasi server lokal jika banyak kasir melakukan autentikasi login secara simultan.
+  * **Mitigasi**: Parameter Cost Factor 12 dibatasi hanya untuk operasi autentikasi dan pendaftaran staf. Lakukan pengujian latensi berkala. Skema client-server mendistribusikan beban kalkulasi bcrypt ke mesin klien PC Kasir masing-masing, sehingga server database tidak terbebani kalkulasi kriptografi.
 
-### 5.4. Keputusan: PyJWT
+### 5.4. Keputusan: PyJWT (v2.8.0+)
 
 * **Status Keputusan**: **Disetujui [MANDATORY]**
-* **Justifikasi, Versi & Lisensi**:
+* **Justifikasi Pemilihan**:
   * JSON Web Token (JWT) digunakan untuk mengelola autentikasi session di lingkungan CLI yang murni berbasis teks tanpa state server-side yang berat (*stateless session management*). Setelah pengguna berhasil login, token JWT dibuat oleh database dan dikirim ke terminal klien. Token ini memuat informasi ID User, Role, dan ID Cabang secara aman karena ditandatangani menggunakan kunci rahasia (*Secret Key*) sistem.
-  * Dipilih versi stabil dengan lisensi MIT.
-* **Konfigurasi Algoritma JWT yang Direkomendasikan**:
-  * **Algoritma**: `HS256` (HMAC menggunakan SHA-256). Sangat efisien, aman, dan berkinerja tinggi untuk server database tunggal yang dikelola secara lokal.
-* **Strategi Pengelolaan Token (Lifecycle & Revocation)**:
-  * **Token Expiry**: Durasi token diatur aktif selama **8 jam** (setara dengan 1 shift kerja penuh karyawan toko percetakan), untuk menjamin keamanan dari penyalahgunaan terminal kasir yang ditinggalkan.
-  * **Token Storage**: Di sisi klien CLI, token JWT disimpan di memori variabel sesi aktif (nested closures cache) dan tidak disimpan secara permanen di file teks kosong guna menghindari pencurian token oleh virus/malware lokal.
-  * **Token Revocation (Logout)**: Saat staf melakukan logout atau menutup terminal CLI, token JWT di dalam memori sesi klien langsung dihapus secara permanen, secara instan mengakhiri otorisasi akses.
+* **Versi Spesifik**:
+  * Ditentukan menggunakan versi **2.8.0+**.
+* **Konfigurasi Algoritma & Lifecycle**:
+  * Algoritma penandatanganan menggunakan **HS256** (HMAC-SHA256) dengan secret key yang diimpor dari berkas `.env`. Masa kedaluwarsa token dibatasi selama **8 jam** (setara dengan 1 shift kerja penuh karyawan).
+* **Risiko Teknis & Rencana Mitigasi**:
+  * **Risiko**: Kebocoran kunci rahasia (*Secret Key*) penandatanganan JWT atau manipulasi payload token oleh penyerang lokal di jaringan LAN.
+  * **Mitigasi**: Kunci rahasia JWT wajib diacak minimal 32 karakter heksadesimal di file `.env`. Setiap verifikasi JWT di sisi klien wajib melalui pemeriksaan kecocokan tanda tangan *signature* dan status kedaluwarsa waktu (*exp*).
 
 ### 5.5. Pustaka Standar Python yang Dimanfaatkan
 
@@ -217,22 +221,27 @@ Sistem akan mengoptimalkan pemanfaatan modul bawaan Python (*Standard Library*) 
 
 ### 5.6. Evaluasi Pustaka Tambahan yang Direkomendasikan `[REKOMENDASI]`
 
-Berdasarkan mandat inovasi dan praktik terbaik industri, tim pengembang AI sangat merekomendasikan 3 pustaka tambahan open-source berikut untuk meningkatkan estetika visual dan kegunaan (*usability*) terminal CLI AbuCom bagi karyawan baru:
+Berdasarkan mandat inovasi dan praktik terbaik industri, tim pengembang AI menyetujui penggunaan 2 pustaka tambahan open-source berikut untuk meningkatkan estetika visual dan kegunaan (*usability*) terminal CLI AbuCom bagi karyawan baru:
 
-#### 1. `rich` (Pustaka Visual & Pewarnaan CLI) — **SANGAT DIREKOMENDASIKAN**
-* **Justifikasi**: `rich` mempermudah pewarnaan teks terminal menggunakan kode ANSI, pembuatan tata letak kotak menu CLI (*panels*), visualisasi status antrian pesanan dengan warna kontras (hijau = selesai, kuning = proses, merah = antri), serta visualisasi bar kemajuan (*progress bar*) yang interaktif.
-* **Manfaat**: Meningkatkan kegunaan visual CLI secara drastis dari teks polos yang membosankan menjadi antarmuka yang sangat premium dan hidup, secara signifikan mengurangi tingkat keletihan mata karyawan toko yang menatap terminal seharian.
-* **Risiko**: Dependensi tambahan. Namun, `rich` ditulis menggunakan pure Python dan terbukti sangat stabil serta berlisensi MIT yang ramah komersial.
+#### 5.6.1. `rich` (Pustaka Visual & Pewarnaan CLI)
 
-#### 2. `tabulate` (Pustaka Format Tabel CLI) — **SANGAT DIREKOMENDASIKAN**
-* **Justifikasi**: `tabulate` memformat data array dua dimensi atau data JSON MySQL menjadi representasi tabel terminal yang sangat rapi dan konsisten secara otomatis.
-* **Manfaat**: Mempermudah penyajian laporan keuangan harian, sisa stok gudang, dan log Audit Trail secara tabular yang mudah dipindai oleh mata pemilik usaha.
-* **Risiko**: Dependensi eksternal kecil berlisensi MIT yang aman.
+* **Status Keputusan**: **Disetujui [Rekomendasi Pemilik]**
+* **Justifikasi & Versi**:
+  * Pustaka `rich` (versi **13.7.0+**) mempermudah pewarnaan teks terminal menggunakan kode ANSI, pembuatan tata letak kotak menu CLI (*panels*), visualisasi status antrian pesanan dengan warna kontras (hijau = selesai, kuning = proses, merah = antri), serta visualisasi bar kemajuan (*progress bar*) yang interaktif.
+  * Membantu meningkatkan kegunaan visual CLI secara drastis dari teks polos menjadi antarmuka yang modern, mengurangi keletihan mata staf yang menatap terminal harian.
+* **Risiko Teknis & Rencana Mitigasi**:
+  * **Risiko**: Ketidakcocokan rendering warna ANSI pada emulator terminal Windows Command Prompt (CMD) versi lawas.
+  * **Mitigasi**: Pastikan PC kasir menjalankan CLI melalui program **Windows Terminal** modern. Implementasikan fungsi fungsional pengecekan kapabilitas terminal (`console.is_terminal`) dan fallback otomatis ke format teks polos tanpa warna ANSI jika terminal terdeteksi tidak kompatibel.
 
-#### 3. `click` atau `typer` (Framework CLI Terstruktur) — **OPSIONAL**
-* **Justifikasi**: Mempermudah pembagian sub-menu perintah CLI berbasis argumen.
-* **Manfaat**: Membantu merapikan struktur file program fungsional untuk menangani *command routing* CLI.
-* **Rekomendasi Akhir**: Tim pengembang merekomendasikan penggunaan parser bawaan Python (`argparse` atau menu input sekuensial) terlebih dahulu untuk meminimalkan dependensi runtime.
+#### 5.6.2. `tabulate` (Pustaka Format Tabel CLI)
+
+* **Status Keputusan**: **Disetujui [Rekomendasi Pemilik]**
+* **Justifikasi & Versi**:
+  * Pustaka `tabulate` (versi **0.9.0+**) memformat array dua dimensi atau data JSON database menjadi tabel teks terformat secara otomatis di terminal.
+  * Mempermudah penyajian laporan persediaan barang, mutasi kas, dan log Audit Trail dalam format tabular yang mudah dipindai oleh mata pemilik usaha.
+* **Risiko Teknis & Rencana Mitigasi**:
+  * **Risiko**: Lebar kolom tabel melebihi dimensi piksel layar monitor PC kasir operasional sehingga teks tabel patah dan berantakan.
+  * **Mitigasi**: Kombinasikan `tabulate` dengan modul bawaan `shutil.get_terminal_size()` untuk membatasi lebar kolom tabel secara dinamis dan memotong teks berlebih menggunakan `textwrap.shorten()` secara fungsional.
 
 ### 5.7. Ringkasan Matriks Dependensi
 
@@ -242,8 +251,8 @@ Berdasarkan mandat inovasi dan praktik terbaik industri, tim pengembang AI sanga
 | 2  | `python-dotenv` | 1.0.1+ | BSD | Pemisahan Kredensial `.env` | Wajib | Disetujui |
 | 3  | `bcrypt` | 4.1.0+ | Apache 2.0 | Enkripsi Sandi Pengguna | Wajib | Disetujui |
 | 4  | `pyjwt` | 2.8.0+ | MIT | Otentikasi Session CLI | Wajib | Disetujui |
-| 5  | `rich` | 13.7.0+ | MIT | Pewarnaan & Visual Panel CLI | Rekomendasi | **Disetujui Pemilik** |
-| 6  | `tabulate` | 0.9.0+ | MIT | Format Tabel Terminal CLI | Rekomendasi | **Disetujui Pemilik** |
+| 5  | `rich` | 13.7.0+ | MIT | Pewarnaan & Visual Panel CLI | Rekomendasi | Disetujui Pemilik |
+| 6  | `tabulate` | 0.9.0+ | MIT | Format Tabel Terminal CLI | Rekomendasi | Disetujui Pemilik |
 | 7  | `decimal` | Bawaan | PSF | Presisi Perhitungan BOM & Kas | Bawaan | Disetujui |
 | 8  | `functools` | Bawaan | PSF | Fungsi Pihak Ketiga (FP) | Bawaan | Disetujui |
 
@@ -387,6 +396,35 @@ Untuk mematuhi regulasi **UU PDP No. 27 Tahun 2022** di Indonesia terkait perlin
 2. **Pembatasan Hak Akses Direktori Server**: Direktori lokal folder penyimpanan berkas cadangan database (*backup folder*) pada sistem operasi Linux Debian 12 dikunci penuh secara administratif menggunakan perintah `chmod 700`, membatasi hak baca dan tulis hanya untuk user **root** server.
 3. **Kata Sandi Root Database yang Kuat**: Akun root database MySQL dilindungi kata sandi acak 32 karakter untuk mencegah penyalinan file basis data secara ilegal oleh flashdisk staf fisik.
 
+### 8.6. Proteksi SQL Injection
+
+Untuk mengantisipasi eksploitasi keamanan terhadap basis data relasional melalui masukan input teks oleh penyerang lokal:
+1. **Wajib Parameterized Queries**: Seluruh query SQL yang dibangun pada modul Python wajib dideklarasikan menggunakan parameter binding (`%s`) resmi dari driver `mysql-connector-python`.
+2. **Pelarangan String Formatting**: Dilarang keras menggabungkan masukan data dari variabel program menggunakan manipulasi string manual bawaan Python (seperti f-string `f"SELECT ... WHERE col = {var}"`, operator string `%`, atau fungsi `str.format()`) pada alur interaksi basis data.
+3. **Contoh Format Query Fungsional yang Aman**:
+   ```python
+   # Fungsi murni untuk mengambil data transaksi pengguna
+   def get_user_transaction(db_connection, user_id):
+       query = "SELECT id, total_bayar FROM transaksi WHERE user_id = %s"
+       cursor = db_connection.cursor()
+       cursor.execute(query, (user_id,))
+       return cursor.fetchall()
+   ```
+
+### 8.7. Rate Limiting Login CLI
+
+Mencegah serangan brute-force lokal dari terminal kasir dengan mengunci akses akun sementara jika terdeteksi indikasi login mencurigakan:
+1. **Mekanisme Penguncian**: Pembatasan login gagal diatur maksimal **5 kali berturut-turut**.
+2. **Durasi Penangguhan**: Jika batas terlampaui, akun pengguna bersangkutan akan dikunci secara otomatis selama **10 menit** (disimpan sebagai timestamp masa penangguhan di tabel database `pengguna` pada kolom `locked_until`).
+3. **Pencatatan Status**: Setiap kegagalan autentikasi dicatat dalam database dengan memperbarui kolom `failed_login_attempts`. Nilai hitungan dibersihkan (*reset* menjadi 0) secara otomatis begitu pengguna berhasil login dengan kredensial yang valid.
+
+### 8.8. Validasi Input Terminal CLI
+
+Mengamankan alur aplikasi terminal dari injeksi karakter yang merusak sistem visual ANSI atau memicu gangguan interpreter program:
+1. **Sanitasi Terminal Control Character**: Program akan memfilter dan menolak masukan input teks yang mengandung karakter kontrol terminal seperti byte ESC (`\x1b`), control characters ANSI, dan ASCII di bawah `\x20` (kecuali karakter baris baru).
+2. **Pembatasan Batas Panjang Input (Length Bounds)**: Setiap masukan teks dari staf wajib dibatasi panjang maksimalnya di sisi Python sebelum diproses (misalnya: maksimal 50 karakter untuk nama pelanggan, 100 karakter untuk deskripsi, dan dibatasi hanya angka positif untuk kuantitas desimal).
+3. **Validasi Tipe Data Fungsional**: Penggunaan fungsi pembungkus validator (*validator wrappers*) murni yang menguji format masukan (misal: memvalidasi format nomor WhatsApp Indonesia `^08[0-9]{8,11}$`) sebelum dioperasikan ke database.
+
 ---
 
 ## 9. Keputusan Tech Stack — Infrastruktur Pengembangan
@@ -417,6 +455,38 @@ Kolaborasi pengembangan didistribusikan secara transparan kepada 6 model AI spes
 Proyek AbuCom dikembangkan menggunakan **Pendekatan Hybrid (Waterfall & Agile)**:
 * **Waterfall (Planning - Design)**: Digunakan pada Fase 1 hingga Fase 3 (Project Charter, SRS, SDD, dan ERD). Setiap dokumen harus disetujui secara formal oleh Pemilik Usaha sebelum fase berikutnya dimulai. Hal ini penting untuk memastikan batasan ruang lingkup yang rigid dan arsitektur database multi-branch yang solid.
 * **Agile Sprint (Implementation - Testing)**: Siklus penulisan kode sumber dijalankan dalam sprint iteratif selama **2 minggu**. Setiap akhir sprint, modul CLI yang siap pakai dipresentasikan kepada Junior Programmer untuk mendapatkan umpan balik cepat dan perbaikan segera.
+
+### 9.4. Strategi requirements.txt
+
+Untuk memastikan kestabilan replikasi lingkungan pengembangan (*reproducible development environment*) lintas PC kasir Windows 11 dan server database Linux Debian 12:
+1. **Penggunaan pip freeze**: Seluruh dependensi eksternal wajib dikunci versinya secara ketat di dalam file deklarasi tunggal `requirements.txt`.
+2. **Kepatuhan Instalasi**: Pemasangan pustaka pihak ketiga di lingkungan baru menggunakan perintah:
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. **Format Deklarasi Dependensi Terkunci**:
+   ```text
+   mysql-connector-python==8.4.0
+   python-dotenv==1.0.1
+   bcrypt==4.1.0
+   pyjwt==2.8.0
+   rich==13.7.0
+   tabulate==0.9.0
+   ```
+
+### 9.5. Strategi Inisialisasi Database (schema.sql & seed.sql)
+
+Memudahkan setup basis data awal secara otomatis dan menjamin keseragaman struktur data:
+1. **File `schema.sql`**: Berkas SQL yang berisi deklarasi terstruktur pembuatan basis data, tabel-tabel utama (lengkap dengan foreign key, default index, collation `utf8mb4_unicode_ci`, dan opsi engine `InnoDB`), relasi multi-cabang, serta trigger untuk log Audit Trail.
+2. **File `seed.sql`**: Berkas SQL yang berisi data awal master (*seed data*) yang wajib ada (seperti definisi unit cabang pertama default, data awal 8 posisi peran staf, definisi poin insentif, akun default administratif pemilik) serta data dummy transaksi awal yang realistis untuk keperluan demonstrasi sistem.
+3. **Automasi Setup**: Pengeksekusian migrasi inisialisasi database dapat dipicu secara CLI melalui script utilitas database independen pada awal instalasi sistem.
+
+### 9.6. Strategi Pengujian Fungsional (Unit Testing FP)
+
+Menjamin keandalan kalkulasi matematika keuangan dan stok desimal terbebas dari kesalahan fungsional melalui pengujian mandiri:
+1. **Unit Testing Pure Functions**: Karena logika bisnis diimplementasikan menggunakan paradigma *Functional Programming* murni tanpa class dan tanpa modifikasi status global, setiap fungsi bisnis (seperti fungsi hitung HPP BOM desimal `calculate_bom_hpp(materials_tuple)`) sangat mudah diuji secara terisolasi.
+2. **Framework Pilihan**: Pengujian wajib menggunakan pustaka bawaan standard library Python `unittest` atau framework `pytest` yang dikonfigurasi berjalan secara lokal.
+3. **Persyaratan Pengujian**: Setiap sprint pengerjaan fungsi komputasi keuangan wajib menyertakan skrip unit test dengan target cakupan kode (*code coverage*) logika bisnis minimal **90%** untuk menjamin zero-error sebelum go-live.
 
 ---
 
@@ -511,7 +581,7 @@ Jika salah satu kondisi pemicu di atas terpenuhi, tim pengembang AI wajib menyus
 
 ## 14. Persetujuan dan Otorisasi
 
-Dokumen **Tech Stack Decision v1.0** ini diajukan oleh Tim Pengembang AI dan disetujui secara formal sebagai dasar arsitektur dasar yang mengikat dan tidak boleh dilanggar untuk seluruh siklus implementasi SDLC berikutnya.
+Dokumen **Tech Stack Decision v1.1** ini diajukan oleh Tim Pengembang AI dan disetujui secara formal sebagai dasar arsitektur dasar yang mengikat dan tidak boleh dilanggar untuk seluruh siklus implementasi SDLC berikutnya.
 
 | Pihak Penandatangan | Peran / Jabatan | Status Persetujuan | Tanggal Persetujuan |
 |---------------------|-----------------|--------------------|---------------------|
@@ -530,7 +600,7 @@ Berikut adalah glosarium penjelasan istilah teknis yang digunakan di dalam dokum
 4. **Audit Trail**: Log kronologis terstruktur yang merekam secara mendalam aktivitas manipulasi data sensitif database (siapa, kapan, aksi, data lama, data baru) untuk mencegah kecurangan.
 5. **Command Line Interface (CLI)**: Antarmuka aplikasi berbasis teks yang dioperasikan pengguna murni menggunakan ketikan instruksi keyboard di layar terminal tanpa tombol visual grafis.
 6. **JSON Web Token (JWT)**: Standar terbuka (RFC 7519) untuk transmisi informasi digital secara aman antar-node sebagai token session terenkripsi tanpa state server (*stateless session*).
-7. **bcrypt**: Algoritma enkripsi satu arah yang menggunakanBlowfish cipher, didesain tangguh terhadap serangan brute-force karena parameter cost factor-nya yang dinamis.
+7. **bcrypt**: Algoritma enkripsi satu arah yang menggunakan Blowfish cipher, didesain tangguh terhadap serangan brute-force karena parameter cost factor-nya yang dinamis.
 8. **Bill of Materials (BOM)**: Komposisi rinci bahan baku dan dimensi kuantitas pemakaian yang dibutuhkan secara presisi untuk memproduksi satu unit produk cetak kustom.
 9. **CAPEX (Capital Expenditure)**: Pengeluaran biaya investasi awal satu kali untuk aset fisik pengembangan proyek (seperti Mini PC server, router, UPS).
 10. **OPEX (Operational Expenditure)**: Biaya pengeluaran rutin operasional berkelanjutan harian untuk pemeliharaan sistem pasca go-live (listrik, kuota token API).
@@ -546,6 +616,12 @@ Berikut adalah glosarium penjelasan istilah teknis yang digunakan di dalam dokum
 20. **UU PDP**: Undang-Undang No. 27 Tahun 2022 di Indonesia tentang Pelindungan Data Pribadi, yang membebankan tanggung jawab hukum atas keamanan data CRM pelanggan.
 21. **Architecture Decision Record (ADR)**: Berkas dokumen formal yang merekam keputusan arsitektur penting yang diambil beserta konteks, status, dan dampak konsekuensinya.
 22. **Multi-Branch Ready**: Kesiapan struktur arsitektur data basis data relasional sejak awal untuk diintegrasikan dengan kode pengenal cabang guna ekspansi toko.
+23. **SQL Injection**: Kerentanan keamanan basis data di mana penyerang mampu menyisipkan perintah SQL berbahaya melalui masukan input data pengguna.
+24. **Rate Limiting**: Kebijakan pembatasan frekuensi percobaan aksi pengguna (seperti login) guna menjaga keamanan sistem dari penyalahgunaan.
+25. **requirements.txt**: File standardisasi deklarasi ketergantungan library Python untuk memastikan konsistensi setup antar environment.
+26. **schema.sql**: Skrip instruksi SQL deklaratif untuk membangun skema basis data awal.
+27. **seed.sql**: Skrip instruksi SQL untuk mengisi tabel basis data dengan data awal administratif maupun data simulasi pengujian.
+28. **Unit Testing**: Metode verifikasi program untuk menguji unit terkecil kode (fungsi) secara terisolasi guna menjamin kebenaran logika.
 
 ---
 
