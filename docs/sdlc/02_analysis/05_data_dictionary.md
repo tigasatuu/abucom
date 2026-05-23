@@ -1,9 +1,9 @@
 ---
 dokumen    : Data Dictionary
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.0
+versi      : 1.1
 tanggal    : 2026-05-24
-status     : Draft
+status     : Approved
 penyusun   : Senior Database Architect & Data Modeling Specialist
 ---
 
@@ -13,6 +13,7 @@ penyusun   : Senior Database Architect & Data Modeling Specialist
 
 | Versi | Tanggal | Perubahan | Oleh |
 |---|---|---|---|
+| 1.1 | 2026-05-24 | Reviu dan revisi v1.1 (Approved). Menambahkan kolom yang terlewat (transaksi.metode_pembayaran, pengguna.nama_lengkap, payroll.metode_bayar_gaji, utang_supplier.tanggal_pelunasan, kasbon.cicilan_per_bulan, barang.harga_beli), penyeragaman foreign key pengguna_id, memisahkan domain status opname, melengkapi parameter system_configs (13 parameter), menambahkan composite/CHECK constraints, serta menyusun panduan seed data awal minimum. | Senior Database Architect & Data Modeling Specialist |
 | 1.0 | 2026-05-24 | Pembuatan dokumen spesifikasi kamus data pertama kali (Data Dictionary v1.0). Mengintegrasikan 21 entitas dasar dari SRS v1.1 dan menurunkan secara logis 7 entitas tambahan/derivasi berdasarkan alur operasional. Melengkapi dengan kamus domain nilai, matriks foreign key, diagram ERD relasional Mermaid, aturan bisnis data, rekomendasi optimasi indeks, dan RTM. | Senior Database Architect & Data Modeling Specialist |
 
 ---
@@ -77,33 +78,33 @@ Dalam dokumen ini, konvensi penamaan dan penulisan elemen basis data diatur seba
 | No | Nama Tabel | Deskripsi Singkat | Modul Terkait | Jumlah Kolom | Derivasi SRS |
 |---|---|---|---|:---:|---|
 | 1 | `cabang` | Data cabang toko fisik AbuCom multi-branch | M.9 — Skalabilitas | 6 | SRS-F-037 |
-| 2 | `pengguna` | Akun kredensial, role, dan session staf | M.7 — Keamanan | 9 | SRS-F-030 |
-| 3 | `pelanggan` | Data profil CRM pelanggan toko | M.8 — CRM | 6 | SRS-F-036 |
-| 4 | `supplier` | Data vendor penyuplai bahan & retail | M.2 — Persediaan | 6 | SRS-F-040 |
-| 5 | `barang` | Data master retail ATK dan bahan baku | M.2 — Persediaan | 11 | SRS-F-009 |
-| 6 | `bom_komposisi` | Komposisi bahan produk cetak kustom | M.2 — Persediaan | 6 | SRS-F-007 |
-| 7 | `transaksi` | Header pencatatan penjualan multi-divisi | M.1 — Transaksi | 12 | SRS-F-001 |
-| 8 | `detail_transaksi` | Baris rincian barang/jasa belanja nota | M.1 — Transaksi | 8 | SRS-F-001 |
-| 9 | `antrian_kerja` | Alur tracking produksi cetak kustom | M.5 — Antrian | 10 | SRS-F-022 |
-| 10 | `absensi` | Pencatatan kehadiran harian staf | M.4 — SDM | 6 | SRS-F-018 |
-| 11 | `kasbon` | Saldo utang internal kasbon karyawan | M.4 — SDM | 8 | SRS-F-021 |
-| 12 | `payroll` | Perhitungan slip gaji bulanan staf | M.4 — SDM | 10 | SRS-F-019 |
-| 13 | `pengeluaran` | Laporan beban biaya operasional toko | M.6 — Laporan | 9 | SRS-F-029 |
-| 14 | `audit_logs` | Catatan log kronologis modifikasi data | M.7 — Keamanan | 8 | SRS-F-031 |
-| 15 | `limbah_produksi` | Pencatatan bahan baku gagal cetak | M.2 — Persediaan | 9 | SRS-F-008 |
-| 16 | `saldo_ppob` | Pos deposit saldo virtual agen tagihan | M.3 — Layanan | 5 | SRS-F-015 |
-| 17 | `jasa_service` | Registrasi perbaikan laptop & printer | M.3 — Layanan | 11 | SRS-F-017 |
-| 18 | `poin_insentif` | Agregasi bonus poin staf per transaksi | M.4 — SDM | 9 | SRS-F-020 |
-| 19 | `shift_handover` | Log serah terima laci kas kasir | M.7 — Keamanan | 12 | SRS-F-032 |
-| 20 | `utang_supplier` | Kewajiban utang tempo belanja supplier | M.2 — Persediaan | 8 | SRS-F-040 |
-| 21 | `backup_logs` | Log pencadangan data manual terenkripsi | M.2 — Persediaan | 6 | SRS-F-039 |
-| 22 | `pinjaman_bank` | Rekapitulasi utang berbunga bank komersil | M.6 — Laporan | 13 | **Derivasi** |
-| 23 | `pinjaman_kerabat` | Rekapitulasi utang tanpa bunga kerabat | M.6 — Laporan | 9 | **Derivasi** |
-| 24 | `aset` | Depresiasi & tabungan pengadaan aset tetap | M.6 — Laporan | 12 | **Derivasi** |
-| 25 | `stock_opname` | Penyesuaian fisik stok sistem berkala | M.2 — Persediaan | 13 | **Derivasi** |
-| 26 | `riwayat_harga_supplier` | Pelacakan fluktuasi harga beli pengadaan | M.2 — Persediaan | 7 | **Derivasi** |
-| 27 | `saldo_ewallet` | Tarif & saldo 6 akun dompet digital | M.3 — Layanan | 8 | **Derivasi** |
-| 28 | `system_configs` | Parameter runtime regulasi bisnis | M.10 — Config | 7 | **Derivasi** |
+| 2 | `pengguna` | Akun kredensial, role, nama lengkap, dan session staf | M.7 — Keamanan | 10 | SRS-F-030 |
+| 3 | `pelanggan` | Data profil CRM pelanggan toko | M.8 — CRM | 7 | SRS-F-036 |
+| 4 | `supplier` | Data vendor penyuplai bahan & retail | M.2 — Persediaan | 7 | SRS-F-040 |
+| 5 | `barang` | Data master retail ATK, harga beli, dan bahan baku | M.2 — Persediaan | 13 | SRS-F-009 |
+| 6 | `bom_komposisi` | Komposisi bahan produk cetak kustom | M.2 — Persediaan | 7 | SRS-F-007 |
+| 7 | `transaksi` | Header pencatatan penjualan kasir (multi-metode) | M.1 — Transaksi | 14 | SRS-F-001 |
+| 8 | `detail_transaksi` | Baris rincian barang/jasa belanja nota | M.1 — Transaksi | 9 | SRS-F-001 |
+| 9 | `antrian_kerja` | Alur tracking produksi cetak kustom | M.5 — Antrian | 11 | SRS-F-022 |
+| 10 | `absensi` | Pencatatan kehadiran harian staf | M.4 — SDM | 7 | SRS-F-018 |
+| 11 | `kasbon` | Saldo utang internal kasbon karyawan (cicilan) | M.4 — SDM | 10 | SRS-F-021 |
+| 12 | `payroll` | Perhitungan slip gaji bulanan staf (Smart Payroll) | M.4 — SDM | 12 | SRS-F-019 |
+| 13 | `pengeluaran` | Laporan beban biaya operasional toko | M.6 — Laporan | 10 | SRS-F-029 |
+| 14 | `audit_logs` | Catatan log kronologis modifikasi data (FK pengguna) | M.7 — Keamanan | 10 | SRS-F-031 |
+| 15 | `limbah_produksi` | Pencatatan bahan baku gagal cetak | M.2 — Persediaan | 11 | SRS-F-008 |
+| 16 | `saldo_ppob` | Pos deposit saldo virtual agen tagihan | M.3 — Layanan | 7 | SRS-F-015 |
+| 17 | `jasa_service` | Registrasi perbaikan laptop & printer | M.3 — Layanan | 13 | SRS-F-017 |
+| 18 | `poin_insentif` | Agregasi bonus poin staf per transaksi | M.4 — SDM | 10 | SRS-F-020 |
+| 19 | `shift_handover` | Log serah terima laci kas kasir | M.7 — Keamanan | 14 | SRS-F-032 |
+| 20 | `utang_supplier` | Kewajiban utang tempo belanja supplier | M.2 — Persediaan | 11 | SRS-F-040 |
+| 21 | `backup_logs` | Log pencadangan data manual terenkripsi (FK pengguna)| M.2 — Persediaan | 8 | SRS-F-039 |
+| 22 | `pinjaman_bank` | Rekapitulasi utang berbunga bank komersil | M.6 — Laporan | 14 | **Derivasi** |
+| 23 | `pinjaman_kerabat` | Rekapitulasi utang tanpa bunga kerabat | M.6 — Laporan | 10 | **Derivasi** |
+| 24 | `aset` | Depresiasi & tabungan pengadaan aset tetap | M.6 — Laporan | 13 | **Derivasi** |
+| 25 | `stock_opname` | Penyesuaian fisik stok sistem berkala (FK pengguna)| M.2 — Persediaan | 14 | **Derivasi** |
+| 26 | `riwayat_harga_supplier` | Pelacakan fluktuasi harga beli pengadaan | M.2 — Persediaan | 8 | **Derivasi** |
+| 27 | `saldo_ewallet` | Tarif & saldo 6 akun dompet digital | M.3 — Layanan | 9 | **Derivasi** |
+| 28 | `system_configs` | Parameter runtime regulasi bisnis | M.10 — Config | 8 | **Derivasi** |
 
 ### 2.2. Diagram ER Konseptual (Mermaid)
 
@@ -149,8 +150,8 @@ erDiagram
     PENGGUNA ||--o{ POIN_INSENTIF : menerima_poin
     CABANG ||--o{ POIN_INSENTIF : mencatat_poin
     PENGGUNA ||--o{ SHIFT_HANDOVER : menyerahkan
-    PENGGUNA ||--o{ SHIFT-HANDOVER : menerima_shift
-    PENGGUNA ||--o{ SHIFT-HANDOVER : menyetujui_shift
+    PENGGUNA ||--o{ SHIFT_HANDOVER : menerima_shift
+    PENGGUNA ||--o{ SHIFT_HANDOVER : menyetujui_shift
     CABANG ||--o{ SHIFT_HANDOVER : mencatat_shift
     SUPPLIER ||--o{ UTANG_SUPPLIER : memberikan_tempo
     CABANG ||--o{ UTANG_SUPPLIER : memiliki_utang
@@ -168,7 +169,7 @@ erDiagram
 
 ### 2.3. Statistik Ringkasan Model Data
 - **Total Tabel**: 28
-- **Total Kolom/Atribut**: 234
+- **Total Kolom/Atribut**: 282
 - **Tabel Basis Modul Utama (M.1 - M.2)**: 9 tabel
 - **Tabel Layanan & Keuangan (M.3 - M.6)**: 10 tabel
 - **Tabel Pendukung & Keamanan (M.7 - M.10)**: 9 tabel
@@ -226,14 +227,18 @@ erDiagram
 | No | Nama Kolom | Tipe Data MySQL | Constraint | Null? | Default | Deskripsi Bisnis | Domain Nilai |
 |---|---|---|---|:---:|---|---|---|
 | 1 | `id` | INT | PK, AI, NN | NOT NULL | - | Identifikasi unik akun pengguna staf. | Auto-generated integer |
-| 2 | `username` | VARCHAR(50) | UQ, NN | NOT NULL | - | Nama unik staf untuk proses otentikasi login. | Free text (no spaces, alphanumeric) |
-| 3 | `password_hash` | VARCHAR(255) | NN | NOT NULL | - | String hash kata sandi terenkripsi bcrypt Cost 12. | bcrypt hash string |
-| 4 | `role` | VARCHAR(30) | NN | NOT NULL | - | Peran administratif hak akses menu CLI (RBAC). | Domain Peran Pengguna (Role) |
-| 5 | `failed_login_attempts` | INT | NN | NOT NULL | 0 | Jumlah kumulatif kegagalan login berturut-turut. | Integer [0 - 5] |
-| 6 | `locked_until` | TIMESTAMP | - | NULL | NULL | Batas waktu suspensi login akibat brute-force. | Timestamp (NULL jika tidak terblokir) |
-| 7 | `cabang_id` | INT | FK → `cabang.id`, NN | NOT NULL | 1 | Keterkaitan penempatan cabang kerja staf. | Referensi `cabang.id` |
-| 8 | `created_at` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP | Tanggal & waktu baris data dibuat. | Auto-generated timestamp |
-| 9 | `updated_at` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | Tanggal & waktu terakhir baris data diperbarui. | Auto-generated timestamp |
+| 2 | `nama_lengkap` | VARCHAR(100) | NN | NOT NULL | - | Nama lengkap asli dari staf/karyawan. | Free text |
+| 3 | `username` | VARCHAR(50) | UQ, NN | NOT NULL | - | Nama unik staf untuk proses otentikasi login. | Free text (no spaces, alphanumeric) |
+| 4 | `password_hash` | VARCHAR(255) | NN | NOT NULL | - | String hash kata sandi terenkripsi bcrypt Cost 12. | bcrypt hash string |
+| 5 | `role` | VARCHAR(30) | NN | NOT NULL | - | Peran administratif hak akses menu CLI (RBAC). | Domain Peran Pengguna (Role) |
+| 6 | `failed_login_attempts` | INT | NN, CK | NOT NULL | 0 | Jumlah kumulatif kegagalan login berturut-turut. | Integer [0 - 5] |
+| 7 | `locked_until` | TIMESTAMP | - | NULL | NULL | Batas waktu suspensi login akibat brute-force. | Timestamp (NULL jika tidak terblokir) |
+| 8 | `cabang_id` | INT | FK → `cabang.id`, NN | NOT NULL | 1 | Keterkaitan penempatan cabang kerja staf. | Referensi `cabang.id` |
+| 9 | `created_at` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP | Tanggal & waktu baris data dibuat. | Auto-generated timestamp |
+| 10 | `updated_at` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | Tanggal & waktu terakhir baris data diperbarui. | Auto-generated timestamp |
+
+> **Table-Level Constraints & Checks**:
+> - `failed_login_attempts` CHECK (`failed_login_attempts` BETWEEN 0 AND 5)
 
 ---
 
@@ -316,13 +321,21 @@ erDiagram
 | 3 | `tipe_barang` | VARCHAR(20) | NN | NOT NULL | - | Klasifikasi peran barang dalam alur operasional. | Domain Tipe Barang |
 | 4 | `satuan_uom` | VARCHAR(20) | NN | NOT NULL | - | Satuan dasar stok (Unit of Measure). | Free text (e.g. 'Pcs', 'Lembar') |
 | 5 | `stok_saat_ini` | DECIMAL(15,4) | NN | NOT NULL | 0.0000 | Jumlah kuantitas fisik stok yang tersedia. | Angka pecahan (dapat negatif) |
-| 6 | `harga_retail` | DECIMAL(15,4) | NN | NOT NULL | 0.0000 | Harga jual per unit untuk pelanggan umum. | Nominal Rupiah >= 0 |
-| 7 | `harga_grosir` | DECIMAL(15,4) | NN | NOT NULL | 0.0000 | Harga jual per unit untuk pembelian grosir. | Nominal Rupiah >= 0 |
-| 8 | `min_grosir` | DECIMAL(15,4) | NN | NOT NULL | 0.0000 | Jumlah minimal pembelian pemicu harga grosir. | Kuantitas desimal > 0 |
-| 9 | `harga_mitra` | DECIMAL(15,4) | NN | NOT NULL | 0.0000 | Harga jual per unit khusus akun terdaftar Mitra. | Nominal Rupiah >= 0 |
-| 10 | `cabang_id` | INT | FK → `cabang.id`, NN | NOT NULL | 1 | Unit cabang pemilik kepemilikan stok barang. | Referensi `cabang.id` |
-| 11 | `created_at` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP | Tanggal & waktu baris data dibuat. | Auto-generated timestamp |
-| 12 | `updated_at` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | Tanggal & waktu terakhir baris data diperbarui. | Auto-generated timestamp |
+| 6 | `harga_beli` | DECIMAL(15,4) | NN, CK | NOT NULL | 0.0000 | Harga pengadaan/beli dari vendor supplier. | Nominal Rupiah >= 0 |
+| 7 | `harga_retail` | DECIMAL(15,4) | NN, CK | NOT NULL | 0.0000 | Harga jual per unit untuk pelanggan umum. | Nominal Rupiah >= 0 |
+| 8 | `harga_grosir` | DECIMAL(15,4) | NN, CK | NOT NULL | 0.0000 | Harga jual per unit untuk pembelian grosir. | Nominal Rupiah >= 0 |
+| 9 | `min_grosir` | DECIMAL(15,4) | NN, CK | NOT NULL | 0.0000 | Jumlah minimal pembelian pemicu harga grosir. | Kuantitas desimal > 0 |
+| 10 | `harga_mitra` | DECIMAL(15,4) | NN, CK | NOT NULL | 0.0000 | Harga jual per unit khusus akun terdaftar Mitra. | Nominal Rupiah >= 0 |
+| 11 | `cabang_id` | INT | FK → `cabang.id`, NN | NOT NULL | 1 | Unit cabang pemilik kepemilikan stok barang. | Referensi `cabang.id` |
+| 12 | `created_at` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP | Tanggal & waktu baris data dibuat. | Auto-generated timestamp |
+| 13 | `updated_at` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | Tanggal & waktu terakhir baris data diperbarui. | Auto-generated timestamp |
+
+> **Table-Level Constraints & Checks**:
+> - `harga_beli` CHECK (`harga_beli` >= 0)
+> - `harga_retail` CHECK (`harga_retail` >= 0)
+> - `harga_grosir` CHECK (`harga_grosir` >= 0)
+> - `harga_mitra` CHECK (`harga_mitra` >= 0)
+> - `min_grosir` CHECK (`min_grosir` > 0)
 
 > **Catatan Implementasi**:
 > - Kolom `stok_saat_ini` didefinisikan desimal untuk mendukung pemotongan stok bahan berukuran luas/panjang (misal: karet stempel flash, m2, banner, m). Nilai minus diperbolehkan jika diizinkan sistem untuk kelancaran cetak darurat.
@@ -330,6 +343,9 @@ erDiagram
 ---
 
 ### 3.6. Tabel: `bom_komposisi`
+
+> **Table-Level Constraints & Checks**:
+> - UNIQUE `bom_induk_bahan` (`barang_induk_id`, `bahan_baku_id`)
 
 | Atribut Tabel | Nilai |
 |---|---|
@@ -378,14 +394,19 @@ erDiagram
 | 3 | `pelanggan_id` | INT | FK → `pelanggan.id` | NULL | NULL | Keterkaitan pelanggan CRM terdaftar. | Referensi `pelanggan.id` (NULL = non-CRM) |
 | 4 | `kasir_id` | INT | FK → `pengguna.id`, NN | NOT NULL | - | Karyawan kasir operasional pencatat penjualan. | Referensi `pengguna.id` |
 | 5 | `tanggal_transaksi` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP | Waktu terjadinya pembayaran transaksi. | Format timestamp |
-| 6 | `total_bayar` | DECIMAL(15,4) | NN | NOT NULL | 0.0000 | Total tagihan akhir belanja nota yang dibayar. | Nominal Rupiah >= 0 |
-| 7 | `dp_bayar` | DECIMAL(15,4) | NN | NOT NULL | 0.0000 | Nilai uang muka Down Payment yang diterima kasir. | Nominal Rupiah >= 0 |
+| 6 | `total_bayar` | DECIMAL(15,4) | NN, CK | NOT NULL | 0.0000 | Total tagihan akhir belanja nota yang dibayar. | Nominal Rupiah >= 0 |
+| 7 | `dp_bayar` | DECIMAL(15,4) | NN, CK | NOT NULL | 0.0000 | Nilai uang muka Down Payment yang diterima kasir. | Nominal Rupiah >= 0 |
 | 8 | `status_pembayaran` | VARCHAR(20) | NN | NOT NULL | 'BELUM LUNAS' | Status keuangan tagihan belanja nota. | Domain Status Pembayaran |
 | 9 | `status_pengambilan` | VARCHAR(20) | NN | NOT NULL | 'BELUM DIAMBIL' | Status serah terima barang fisik pesanan. | Domain Status Pengambilan |
-| 10 | `tipe_pelanggan` | VARCHAR(20) | NN | NOT NULL | 'Retail' | Tipe klasifikasi tarif keanggotaan pelanggan. | Domain Tipe Pelanggan |
-| 11 | `cabang_id` | INT | FK → `cabang.id`, NN | NOT NULL | 1 | Identifikasi cabang tempat kasir mencatat nota. | Referensi `cabang.id` |
-| 12 | `created_at` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP | Tanggal & waktu baris data dibuat. | Auto-generated timestamp |
-| 13 | `updated_at` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | Tanggal & waktu terakhir baris data diperbarui. | Auto-generated timestamp |
+| 10 | `metode_pembayaran` | VARCHAR(20) | NN | NOT NULL | 'Kas' | Saluran pembayaran (Tunai kasir vs bank/qris). | Domain Metode Pembayaran |
+| 11 | `tipe_pelanggan` | VARCHAR(20) | NN | NOT NULL | 'Retail' | Tipe klasifikasi tarif keanggotaan pelanggan. | Domain Tipe Pelanggan |
+| 12 | `cabang_id` | INT | FK → `cabang.id`, NN | NOT NULL | 1 | Identifikasi cabang tempat kasir mencatat nota. | Referensi `cabang.id` |
+| 13 | `created_at` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP | Tanggal & waktu baris data dibuat. | Auto-generated timestamp |
+| 14 | `updated_at` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | Tanggal & waktu terakhir baris data diperbarui. | Auto-generated timestamp |
+
+> **Table-Level Constraints & Checks**:
+> - `total_bayar` CHECK (`total_bayar` >= 0)
+> - `dp_bayar` CHECK (`dp_bayar` >= 0 AND `dp_bayar` <= `total_bayar`)
 
 ---
 
@@ -451,6 +472,9 @@ erDiagram
 
 ### 3.10. Tabel: `absensi`
 
+> **Table-Level Constraints & Checks**:
+> - UNIQUE `absensi_pengguna_tanggal` (`pengguna_id`, `tanggal`)
+
 | Atribut Tabel | Nilai |
 |---|---|
 | **Nama Tabel** | `absensi` |
@@ -495,13 +519,19 @@ erDiagram
 |---|---|---|---|:---:|---|---|---|
 | 1 | `id` | INT | PK, AI, NN | NOT NULL | - | Identifikasi unik pengajuan kasbon staf. | Auto-generated integer |
 | 2 | `pengguna_id` | INT | FK → `pengguna.id`, NN | NOT NULL | - | Referensi staf penerima utang kasbon. | Referensi `pengguna.id` |
-| 3 | `nominal_pinjaman` | DECIMAL(15,4) | NN | NOT NULL | 0.0000 | Nominal penarikan awal pinjaman kasbon staf. | Nominal Rupiah > 0 |
-| 4 | `sisa_utang` | DECIMAL(15,4) | NN | NOT NULL | 0.0000 | Saldo utang kasbon aktif yang belum terbayar. | Nominal Rupiah >= 0 |
-| 5 | `tanggal_pinjam` | DATE | NN | NOT NULL | (CURRENT_DATE) | Tanggal dilakukannya pencairan dana kasbon. | Format: YYYY-MM-DD |
-| 6 | `status_kasbon` | VARCHAR(20) | NN | NOT NULL | 'AKTIF' | Keabsahan status saldo utang kasbon aktif. | Domain Status Kasbon |
-| 7 | `cabang_id` | INT | FK → `cabang.id`, NN | NOT NULL | 1 | Cabang penyedia alokasi kas laci untuk kasbon. | Referensi `cabang.id` |
-| 8 | `created_at` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP | Tanggal & waktu baris data dibuat. | Auto-generated timestamp |
-| 9 | `updated_at` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | Tanggal & waktu terakhir baris data diperbarui. | Auto-generated timestamp |
+| 3 | `nominal_pinjaman` | DECIMAL(15,4) | NN, CK | NOT NULL | 0.0000 | Nominal penarikan awal pinjaman kasbon staf. | Nominal Rupiah > 0 |
+| 4 | `sisa_utang` | DECIMAL(15,4) | NN, CK | NOT NULL | 0.0000 | Saldo utang kasbon aktif yang belum terbayar. | Nominal Rupiah >= 0 |
+| 5 | `cicilan_per_bulan` | DECIMAL(15,4) | NN, CK | NOT NULL | 0.0000 | Nominal auto-debit cicilan gaji staf per bulan. | Nominal Rupiah >= 0 |
+| 6 | `tanggal_pinjam` | DATE | NN | NOT NULL | (CURRENT_DATE) | Tanggal dilakukannya pencairan dana kasbon. | Format: YYYY-MM-DD |
+| 7 | `status_kasbon` | VARCHAR(20) | NN | NOT NULL | 'AKTIF' | Keabsahan status saldo utang kasbon aktif. | Domain Status Kasbon |
+| 8 | `cabang_id` | INT | FK → `cabang.id`, NN | NOT NULL | 1 | Cabang penyedia alokasi kas laci untuk kasbon. | Referensi `cabang.id` |
+| 9 | `created_at` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP | Tanggal & waktu baris data dibuat. | Auto-generated timestamp |
+| 10 | `updated_at` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | Tanggal & waktu terakhir baris data diperbarui. | Auto-generated timestamp |
+
+> **Table-Level Constraints & Checks**:
+> - `nominal_pinjaman` CHECK (`nominal_pinjaman` > 0)
+> - `sisa_utang` CHECK (`sisa_utang` >= 0 AND `sisa_utang` <= `nominal_pinjaman`)
+> - `cicilan_per_bulan` CHECK (`cicilan_per_bulan` >= 0)
 
 ---
 
@@ -525,14 +555,21 @@ erDiagram
 | 1 | `id` | INT | PK, AI, NN | NOT NULL | - | Identifikasi unik data slip gaji. | Auto-generated integer |
 | 2 | `pengguna_id` | INT | FK → `pengguna.id`, NN | NOT NULL | - | Referensi karyawan penerima pembayaran gaji. | Referensi `pengguna.id` |
 | 3 | `bulan_tahun` | VARCHAR(7) | NN | NOT NULL | - | Periode komputasi gaji (Format: 'MM-YYYY'). | Format string |
-| 4 | `gaji_pokok` | DECIMAL(15,4) | NN | NOT NULL | 0.0000 | Upah pokok/proporsional terhitung kinerja. | Nominal Rupiah >= 0 |
-| 5 | `bonus_insentif` | DECIMAL(15,4) | NN | NOT NULL | 0.0000 | Tambahan nominal uang komisi poin terkumpul. | Nominal Rupiah >= 0 |
-| 6 | `potongan_kasbon` | DECIMAL(15,4) | NN | NOT NULL | 0.0000 | Nilai potongan pelunasan sisa utang kasbon. | Nominal Rupiah >= 0 |
-| 7 | `gaji_bersih` | DECIMAL(15,4) | NN | NOT NULL | 0.0000 | Nominal bersih yang diterima: Pokok + Bonus - Potongan. | Nominal Rupiah >= 0 (Min UMR protection) |
-| 8 | `tanggal_proses` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP | Waktu pencetakan dan pemrosesan slip payroll. | Format timestamp |
-| 9 | `cabang_id` | INT | FK → `cabang.id`, NN | NOT NULL | 1 | Cabang penanggung jawab pengeluaran gaji. | Referensi `cabang.id` |
-| 10 | `created_at` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP | Tanggal & waktu baris data dibuat. | Auto-generated timestamp |
-| 11 | `updated_at` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | Tanggal & waktu terakhir baris data diperbarui. | Auto-generated timestamp |
+| 4 | `gaji_pokok` | DECIMAL(15,4) | NN, CK | NOT NULL | 0.0000 | Upah pokok/proporsional terhitung kinerja. | Nominal Rupiah >= 0 |
+| 5 | `bonus_insentif` | DECIMAL(15,4) | NN, CK | NOT NULL | 0.0000 | Tambahan nominal uang komisi poin terkumpul. | Nominal Rupiah >= 0 |
+| 6 | `potongan_kasbon` | DECIMAL(15,4) | NN, CK | NOT NULL | 0.0000 | Nilai potongan pelunasan sisa utang kasbon. | Nominal Rupiah >= 0 |
+| 7 | `gaji_bersih` | DECIMAL(15,4) | NN, CK | NOT NULL | 0.0000 | Nominal bersih yang diterima: Pokok + Bonus - Potongan. | Nominal Rupiah >= 0 (Min UMR protection) |
+| 8 | `metode_bayar_gaji` | VARCHAR(20) | NN | NOT NULL | 'Tunai' | Saluran pembayaran (Tunai laci vs transfer bank). | 'Tunai', 'Transfer' |
+| 9 | `tanggal_proses` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP | Waktu pencetakan dan pemrosesan slip payroll. | Format timestamp |
+| 10 | `cabang_id` | INT | FK → `cabang.id`, NN | NOT NULL | 1 | Cabang penanggung jawab pengeluaran gaji. | Referensi `cabang.id` |
+| 11 | `created_at` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP | Tanggal & waktu baris data dibuat. | Auto-generated timestamp |
+| 12 | `updated_at` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | Tanggal & waktu terakhir baris data diperbarui. | Auto-generated timestamp |
+
+> **Table-Level Constraints & Checks**:
+> - `gaji_pokok` CHECK (`gaji_pokok` >= 0)
+> - `bonus_insentif` CHECK (`bonus_insentif` >= 0)
+> - `potongan_kasbon` CHECK (`potongan_kasbon` >= 0)
+> - `gaji_bersih` CHECK (`gaji_bersih` >= 0)
 
 ---
 
@@ -584,7 +621,7 @@ erDiagram
 | No | Nama Kolom | Tipe Data MySQL | Constraint | Null? | Default | Deskripsi Bisnis | Domain Nilai |
 |---|---|---|---|:---:|---|---|---|
 | 1 | `id` | INT | PK, AI, NN | NOT NULL | - | Identifikasi unik log peristiwa sistem. | Auto-generated integer |
-| 2 | `user_id` | INT | FK → `pengguna.id`, NN | NOT NULL | - | Akun pengguna kasir/staf pelaksana aksi. | Referensi `pengguna.id` |
+| 2 | `pengguna_id` | INT | FK → `pengguna.id`, NN | NOT NULL | - | Akun pengguna kasir/staf pelaksana aksi. | Referensi `pengguna.id` |
 | 3 | `action_timestamp` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP | Waktu presisi detik terjadinya aksi manipulasi. | Format timestamp |
 | 4 | `action_type` | VARCHAR(20) | NN | NOT NULL | - | Klasifikasi tipe modifikasi manipulasi basis data. | Domain Action Type Audit |
 | 5 | `target_table` | VARCHAR(100) | NN | NOT NULL | - | Nama tabel database yang diubah nilainya. | Free text (nama tabel valid) |
@@ -770,14 +807,19 @@ erDiagram
 |---|---|---|---|:---:|---|---|---|
 | 1 | `id` | INT | PK, AI, NN | NOT NULL | - | Identifikasi unik utang usaha supplier. | Auto-generated integer |
 | 2 | `supplier_id` | INT | FK → `supplier.id`, NN | NOT NULL | - | Referensi vendor supplier pemberi tempo. | Referensi `supplier.id` |
-| 3 | `nominal_utang` | DECIMAL(15,4) | NN | NOT NULL | 0.0000 | Nominal tagihan pembelian bahan/ATK di awal. | Nominal Rupiah > 0 |
-| 4 | `sisa_utang` | DECIMAL(15,4) | NN | NOT NULL | 0.0000 | Sisa tagihan terutang yang wajib dibayarkan. | Nominal Rupiah >= 0 |
+| 3 | `nominal_utang` | DECIMAL(15,4) | NN, CK | NOT NULL | 0.0000 | Nominal tagihan pembelian bahan/ATK di awal. | Nominal Rupiah > 0 |
+| 4 | `sisa_utang` | DECIMAL(15,4) | NN, CK | NOT NULL | 0.0000 | Sisa tagihan terutang yang wajib dibayarkan. | Nominal Rupiah >= 0 |
 | 5 | `tanggal_utang` | DATE | NN | NOT NULL | (CURRENT_DATE) | Tanggal dilakukannya transaksi nota supplier. | Format: YYYY-MM-DD |
 | 6 | `tanggal_jatuh_tempo` | DATE | NN | NOT NULL | - | Batas tenggat pembayaran pelunasan utang. | Format: YYYY-MM-DD |
-| 7 | `status_utang` | VARCHAR(20) | NN | NOT NULL | 'BELUM LUNAS' | Status pelunasan utang usaha tempo supplier. | Domain Status Utang |
-| 8 | `cabang_id` | INT | FK → `cabang.id`, NN | NOT NULL | 1 | Cabang pemilik pertanggungjawaban utang. | Referensi `cabang.id` |
-| 9 | `created_at` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP | Tanggal & waktu baris data dibuat. | Auto-generated timestamp |
-| 10 | `updated_at` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | Tanggal & waktu terakhir baris data diperbarui. | Auto-generated timestamp |
+| 7 | `tanggal_pelunasan` | DATE | - | NULL | NULL | Waktu pembayaran pelunasan tagihan supplier (NULL jika belum). | Format: YYYY-MM-DD |
+| 8 | `status_utang` | VARCHAR(20) | NN | NOT NULL | 'BELUM LUNAS' | Status pelunasan utang usaha tempo supplier. | Domain Status Utang |
+| 9 | `cabang_id` | INT | FK → `cabang.id`, NN | NOT NULL | 1 | Cabang pemilik pertanggungjawaban utang. | Referensi `cabang.id` |
+| 10 | `created_at` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP | Tanggal & waktu baris data dibuat. | Auto-generated timestamp |
+| 11 | `updated_at` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | Tanggal & waktu terakhir baris data diperbarui. | Auto-generated timestamp |
+
+> **Table-Level Constraints & Checks**:
+> - `nominal_utang` CHECK (`nominal_utang` > 0)
+> - `sisa_utang` CHECK (`sisa_utang` >= 0 AND `sisa_utang` <= `nominal_utang`)
 
 ---
 
@@ -802,7 +844,7 @@ erDiagram
 | 2 | `tanggal_backup` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP | Waktu dilaksanakannya proses ekspor ZIP. | Format timestamp |
 | 3 | `nama_file` | VARCHAR(100) | NN | NOT NULL | - | Nama fisik file output format ZIP AES-256. | Free text (e.g. 'backup_20260523.zip') |
 | 4 | `status_backup` | VARCHAR(20) | NN | NOT NULL | - | Hasil eksekusi skrip dump basis data. | Domain Status Backup |
-| 5 | `user_id` | INT | FK → `pengguna.id`, NN | NOT NULL | - | Pengguna pemilik pemicu ekspor basis data. | Referensi `pengguna.id` |
+| 5 | `pengguna_id` | INT | FK → `pengguna.id`, NN | NOT NULL | - | Pengguna pemilik pemicu ekspor basis data. | Referensi `pengguna.id` |
 | 6 | `cabang_id` | INT | FK → `cabang.id`, NN | NOT NULL | 1 | Cabang pelaksana backup dump data server. | Referensi `cabang.id` |
 | 7 | `created_at` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP | Tanggal & waktu baris data dibuat. | Auto-generated timestamp |
 | 8 | `updated_at` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | Tanggal & waktu terakhir baris data diperbarui. | Auto-generated timestamp |
@@ -997,7 +1039,7 @@ erDiagram
 | No | Nama Kolom | Tipe Data MySQL | Constraint | Null? | Default | Deskripsi Bisnis | Domain Nilai |
 |---|---|---|---|:---:|---|---|---|
 | 1 | `id` | INT | PK, AI, NN | NOT NULL | - | Identifikasi unik baris e-wallet. | Auto-generated integer |
-| 2 | `nama_ewallet` | VARCHAR(50) | UQ, NN | NOT NULL | - | Nama 6 akun dompet digital / agen resmi bank. | 'Mandiri Agen', 'Dana', 'Gopay', ... |
+| 2 | `nama_ewallet` | VARCHAR(50) | UQ, NN | NOT NULL | - | Nama 6 akun dompet digital / agen resmi bank. | 'Mandiri Agen', 'Dana', 'Gopay', 'LinkAja', 'ShopeePay', 'OVO' |
 | 3 | `saldo_terakhir` | DECIMAL(15,4) | NN | NOT NULL | 0.0000 | Jumlah deposit saldo virtual tersisa di e-wallet. | Nominal Rupiah >= 0 |
 | 4 | `biaya_admin_flat` | DECIMAL(15,4) | NN | NOT NULL | 0.0000 | Tarif flat biaya admin e-wallet per transfer. | Nominal Rupiah >= 0 |
 | 5 | `biaya_admin_persen` | DECIMAL(15,4) | NN | NOT NULL | 0.0000 | Persentase biaya admin tambahan dari nominal. | Desimal >= 0 (e.g. 0.0050 = 0.5%) |
@@ -1030,7 +1072,7 @@ erDiagram
 | 1 | `id` | INT | PK, AI, NN | NOT NULL | - | Identifikasi unik baris parameter config. | Auto-generated integer |
 | 2 | `parameter_key` | VARCHAR(100) | UQ, NN | NOT NULL | - | Kunci string parameter regulasi (tanpa spasi). | Free text (e.g. 'umr_daerah') |
 | 3 | `parameter_value` | VARCHAR(255) | NN | NOT NULL | - | Nilai parameter yang dimuat ke program CLI. | Free text |
-| 4 | `tipe_data` | VARCHAR(30) | NN | NOT NULL | 'VARCHAR' | Penentu pemandu casting tipe di program Python. | 'DECIMAL', 'VARCHAR', 'INT', ... |
+| 4 | `tipe_data` | VARCHAR(30) | NN | NOT NULL | 'VARCHAR' | Penentu pemandu casting tipe di program Python. | 'DECIMAL', 'VARCHAR', 'INT', 'BOOLEAN' |
 | 5 | `deskripsi` | TEXT | NN | NOT NULL | - | Penjelasan aturan bisnis terkait parameter. | Free text |
 | 6 | `cabang_id` | INT | FK → `cabang.id`, NN | NOT NULL | 1 | Cabang berlakunya pengaturan parameter bisnis. | Referensi `cabang.id` |
 | 7 | `created_at` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP | Tanggal & waktu baris data dibuat. | Auto-generated timestamp |
@@ -1189,6 +1231,13 @@ Berikut adalah daftar nilai status terstandarisasi yang diperbolehkan mengisi ko
   - `'Token_Tagihan'`: Server PPOB pembayaran token listrik PLN & tagihan pascabayar.
 - **Sumber Referensi**: SRS-F-015 (BRD v1.1 Bab 7.3)
 
+### 4.19. Domain Status Opname
+- **Nilai Kolom**: `status_opname` pada tabel `stock_opname`.
+- **Nilai yang Valid**:
+  - `'DRAFT'`: Rekonsiliasi perhitungan stok fisik masih dirancang (stok sistem belum disesuaikan).
+  - `'APPROVED'`: Perhitungan disetujui supervisor (stok sistem otomatis disesuaikan secara transaksional).
+- **Sumber Referensi**: SRS-F-011 (BRD v1.1 Bab 7.2)
+
 ---
 
 ## 5. Relasi Antar-Entitas (Relationship Matrix)
@@ -1224,7 +1273,7 @@ Matriks referensi integritas database relasional MySQL AbuCom diatur sebagai ber
 | 23 | `payroll` | `cabang_id` | `cabang` | `id` | Many-to-One | RESTRICT | CASCADE |
 | 24 | `pengeluaran` | `kasir_id` | `pengguna` | `id` | Many-to-One | RESTRICT | CASCADE |
 | 25 | `pengeluaran` | `cabang_id` | `cabang` | `id` | Many-to-One | RESTRICT | CASCADE |
-| 26 | `audit_logs` | `user_id` | `pengguna` | `id` | Many-to-One | RESTRICT | CASCADE |
+| 26 | `audit_logs` | `pengguna_id` | `pengguna` | `id` | Many-to-One | RESTRICT | CASCADE |
 | 27 | `audit_logs` | `cabang_id` | `cabang` | `id` | Many-to-One | RESTRICT | CASCADE |
 | 28 | `limbah_produksi` | `transaksi_id` | `transaksi` | `id` | Many-to-One | RESTRICT | CASCADE |
 | 29 | `limbah_produksi` | `bahan_baku_id` | `barang` | `id` | Many-to-One | RESTRICT | CASCADE |
@@ -1243,13 +1292,13 @@ Matriks referensi integritas database relasional MySQL AbuCom diatur sebagai ber
 | 42 | `shift_handover` | `cabang_id` | `cabang` | `id` | Many-to-One | RESTRICT | CASCADE |
 | 43 | `utang_supplier` | `supplier_id` | `supplier` | `id` | Many-to-One | RESTRICT | CASCADE |
 | 44 | `utang_supplier` | `cabang_id` | `cabang` | `id` | Many-to-One | RESTRICT | CASCADE |
-| 45 | `backup_logs` | `user_id` | `pengguna` | `id` | Many-to-One | RESTRICT | CASCADE |
+| 45 | `backup_logs` | `pengguna_id` | `pengguna` | `id` | Many-to-One | RESTRICT | CASCADE |
 | 46 | `backup_logs` | `cabang_id` | `cabang` | `id` | Many-to-One | RESTRICT | CASCADE |
 | 47 | `pinjaman_bank` | `cabang_id` | `cabang` | `id` | Many-to-One | RESTRICT | CASCADE |
 | 48 | `pinjaman_kerabat` | `cabang_id` | `cabang` | `id` | Many-to-One | RESTRICT | CASCADE |
 | 49 | `aset` | `cabang_id` | `cabang` | `id` | Many-to-One | RESTRICT | CASCADE |
 | 50 | `stock_opname` | `barang_id` | `barang` | `id` | Many-to-One | RESTRICT | CASCADE |
-| 51 | `stock_opname` | `user_id` | `pengguna` | `id` | Many-to-One | RESTRICT | CASCADE |
+| 51 | `stock_opname` | `pengguna_id` | `pengguna` | `id` | Many-to-One | RESTRICT | CASCADE |
 | 52 | `stock_opname` | `supervisor_id` | `pengguna` | `id` | Many-to-One | RESTRICT | CASCADE |
 | 53 | `stock_opname` | `cabang_id` | `cabang` | `id` | Many-to-One | RESTRICT | CASCADE |
 | 54 | `riwayat_harga_supplier` | `barang_id` | `barang` | `id` | Many-to-One | RESTRICT | CASCADE |
@@ -1309,6 +1358,10 @@ Parameter default regulasi bisnis disimpan secara terpusat pada tabel `system_co
 - `threshold_saldo_ppob` = `150000.0000` (Rp 150.000)
 - `min_topup_ppob` = `500000.0000` (Rp 500.000)
 - `toleransi_selisih_kas` = `10000.0000` (Rp 10.000)
+- `poin_tier_1_rupiah` = `500.0000` (Rp 500)
+- `poin_tier_2_rupiah` = `1500.0000` (Rp 1.500)
+- `poin_tier_3_rupiah` = `2500.0000` (Rp 2.500)
+- `poin_tier_4_rupiah` = `5000.0000` (Rp 5.000)
 - `threshold_pengeluaran` = `500000.0000` (Rp 500.000)
 - `umr_daerah` = `3200000.0000` (Rp 3.200.000)
 - `dana_cadangan_darurat` = `4500000.0000` (Rp 4.500.000)
@@ -1418,18 +1471,24 @@ Berikut adalah pemetaan di mana setiap tabel database berperan dalam 10 modul si
 - **ACID**: Akronim untuk *Atomicity, Consistency, Isolation, Durability*. Standar jaminan pemrosesan transaksi basis data relasional agar aman dari crash.
 - **Auto Increment**: Atribut kolom bertipe integer di mana MySQL otomatis mengisi nilai berurutan (+1) setiap kali ada baris baru masuk.
 - **BOM (Bill of Materials)**: Daftar komposisi bahan baku (volume desimal) yang dibutuhkan untuk memproduksi satu unit barang kustom.
+- **AES-256**: Algoritma enkripsi simetris standar militer dengan ukuran kunci 256-bit untuk mengamankan data cadangan ZIP.
 - **Bcrypt**: Algoritma hashing kata sandi satu arah yang dilengkapi dynamic salt tahan terhadap brute-force GPU.
 - **Cascade**: Aturan integritas database di mana jika record induk dihapus/diubah, record anak yang merujuknya otomatis ikut terhapus/terubah.
 - **Clustered Index**: Penyusunan baris data fisik di dalam disk database berdasarkan kunci utama (Primary Key) untuk pencarian tercepat.
 - **Composite Index**: Indeks database yang dibuat dari gabungan dua atau lebih kolom sekaligus guna optimasi filter multi-parameter.
 - **Decimal(15,4)**: Tipe data numerik presisi tetap di mana 11 digit dialokasikan untuk bilangan bulat dan 4 digit di belakang koma untuk akurasi pecahan persen dan bahan.
 - **Derivasi**: Proses menurunkan skema tabel database secara logis dari narasi atau konteks fungsional bisnis SRS/BRD.
+- **DP (Down Payment)**: Uang muka yang dibayarkan pelanggan di awal pemesanan produk kustom sebagai jaminan finansial.
 - **Foreign Key (FK)**: Kunci asing di dalam tabel anak yang bertindak sebagai referensi penghubung ke Primary Key tabel induk.
 - **JSON**: *JavaScript Object Notation*. Format string terstruktur yang digunakan untuk menyimpan data log audit yang fleksibel di MySQL.
+- **HPP**: Harga Pokok Penjualan. Nilai pengeluaran modal riil (biaya bahan baku dan komisi) untuk memproduksi atau mendatangkan produk.
 - **Primary Key (PK)**: Kunci utama unik non-null yang bertindak sebagai pengenal tunggal mutlak baris data di tabel.
+- **PPOB**: *Payment Point Online Bank*. Layanan digital keagenan pembayaran tagihan (PLN, PDAM) dan pulsa.
 - **RBAC**: *Role-Based Access Control*. Pembatasan hak akses navigasi menu aplikasi CLI berdasarkan peran akun pengguna staf yang login.
 - **Restrict**: Aturan integritas database di mana record induk dilarang dihapus jika masih ada record anak yang merujuk kuncinya.
 - **Set Null**: Aturan integritas database di mana jika record induk dihapus, kolom foreign key record anak diubah nilainya menjadi NULL.
+- **Smart Payroll**: Logika penggajian otomatis cerdas yang mengevaluasi performa laba bersih usaha terhadap target regulasi secara dinamis.
+- **UMR**: Upah Minimum Regional. Batasan perlindungan batas bawah nilai nominal gaji staf agar tidak melanggar hak ketenagakerjaan.
 - **UoM (Unit of Measure)**: Satuan standar yang digunakan untuk mengukur kuantitas stok barang (Pcs, Lembar, Rim, Ml, m2).
 
 ---
@@ -1445,3 +1504,46 @@ Berikut adalah pemetaan di mana setiap tabel database berperan dalam 10 modul si
 7. **Stakeholder Register v1.1** (`docs/sdlc/01_planning/03_stakeholder_register.md`): Acuan pemetaan peran/hak akses 8 aktor internal.
 8. **Feasibility Study v1.1** (`docs/sdlc/01_planning/02_feasibility_study.md`): Acuan penentuan parameter ekonomi default system configs.
 9. **Project Charter v1.1** (`docs/sdlc/01_planning/01_project_charter.md`): Acuan ruang lingkup in-scope 10 modul sistem AbuCom.
+
+---
+
+## 11. Data Seed Awal & Kebijakan Retensi Data
+
+Untuk mendukung keberhasilan inisiasi basis data pada Fase 03 Design (`schema.sql` dan `seed.sql`), disepakati spesifikasi data seed awal minimum dan regulasi retensi log audit sebagai berikut:
+
+### 11.1. Spesifikasi Data Seed Awal Minimum
+
+1. **Unit Cabang (Tabel `cabang`)**:
+   - `id` = `1`
+   - `nama_cabang` = `'Toko Pusat Bandung'`
+   - `alamat` = `'Jl. Raya Percetakan No. 45, RT 02/RW 03, Kecamatan Sukamaju, Kota Bandung, Jawa Barat, 40123'`
+   - `telp` = `'0227654321'`
+
+2. **Pengguna Default (Tabel `pengguna`)**:
+   - `id` = `1`
+   - `nama_lengkap` = `'Pemilik Usaha AbuCom'`
+   - `username` = `'pemilik'`
+   - `password_hash` = `'$2b$12$K3h8jD8sS9fJ2gK3l8h9oOa8fS8jK9l8g7h6j5k4l3m2n1o0p9q8r'` (Bcrypt hash default dari sandi `'admin123'`)
+   - `role` = `'pemilik'`
+   - `cabang_id` = `1`
+
+3. **Layanan PPOB (Tabel `saldo_ppob`)**:
+   - Baris 1: `akun_tipe` = `'Pulsa_Data'`, `saldo_terakhir` = `1000000.0000`, `cabang_id` = `1`
+   - Baris 2: `akun_tipe` = `'Token_Tagihan'`, `saldo_terakhir` = `1500000.0000`, `cabang_id` = `1`
+
+4. **Dompet Digital (Tabel `saldo_ewallet`)**:
+   - Baris 1: `nama_ewallet` = `'Mandiri Agen'`, `saldo_terakhir` = `2000000.0000`, `biaya_admin_flat` = `3000.0000`, `biaya_admin_persen` = `0.0000`, `limit_harian` = `50000000.0000`, `cabang_id` = `1`
+   - Baris 2: `nama_ewallet` = `'Dana'`, `saldo_terakhir` = `1000000.0000`, `biaya_admin_flat` = `1000.0000`, `biaya_admin_persen` = `0.0000`, `limit_harian` = `10000000.0000`, `cabang_id` = `1`
+   - Baris 3: `nama_ewallet` = `'Gopay'`, `saldo_terakhir` = `1000000.0000`, `biaya_admin_flat` = `1000.0000`, `biaya_admin_persen` = `0.0000`, `limit_harian` = `10000000.0000`, `cabang_id` = `1`
+   - Baris 4: `nama_ewallet` = `'LinkAja'`, `saldo_terakhir` = `1000000.0000`, `biaya_admin_flat` = `1000.0000`, `biaya_admin_persen` = `0.0000`, `limit_harian` = `10000000.0000`, `cabang_id` = `1`
+   - Baris 5: `nama_ewallet` = `'ShopeePay'`, `saldo_terakhir` = `1000000.0000`, `biaya_admin_flat` = `1000.0000`, `biaya_admin_persen` = `0.0000`, `limit_harian` = `10000000.0000`, `cabang_id` = `1`
+   - Baris 6: `nama_ewallet` = `'OVO'`, `saldo_terakhir` = `1000000.0000`, `biaya_admin_flat` = `1000.0000`, `biaya_admin_persen` = `0.0000`, `limit_harian` = `10000000.0000`, `cabang_id` = `1`
+
+5. **Parameter Konfigurasi Sistem (Tabel `system_configs`)**:
+   - Seluruh 13 default parameter di Bab 6.4 wajib di-seed penuh sebagai baris-baris record dengan `cabang_id = 1`.
+
+### 11.2. Kebijakan Retensi dan Rotasi Data Log Keamanan
+
+Mengingat volume data `audit_logs` akan tumbuh secara linear terhadap kuantitas transaksi kasir LAN:
+1. **Purging Log**: Log audit yang berumur lebih dari **180 hari (6 bulan)** wajib diarsipkan ke file teks eksternal terkompresi di folder `exports/logs/` dan dihapus dari tabel basis data utama demi stabilitas write index.
+2. **Imutabilitas**: Perintah `DELETE` atau `UPDATE` secara langsung pada tabel `audit_logs` diblokir total di tingkat DB trigger MySQL (kecuali dipicu oleh fungsi migrasi/purging sistem).
