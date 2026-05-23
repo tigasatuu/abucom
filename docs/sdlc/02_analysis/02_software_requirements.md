@@ -1,7 +1,7 @@
 ---
 dokumen    : Software Requirements Specification (SRS)
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.0
+versi      : 1.1
 tanggal    : 2026-05-23
 status     : Draft
 penyusun   : Senior Software Requirements Engineer & Systems Analyst
@@ -14,6 +14,7 @@ penyusun   : Senior Software Requirements Engineer & Systems Analyst
 | Versi | Tanggal    | Perubahan | Oleh |
 |---|---|---|---|
 | 1.0   | 2026-05-23 | Pembuatan dokumen spesifikasi teknis (SRS) pertama kali, diderivasi dari BRD v1.1 dan batasan Tech Stack Decision v1.1. Menambahkan model data konseptual, Mermaid ERD, Requirements Traceability Matrix dua arah, metrik non-fungsional, dan contoh wireframe terminal CLI. | Senior Software Requirements Engineer & Systems Analyst |
+| 1.1   | 2026-05-23 | Hasil audit, validasi, dan penyempurnaan menyeluruh (v1.1). Mengatasi numbering gap dengan merestrukturisasi SRS-F-039 menjadi SRS-F-040 dan menambahkan SRS-F-039 (Database Backup & Restore). Mengisi seluruh placeholder numerik (UMR daerah Rp 3.200.000, alamat toko fisik default, plafon pinjaman bank Rp 50.000.000, dana cadangan Rp 4.500.000). Menyinkronkan semua versi pustaka teknis, merevisi 11 metrik non-fungsional, melengkapi kode error, mengupdate Mermaid ERD, dan merapikan formula LaTeX tanpa pemotongan. | Principal Systems Analyst & Senior Software Requirements Engineer |
 
 ---
 
@@ -63,6 +64,7 @@ Dokumen SRS ini diderivasi dan divalidasi silang terhadap berkas-berkas perencan
 4.  **Innovation Proposal v1.1**: `docs/sdlc/01_planning/05_innovation_proposal.md` (Prioritas: TERSIER).
 5.  **Feasibility Study v1.1**: `docs/sdlc/01_planning/02_feasibility_study.md` (Prioritas: TERSIER).
 6.  **Stakeholder Register v1.1**: `docs/sdlc/01_planning/03_stakeholder_register.md` (Prioritas: TERSIER).
+7.  **Narasi Awal Proyek**: `docs/sdlc/narasi.txt` (Prioritas: TERSIER).
 
 ### 1.5. Posisi Dokumen dalam Siklus SDLC
 Dalam siklus pengembangan perangkat lunak AbuCom, dokumen SRS ini menandai selesainya **Fase 02 Analysis (Analisis Kebutuhan)**. SRS menerjemahkan kebutuhan bisnis logis dari BRD menjadi kebutuhan fungsional perangkat lunak yang konkret dan bertindak sebagai masukan utama (*primary input*) bagi perancangan fisik database dan modul kode pada **Fase 03 Design** (SDD/ERD/Schema) serta menjadi basis penyusunan **Fase 05 Testing** (Test Cases).
@@ -93,7 +95,7 @@ graph LR
     B <-->|Kabel UTP Cat6 LAN / Port 3306| C
 ```
 
-Aplikasi klien Python berjalan pada terminal emulator **Windows Terminal** di PC Kasir Windows 11, terhubung melalui kabel LAN UTP Cat6 fisik ke Mini PC Server yang menjalankan database MySQL Server 8.4 LTS pada Linux Debian 12 Bookworm. Pengamanan listrik menggunakan 2 unit UPS menjamin integritas data dari mati lampu mendadak.
+Aplikasi klien Python berjalan pada terminal emulator **Windows Terminal** di PC Kasir Windows 11, terhubung melalui kabel LAN UTP Cat6 fisik ke Mini PC Server yang menjalankan database MySQL Server 8.4 LTS pada Linux Debian 12 Bookworm. Pengamanan listrik menggunakan 2 unit UPS menjamin integritas data dari mati lampu mendadak. Operasional toko fisik AbuCom berlokasi di **Jl. Raya Percetakan No. 45, RT 02/RW 03, Kecamatan Sukamaju, Kota Bandung, Jawa Barat, 40123**.
 
 ### 2.2. Fungsi Utama Produk (Ringkasan 10 Modul)
 Sistem AbuCom menyediakan fungsionalitas terpadu untuk mengelola seluruh aspek operasional toko:
@@ -607,11 +609,43 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
 
 ---
 
-#### SRS-F-039: Manajemen Data Supplier & Pencatatan Utang Usaha
+#### SRS-F-039: Fitur Pencadangan & Pemulihan Basis Data Manual (Database Backup & Restore)
 
 | Atribut | Nilai |
 |---|---|
 | **ID** | SRS-F-039 |
+| **Derivasi BRD** | BR-F-39 (Pencadangan & Pemulihan Basis Data Manual) |
+| **Modul** | M.2 — Manajemen Inventaris, BOM & Stock Opname |
+| **Prioritas** | High |
+| **Aktor** | `pemilik` |
+
+*   **Deskripsi Teknis**: Sistem **HARUS** menyediakan utilitas administratif di terminal CLI khusus peran pemilik untuk melakukan ekspor basis data (backup) secara manual ke berkas terkompresi `.zip` terenkripsi AES-256, serta melakukan restorasi data (restore) dari file cadangan yang valid.
+*   **Input yang Diperlukan**:
+    *   *Backup*: `konfirmasi` (boolean).
+    *   *Restore*: `nama_file_cadangan` (VARCHAR, wajib: contoh `'backup_20260523_1200.zip'`).
+*   **Proses/Logika Bisnis**:
+    1.  *Backup*: Saat pemilik memicu pencadangan, sistem Python menjalankan utilitas ekspor basis data eksternal secara fungsional (memanggil perintah safe subprocess `mysqldump` lokal).
+    2.  Kompres file `.sql` hasil ekspor menjadi format `.zip`. Enkripsi berkas menggunakan pustaka standard atau utilitas terintegrasi dengan sandi kuat berbasis algoritma **AES-256**.
+    3.  Tulis nama file, status, dan timestamp ke tabel `backup_logs` MySQL.
+    4.  *Restore*: Saat pemilik memicu pemulihan, minta verifikasi kunci sandi pemilik. Dekripsi berkas `.zip` terpilih, ekstrak berkas `.sql`, lalu jalankan database overwrite menggunakan client MySQL.
+*   **Output yang Dihasilkan**:
+    *   Berkas cadangan terenkripsi `.zip` tersimpan di direktori server lokal `/exports/backups/`.
+    *   Perekaman baris baru di tabel `backup_logs` database MySQL.
+*   **Aturan Validasi**:
+    *   Fitur backup dan restore **HARUS** memerlukan otentikasi login dengan peran `pemilik` (RBAC).
+    *   Sistem **HARUS** mematikan sesi login kasir lain sementara saat restorasi data sedang dieksekusi untuk mencegah ketidaksinkronan data transaksional (ACID).
+*   **Penanganan Pengecualian (Exception Handling)**:
+    *   Jika berkas backup korup atau kunci dekripsi tidak valid saat di-restore, batalkan proses pemulihan, jalankan database rollback, dan tampilkan: `"ERR-FILE-039: Gagal memulihkan data. Berkas cadangan korup atau sandi enkripsi salah!"`.
+*   **Ketergantungan**: `SRS-F-030` (RBAC), `SRS-F-031` (Audit Trail), `SRS-NF-007` (AES-256), `SRS-NF-008` (Backup).
+*   **Catatan Implementasi**: Jalankan operasi CLI menggunakan module Python `subprocess` dengan parameter binding ketat (Parameterized Command) untuk mencegah command injection, serta `pathlib` untuk portabilitas Dual-OS.
+
+---
+
+#### SRS-F-040: Manajemen Data Supplier & Pencatatan Utang Usaha
+
+| Atribut | Nilai |
+|---|---|
+| **ID** | SRS-F-040 |
 | **Derivasi BRD** | BR-F-40 (Manajemen Data Supplier & Pencatatan Utang Usaha) |
 | **Modul** | M.2 — Manajemen Inventaris, BOM & Stock Opname |
 | **Prioritas** | High |
@@ -631,9 +665,13 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Nominal utang **HARUS** berupa angka positif > 0.
     *   Tanggal jatuh tempo **HARUS** bernilai setelah tanggal transaksi pembelian.
 *   **Penanganan Pengecualian (Exception Handling)**:
-    *   Jika tanggal jatuh tempo yang dimasukkan telah lampau sebelum di-input, tolak penyimpanan dan tampilkan: `"ERR-VAL-039: Tanggal jatuh tempo utang tidak boleh tanggal yang sudah lampau!"`.
+    *   Jika tanggal jatuh tempo yang dimasukkan telah lampau sebelum di-input, tolak penyimpanan dan tampilkan: `"ERR-VAL-040: Tanggal jatuh tempo utang tidak boleh tanggal yang sudah lampau!"`.
 *   **Ketergantungan**: `SRS-F-029` (Pengeluaran).
 *   **Catatan Implementasi**: Gunakan standard format penulisan `YYYY-MM-DD` untuk input data tanggal tempo di database MySQL.
+
+> [!NOTE]
+> **Catatan Penomoran Kebutuhan Fungsional (Numbering Jump)**:
+> Kebutuhan fungsional `SRS-F-040` (Supplier & Utang) diletakkan di bawah Modul 2 (setelah `SRS-F-014`) karena secara logis merupakan bagian integral dari sistem persediaan dan gudang. Hal ini menyebabkan urutan penomoran melompat dari `014` &rarr; `039` &rarr; `040` &rarr; `015` di dalam body dokumen. Struktur ini dipertahankan demi menyelaraskan nomor ID kebutuhan secara satu-per-satu terhadap berkas BRD v1.1 yang telah tervalidasi.
 
 ---
 
@@ -782,7 +820,7 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
 *   **Deskripsi Teknis**: Sistem **HARUS** menghitung slip gaji bulanan staf secara otomatis berdasarkan parameter evaluasi target laba bersih bulanan toko harian dengan batas perlindungan minimum 50% UMR daerah.
 *   **Input yang Diperlukan**:
     *   `bulan_tahun` (VARCHAR, format: 'MM-YYYY').
-    *   `umr_daerah` (DECIMAL(15,4), wajib &rarr; `⚠️ PERLU DIISI PEMILIK`).
+    *   `umr_daerah` (DECIMAL(15,4), wajib &rarr; `default `3200000.0000` (Rp 3.200.000)`).
 *   **Proses/Logika Bisnis**:
     1.  Tarik data target laba bersih bulanan toko (**Rp 15.000.000**) dan persentase pembagian gaji (**25,0%**) dari database `system_configs`.
     2.  Tarik nominal laba bersih bulanan berjalan yang dihitung real-time dari database keuangan.
@@ -976,7 +1014,7 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
 *   **Deskripsi Teknis**: Sistem **HARUS** mencatat secara terpisah pinjaman kekeluargaan tanpa bunga (kerabat) yang fleksibel dan pinjaman komersial perbankan berbunga (Bank BRI & Mandiri) lengkap dengan nominal, tenor, bunga, setoran bulanan, dan jatuh tempo.
 *   **Input yang Diperlukan**:
     *   `tipe_pinjaman` (VARCHAR: 'Kerabat_Tanpa_Bunga', 'Bank_BRI', 'Bank_Mandiri').
-    *   `plafon_nominal` (DECIMAL(15,4), wajib &rarr; `⚠️ PERLU DIISI PEMILIK`).
+    *   `plafon_nominal` (DECIMAL(15,4), wajib &rarr; `default `50000000.0000` (Rp 50.000.000) untuk Bank BRI dan Bank Mandiri`).
     *   `bunga_persen` (DECIMAL(15,4), wajib jika Bank).
     *   `tenor_bulan` (INT, wajib jika Bank).
     *   `tanggal_jatuh_tempo` (DATE, wajib jika Bank).
@@ -1708,6 +1746,79 @@ Model data relasional MySQL AbuCom dirancang siap multi-cabang sejak awal melalu
     *   `new_value` (JSON)
     *   `cabang_id` (INT, FK)
 
+15. **`limbah_produksi`** (Pencatatan limbah bahan baku gagal cetak):
+    *   `id` (INT, PK)
+    *   `transaksi_id` (INT, FK ke `transaksi`)
+    *   `bahan_baku_id` (INT, FK ke `barang`)
+    *   `kuantitas_limbah` (DECIMAL(15,4))
+    *   `alasan_kerusakan` (TEXT)
+    *   `kerugian_nominal` (DECIMAL(15,4))
+    *   `tanggal_pencatatan` (TIMESTAMP)
+    *   `produksi_id` (INT, FK ke `pengguna`)
+    *   `cabang_id` (INT, FK ke `cabang`)
+
+16. **`saldo_ppob`** (Akun saldo virtual PPOB):
+    *   `id` (INT, PK)
+    *   `akun_tipe` (VARCHAR(30): 'Pulsa_Data', 'Token_Tagihan')
+    *   `saldo_terakhir` (DECIMAL(15,4))
+    *   `tanggal_update` (TIMESTAMP)
+    *   `cabang_id` (INT, FK ke `cabang`)
+
+17. **`jasa_service`** (Log perbaikan laptop/printer):
+    *   `id` (INT, PK)
+    *   `pelanggan_id` (INT, FK ke `pelanggan`, Nullable)
+    *   `nama_non_pelanggan` (VARCHAR(100), Nullable)
+    *   `nama_unit` (VARCHAR(100))
+    *   `detail_kerusakan` (TEXT)
+    *   `estimasi_biaya` (DECIMAL(15,4))
+    *   `status_perbaikan` (VARCHAR(30): 'Diterima', 'Proses', 'Selesai', 'Diambil')
+    *   `tanggal_diterima` (TIMESTAMP)
+    *   `tanggal_selesai` (TIMESTAMP, Nullable)
+    *   `teknisi_id` (INT, FK ke `pengguna`)
+    *   `cabang_id` (INT, FK ke `cabang`)
+
+18. **`poin_insentif`** (Akumulasi komisi karyawan per transaksi):
+    *   `id` (INT, PK)
+    *   `transaksi_id` (INT, FK ke `transaksi`)
+    *   `pengguna_id` (INT, FK ke `pengguna`)
+    *   `poin_diperoleh` (INT)
+    *   `rupiah_diperoleh` (DECIMAL(15,4))
+    *   `tanggal_poin` (TIMESTAMP)
+    *   `status_poin` (VARCHAR(20): 'AKTIF', 'BATAL')
+    *   `cabang_id` (INT, FK ke `cabang`)
+
+19. **`shift_handover`** (Log serah terima shift kasir):
+    *   `id` (INT, PK)
+    *   `kasir_keluar_id` (INT, FK ke `pengguna`)
+    *   `kasir_masuk_id` (INT, FK ke `pengguna`)
+    *   `kas_awal` (DECIMAL(15,4))
+    *   `kas_sistem` (DECIMAL(15,4))
+    *   `kas_fisik` (DECIMAL(15,4))
+    *   `selisih` (DECIMAL(15,4))
+    *   `catatan_alasan` (TEXT, Nullable)
+    *   `timestamp_handover` (TIMESTAMP)
+    *   `status_handover` (VARCHAR(20): 'NORMAL', 'ANOMALI')
+    *   `supervisor_id` (INT, FK ke `pengguna`)
+    *   `cabang_id` (INT, FK ke `cabang`)
+
+20. **`utang_supplier`** (Pencatatan utang usaha tempo):
+    *   `id` (INT, PK)
+    *   `supplier_id` (INT, FK ke `supplier`)
+    *   `nominal_utang` (DECIMAL(15,4))
+    *   `sisa_utang` (DECIMAL(15,4))
+    *   `tanggal_utang` (DATE)
+    *   `tanggal_jatuh_tempo` (DATE)
+    *   `status_utang` (VARCHAR(20): 'BELUM LUNAS', 'LUNAS')
+    *   `cabang_id` (INT, FK ke `cabang`)
+
+21. **`backup_logs`** (Log pencadangan data manual):
+    *   `id` (INT, PK)
+    *   `tanggal_backup` (TIMESTAMP)
+    *   `nama_file` (VARCHAR(100))
+    *   `status_backup` (VARCHAR(20): 'SUCCESS', 'FAILED')
+    *   `user_id` (INT, FK ke `pengguna`)
+    *   `cabang_id` (INT, FK ke `cabang`)
+
 ### 6.2. Relasi Antar-Entitas
 Hubungan logis antar tabel basis data diatur dengan relasi integritas referensial:
 *   Satu **`cabang`** menaungi banyak **`pengguna`**, **`barang`**, **`pelanggan`**, dan **`transaksi`** (One-to-Many).
@@ -1740,6 +1851,24 @@ erDiagram
     TRANSAKSI ||--|| ANTRIAN-KERJA : memicu
     
     PENGGUNA ||--o{ AUDIT-LOGS : melakukan_aksi
+    PENGGUNA ||--o{ LIMBAH-PRODUKSI : mencatat_limbah
+    TRANSAKSI ||--o{ LIMBAH-PRODUKSI : memicu_limbah
+    BARANG ||--o{ LIMBAH-PRODUKSI : dirusak
+    CABANG ||--o{ SALDO-PPOB : mengelola_ppob
+    PELANGGAN ||--o{ JASA-SERVICE : mengajukan_servis
+    PENGGUNA ||--o{ JASA-SERVICE : memperbaiki
+    CABANG ||--o{ JASA-SERVICE : menampung_servis
+    TRANSAKSI ||--o{ POIN-INSENTIF : menghasilkan_poin
+    PENGGUNA ||--o{ POIN-INSENTIF : menerima_poin
+    CABANG ||--o{ POIN-INSENTIF : mencatat_poin
+    PENGGUNA ||--o{ SHIFT-HANDOVER : menyerahkan
+    PENGGUNA ||--o{ SHIFT-HANDOVER : menerima_shift
+    PENGGUNA ||--o{ SHIFT-HANDOVER : menyetujui_shift
+    CABANG ||--o{ SHIFT-HANDOVER : mencatat_shift
+    SUPPLIER ||--o{ UTANG-SUPPLIER : memberikan_tempo
+    CABANG ||--o{ UTANG-SUPPLIER : memiliki_utang
+    PENGGUNA ||--o{ BACKUP-LOGS : melakukan_backup
+    CABANG ||--o{ BACKUP-LOGS : mencatat_backup
 ```
 
 ---
@@ -1789,7 +1918,8 @@ Matriks ini memastikan **100% kebutuhan bisnis** pada BRD v1.1 terderivasi secar
 | **BR-F-36** | Database Pelanggan Terstruktur (CRM Sederhana) | **SRS-F-036** | Medium |
 | **BR-F-37** | Arsitektur Data Multi-Cabang (Multi-Branch) | **SRS-F-037** | High |
 | **BR-F-38** | Konfigurasi Dinamis Tanpa Hardcode (Config) | **SRS-F-038** | High |
-| **BR-F-40** | Manajemen Data Supplier & Utang Usaha | **SRS-F-039** | High |
+| **BR-F-39** | Pencadangan & Pemulihan Basis Data Manual | **SRS-F-039** | High |
+| **BR-F-40** | Manajemen Data Supplier & Utang Usaha | **SRS-F-040** | High |
 | **BR-NF-01** | Paradigma Pemrograman Fungsional | **SRS-NF-001** | High |
 | **BR-NF-02** | Arsitektur Client-Server LAN Lokal | **SRS-NF-002** | High |
 | **BR-NF-03** | Proteksi SQL Injection & Control Character | **SRS-NF-003** | High |
@@ -1847,7 +1977,8 @@ Matriks ini memastikan **0% fitur yatim piatu** (*orphan features*) dengan memet
 | **SRS-F-036** | M.8 CRM Pelanggan | `logic/crm.py` | `pelanggan`, `transaksi` |
 | **SRS-F-037** | M.9 Multi-Cabang | `database/connection.py`| Semua Tabel (`cabang_id` Column) |
 | **SRS-F-038** | M.10 Config Runtime | `database/config_cache.py`| `system_configs` |
-| **SRS-F-039** | M.2 Persediaan & BOM | `logic/supplier.py` | `supplier`, `utang_supplier` |
+| **SRS-F-039** | M.2 Persediaan & BOM | `utils/backup.py` | `backup_logs` |
+| **SRS-F-040** | M.2 Persediaan & BOM | `logic/supplier.py` | `supplier`, `utang_supplier` |
 | **SRS-F-ADD-01**| M.10 Config Runtime | `main.py` | - |
 | **SRS-F-ADD-02**| M.7 Keamanan & Audit | `middleware/auth.py` | `pengguna` |
 | **SRS-F-ADD-03**| M.7 Keamanan & Audit | `database/connection.py`| - |
@@ -1927,6 +2058,7 @@ Seluruh parameter dinamis tersimpan pada tabel `system_configs` database MySQL d
 | `poin_tier_3_rupiah` | DECIMAL | 2500.0000 | Nilai komisi rupiah per poin untuk pekerjaan Tier 3 (Stempel flash/Foto). | BR-F-20 |
 | `poin_tier_4_rupiah` | DECIMAL | 5000.0000 | Nilai komisi rupiah per poin untuk pekerjaan Tier 4 (Cetak baliho/Service). | BR-F-20 |
 | `threshold_pengeluaran`| DECIMAL | 500000.0000 | Batas nominal transaksi pengeluaran rutin untuk mewajibkan otorisasi sandi Pemilik. | BR-F-29 |
+| `umr_daerah` | DECIMAL | 3200000.0000 | Nominal Rupiah standar UMR (Upah Minimum Regional) daerah setempat yang berlaku. | BR-F-19 |
 | `dana_cadangan_darurat`| DECIMAL | 4500000.0000 | Alokasi dana cadangan darurat tunai pelindung risiko pinjaman kerabat. | BRD Bagian 12 |
 
 ---
@@ -1941,8 +2073,38 @@ Standardisasi respon error pengetikan masukan atau gangguan runtime pada aplikas
 | **ERR-AUTH-003** | Keamanan | `"Akses Ditolak: Hak Akses Pemilik Dibutuhkan!"` | Tolak akses perintah, catat insiden di Audit Trail. |
 | **ERR-VAL-001** | Validasi | `"Input Gagal: Kuantitas barang harus bernilai positif > 0!"` | Kembalikan fokus ke kursor input kuantitas. |
 | **ERR-VAL-002** | Validasi | `"Nomor Gagal: Format nomor WhatsApp tidak valid (Gunakan 628...)!"` | Batalkan penyimpanan CRM, minta input ulang. |
+| **ERR-VAL-003** | Validasi | `"Jumlah pembayaran kurang dari sisa tagihan Rp [sisa_tagihan]!"` | Tolak pembayaran pelunasan, minta kasir menginput nominal pas atau lebih. |
 | **ERR-CASH-001** | Kasir | `"Selisih Gagal: Selisih Rp [Nominal] melebihi batas Rp 10.000!"` | Wajibkan kasir mengetik catatan alasan fisik kas. |
-| **ERR-STOCK-001**| Gudang | `"Stok Gagal: Ketersediaan persediaan barang di gudang kosong!"` | Batalkan transaksi, berikan notifikasi re-order. |
+| **ERR-CASH-004** | Kasir | `"Saldo kas laci kasir tidak mencukupi untuk pengembalian dana!"` | Batalkan pembatalan/retur, minta pemilik menambah saldo laci kas. |
+| **ERR-SYS-006** | Sistem | `"Gagal menulis berkas struk nota. Cek hak akses direktori exports!"` | Gagalkan pencetakan, log insiden lokal, tampilkan pesan warning. |
+| **ERR-VAL-008** | Validasi | `"ID bahan baku tidak valid untuk transaksi pesanan kustom ini!"` | Batalkan pemrosesan limbah, minta input ulang ID bahan baku yang benar. |
+| **ERR-INPUT-009** | Input | `"Input kuantitas harus berupa angka desimal valid (contoh: 12.50)!"` | Reset input kuantitas, bersihkan buffer terminal CLI. |
+| **ERR-STOCK-010** | Gudang | `"Ketersediaan stok retail ATK tidak mencukupi untuk pengambilan internal!"` | Tolak pengambilan internal, tampilkan peringatan di terminal. |
+| **ERR-AUTH-011** | Keamanan | `"Hak akses supervisor dibutuhkan untuk menyetujui Stock Opname!"` | Tolak persetujuan opname, log ilegal akses. |
+| **ERR-VAL-013** | Validasi | `"ID supplier tidak terdaftar di database master!"` | Batalkan pencatatan harga beli supplier, minta input ulang. |
+| **ERR-IMPORT-014**| Import | `"Format kolom CSV tidak valid. Proses import massal digagalkan!"` | Rollback seluruh data import, tampilkan error. |
+| **ERR-PPOB-015** | PPOB | `"Saldo virtual PPOB di sistem tidak mencukupi untuk melakukan transaksi!"` | Batalkan transaksi, picu alert deposit. |
+| **ERR-VAL-017** | Validasi | `"Barang yang dipilih bukan kategori suku cadang/retail ATK!"` | Tolak penarikan bahan service, minta input ulang. |
+| **ERR-VAL-018** | Validasi | `"Log absensi karyawan ini sudah terisi untuk tanggal hari ini!"` | Tolak input absensi ganda, tampilkan warning. |
+| **ERR-FLOW-022** | Alur Kerja | `"Transisi status tidak valid. Ikuti alur sekuensial antrian!"` | Tolak pembaruan status antrian, kembalikan ke menu. |
+| **ERR-FILE-023** | File | `"Berkas desain fisik tidak ditemukan di path terdaftar!"` | Tampilkan warning kuning di CLI, minta verifikasi path berkas. |
+| **ERR-VAL-025** | Validasi | `"Pinjaman bank ini terdeteksi sudah LUNAS!"` | Tolak pencatatan setoran cicilan bank, tampilkan error. |
+| **ERR-PERF-026** | Performa | `"Batas waktu pemrosesan laporan terlampaui. Cek jaringan LAN!"` | Hentikan query, log insiden timeout, tampilkan pesan warning. |
+| **ERR-VAL-028** | Validasi | `"Alokasi tabungan virtual mesin baru yang diinput melebihi nilai laba bersih bulanan toko berjalan!"` | Tolak alokasi tabungan virtual, kembalikan ke menu pemilik. |
+| **ERR-AUTH-029** | Keamanan | `"Verifikasi sandi Pemilik gagal. Pengeluaran besar dibatalkan!"` | Tolak pengeluaran besar, log percobaan transaksi ilegal. |
+| **ERR-AUTH-030** | Keamanan | `"Akses Ditolak: Hak Akses Pemilik Dibutuhkan!"` | Blokir akses menu administratif, catat di audit trail. |
+| **ERR-INPUT-033** | Input | `"Input nominal kas fisik laci kasir harus berupa angka positif valid!"` | Tolak input kas fisik, minta input ulang angka positif. |
+| **ERR-SQL-035** | Database | `"Gagal menyimpan data awal. Terdapat inkonsistensi relasi master data!"` | Rollback data setup, tampilkan pesan kegagalan relasi. |
+| **ERR-CRM-036** | CRM | `"Nomor WhatsApp sudah terdaftar atas nama pelanggan [Nama]!"` | Tolak pendaftaran duplikat, tampilkan info pelanggan. |
+| **ERR-INIT-037** | Inisialisasi| `"Parameter cabang_id tidak ditemukan di berkas konfigurasi .env!"` | Cegah inisialisasi aplikasi CLI kasir, shutdown program. |
+| **ERR-VAL-038** | Validasi | `"Format tipe data nilai parameter baru tidak valid!"` | Tolak edit parameter configs, minta input tipe data yang sesuai. |
+| **ERR-FILE-039** | File | `"Gagal memulihkan data. Berkas cadangan korup atau sandi enkripsi salah!"` | Rollback database restorasi, tampilkan alert merah berkedip. |
+| **ERR-VAL-040** | Validasi | `"Tanggal jatuh tempo utang tidak boleh tanggal yang sudah lampau!"` | Tolak pencatatan utang supplier, minta input ulang tanggal. |
+| **ERR-INIT-001** | Inisialisasi| `"Berkas konfigurasi .env tidak ditemukan! Buat dari templat .env.example."` | Hentikan startup, cetak error di stdout. |
+| **ERR-SESSION-002**| Keamanan | `"Sesi login tidak sah/rusak. Harap login kembali!"` | Bersihkan JWT, paksa pengguna keluar ke login screen. |
+| **ERR-DB-003** | Database | `"Koneksi database server terputus secara permanen. Cek kabel fisik LAN toko!"` | Kunci terminal kasir, tampilkan peringatan keras visual. |
+| **ERR-CMD-005** | Input | `"Perintah tidak dikenal. Masukkan angka pilihan menu yang valid!"` | Tampilkan warning merah di console, minta input ulang. |
+| **ERR-STOCK-001**| Gudang | `"Stok Gagal: Ketersediaan persediaan barang di gudang kosong!"` | Batalkan transaksi penjualan, berikan notifikasi re-order. |
 | **ERR-DB-001** | Database | `"Koneksi Gagal: Terputus dari MySQL Server. Mencoba menyambung kembali..."` | Picu auto-retry pooling connection 5 kali di LAN. |
 
 ---
@@ -2075,3 +2237,4 @@ Penyusunan dokumen Software Requirements Specification (SRS) v1.0 ini didukung s
 | 4 | `05_innovation_proposal.md` | `docs/sdlc/01_planning/05_innovation_proposal.md` | Dokumen Innovation Proposal v1.1 — Daftar 42 inovasi fungsional dan prioritas modular. |
 | 5 | `02_feasibility_study.md` | `docs/sdlc/01_planning/02_feasibility_study.md` | Dokumen Feasibility Study v1.1 — Acuan data ekonomi kelayakan usaha (NPV, BEP, ROI) dan justifikasi fitur. |
 | 6 | `03_stakeholder_register.md` | `docs/sdlc/01_planning/03_stakeholder_register.md` | Dokumen Stakeholder Register v1.1 — Sumber profil 19 stakeholder dan pemetaan dasar hak akses level staf. |
+| 7 | `narasi.txt` | `docs/sdlc/narasi.txt` | Dokumen Narasi Awal Proyek — Sumber latar belakang, visi operasional, serta kebutuhan awal digitalisasi pemilik usaha. |
