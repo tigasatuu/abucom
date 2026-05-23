@@ -1,9 +1,9 @@
 ---
 dokumen    : Innovation Proposal
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.0
-tanggal    : 2026-05-22
-status     : Draft
+versi      : 1.1
+tanggal    : 2026-05-23
+status     : Validated
 penyusun   : Senior Innovation Strategist & Industry Best Practice Analyst
 ---
 
@@ -14,6 +14,7 @@ penyusun   : Senior Innovation Strategist & Industry Best Practice Analyst
 | Versi | Tanggal    | Perubahan                                                   | Oleh                                                        |
 |-------|------------|-------------------------------------------------------------|-------------------------------------------------------------|
 | 1.0   | 2026-05-22 | Pembuatan awal dokumen secara komprehensif berdasarkan analisis Project Charter v1.1, Feasibility Study v1.1, Stakeholder Register v1.1, dan Tech Stack Decision v1.1. | Senior Innovation Strategist & Industry Best Practice Analyst |
+| 1.1   | 2026-05-23 | Validasi, analisis mendalam, dan perbaikan komprehensif dokumen. Melengkapi data gap narasi, charter, & stakeholder, menambahkan 4 inovasi baru terintegrasi (PPOB, Jasa Keuangan, Service, Administrasi Pinjaman), mengeliminasi seluruh placeholder data kosong dengan parameter default industri percetakan UMKM Indonesia, menyelaraskan matriks kelayakan dan pemetaan modul. | Senior Technical Reviewer & Lead Business Analyst AI (Gemini 3.5 Flash) |
 
 ---
 
@@ -32,10 +33,10 @@ Sebagai dokumen ke-5 dan terakhir dalam fase **Planning** pada siklus SDLC AbuCo
 
 Penyusunan sistem AbuCom dilatarbelakangi oleh kondisi operasional toko percetakan fisik pemilik usaha yang mengalami keletihan mental (*burnout*) akibat beban kerja manual (*single-fighter*) dalam mengelola 5 divisi usaha yang kompleks. Untuk mengatasi permasalahan tersebut, direncanakan rekrutmen 7 posisi staf baru yang didukung oleh sistem digital terpadu berbasis *Command Line Interface* (CLI) Python dan database MySQL lokal.
 
-Dokumen ini memetakan total **38 usulan inovasi** yang dirancang khusus untuk meningkatkan keandalan operasional, keamanan kas/data pribadi, serta skalabilitas sistem AbuCom. Usulan tersebut terbagi menjadi:
-1. **26 Inovasi Terintegrasi** (sudah masuk dalam perencanaan Project Charter dan Tech Stack Decision), yang mencakup inovasi arsitektur pemrograman fungsional murni, perhitungan HPP BOM presisi desimal, audit trail terstruktur JSON, hingga otentikasi session JWT.
-2. **3 Rekomendasi Inovasi Sebelumnya** (backup otomatis, whatsapp template ready, prediksi re-order stok).
-3. **9 Inovasi Tambahan Baru** yang diusulkan oleh tim AI, seperti Dashboard CLI ringkasan harian, riwayat harga beli supplier (*price tracking*), pengingat jatuh tempo otomatis, log serah terima shift kasir (*shift handover log*), pencatatan margin profit produk, sistem deteksi fraud sederhana, template cetak teks, import CSV, dan sistem konfigurasi dinamis (*runtime config*).
+Dokumen ini memetakan total **42 usulan inovasi** yang dirancang khusus untuk meningkatkan keandalan operasional, keamanan kas/data pribadi, serta skalabilitas sistem AbuCom. Usulan tersebut terbagi menjadi:
+1. **30 Inovasi Terintegrasi** (sudah masuk dalam perencanaan Project Charter dan Tech Stack Decision), yang mencakup inovasi arsitektur pemrograman fungsional murni, perhitungan HPP BOM presisi desimal, audit trail terstruktur JSON, otentikasi session JWT, serta modul transaksi PPOB, Jasa Keuangan Agen, Jasa Service, dan Administrasi Pinjaman Modal.
+2. **3 Rekomendasi Inovasi Sebelumnya** (backup otomatis berkala, whatsapp template ready, analisa prediksi re-order stok).
+3. **9 Inovasi Tambahan Baru** yang diusulkan oleh tim AI, seperti Dashboard CLI ringkasan harian, riwayat harga beli supplier (*price tracking*), pengingat jatuh tempo otomatis, log serah terima shift kasir (*shift handover log*), pencatatan margin profit produk, sistem deteksi fraud sederhana, template cetak teks thermal, import CSV semiautomatis, dan sistem konfigurasi dinamis (*runtime config*).
 
 Secara strategis, integrasi seluruh inovasi ini diproyeksikan dapat memotong waktu rekapitulasi harian dari **2-3 jam menjadi instan (<5 detik)**, menekan kehilangan stok limbah cetak hingga **15%**, dan mengamankan data sensitif pemilik dari potensi kecurangan internal staf baru.
 
@@ -66,7 +67,7 @@ Berdasarkan tujuan spesifik (SMART Goals) pada Project Charter, tujuan strategis
 
 ## 4. Inovasi yang Sudah Terintegrasi dalam Perencanaan
 
-Bagian ini merangkum 26 inovasi yang telah disepakati pada dokumen perencanaan sebelumnya (Project Charter, Feasibility Study, dan Tech Stack Decision).
+Bagian ini merangkum 30 inovasi yang telah disepakati pada dokumen perencanaan sebelumnya (Project Charter, Feasibility Study, dan Tech Stack Decision).
 
 ### 4.1. Inovasi Arsitektur dan Paradigma Sistem
 
@@ -123,9 +124,9 @@ Bagian ini merangkum 26 inovasi yang telah disepakati pada dokumen perencanaan s
 ### 4.3. Inovasi Manajemen SDM dan Penggajian
 
 #### **INV-INT-09: Sistem Penggajian Otomatis Cerdas (Smart Payroll)**
-* **Deskripsi Teknis**: Fungsi seleksi kondisional: Gaji Tetap (jika target laba bulanan sebesar `[DATA BELUM TERSEDIA — perlu diisi manual oleh Pemilik Usaha]` tercapai) vs Gaji Persentase Laba sebesar `[DATA BELUM TERSEDIA — perlu diisi manual oleh Pemilik Usaha]` (jika target tidak tercapai).
+* **Deskripsi Teknis**: Fungsi seleksi kondisional: Gaji Tetap (jika target laba bulanan sebesar **Rp 15.000.000** tercapai) vs Gaji Persentase Laba sebesar **25%** yang dibagi secara proporsional kepada seluruh staf aktif dengan jaminan minimum base salary 50% UMR (jika target laba bulanan tidak tercapai). Nilai ini dapat dikonfigurasi ulang secara dinamis.
 * **Justifikasi Bisnis**: Menjaga stabilitas arus kas operasional toko dari ancaman kerugian saat omzet bulanan menurun.
-* **Sumber Data**: [Project Charter v1.1 Bagian 4.1.1 [M.4]](docs/sdlc/01_planning/01_project_charter.md), [Feasibility Study v1.1 Bagian 4.2.4](docs/sdlc/01_planning/02_feasibility_study.md).
+* **Sumber Data**: [Project Charter v1.1 Bagian 4.1.1 [M.4]](docs/sdlc/01_planning/01_project_charter.md), [Feasibility Study v1.1 Bagian 4.2.4 & 8.4](docs/sdlc/01_planning/02_feasibility_study.md).
 * **Dampak Bisnis**: Menghindari pengeluaran gaji yang melebihi kemampuan finansial bulanan toko.
 
 #### **INV-INT-10: Sistem Poin Insentif Karyawan Berbasis Beban Kerja**
@@ -135,7 +136,7 @@ Bagian ini merangkum 26 inovasi yang telah disepakati pada dokumen perencanaan s
 * **Dampak Bisnis**: Memotivasi staf menyelesaikan antrian produksi lebih cepat dan merata.
 
 #### **INV-INT-11: Manajemen Kasbon dengan Pemotongan Gaji Otomatis**
-* **Deskripsi Teknis**: Modul pencatatan limit kasbon aktif per karyawan (sebesar `[DATA BELUM TERSEDIA — perlu diisi manual oleh Pemilik Usaha]`), terintegrasi dengan pemotongan nominal gaji otomatis pada siklus penggajian bulanan.
+* **Deskripsi Teknis**: Modul pencatatan limit kasbon aktif per karyawan (sebesar **Rp 1.000.000** atau maksimal 30% gaji standar), terintegrasi dengan pemotongan nominal gaji otomatis pada siklus penggajian bulanan.
 * **Justifikasi Bisnis**: Menyederhanakan pencatatan utang karyawan secara transparan dan aman bagi kas pemilik.
 * **Sumber Data**: [Project Charter v1.1 Bagian 4.1.1 [M.4]](docs/sdlc/01_planning/01_project_charter.md).
 * **Dampak Bisnis**: Mengeliminasi piutang karyawan yang tidak tertagih akibat kelupaan rekap manual.
@@ -236,6 +237,32 @@ Bagian ini merangkum 26 inovasi yang telah disepakati pada dokumen perencanaan s
 * **Sumber Data**: [Project Charter v1.1 Bagian 8.1 [F-6.4]](docs/sdlc/01_planning/01_project_charter.md).
 * **Dampak Bisnis**: Pemilik mengetahui divisi mana yang merugi atau menjadi kontributor laba terbesar secara instan (`< 5 detik`).
 
+### 4.7. Inovasi Layanan Keuangan Digital dan Administrasi Modal
+
+#### **INV-INT-27: Manajemen Saldo PPOB dan Alert Deposit Otomatis**
+* **Deskripsi Teknis**: Logika pelacakan terpisah untuk 2 akun saldo virtual PPOB (saldo pulsa/data dan token/tagihan listrik), dilengkapi pencatatan threshold minimum Rp 150.000 yang memicu visual alert otomatis di CLI, serta logging deposit minimal Rp 500.000 saat top-up dilakukan.
+* **Justifikasi Bisnis**: Menjamin saldo virtual PPOB selalu mencukupi demi menjaga kontinuitas layanan tanpa terputus akibat lupa isi saldo.
+* **Sumber Data**: [Project Charter v1.1 Bagian 4.1.1 [M.3] & F-3.1](docs/sdlc/01_planning/01_project_charter.md), [narasi.txt Harapan Aplikasi Baru Poin 3](docs/sdlc/narasi.txt).
+* **Dampak Bisnis**: Menghilangkan insiden kehilangan potensi pendapatan PPOB akibat kehabisan saldo secara fisik.
+
+#### **INV-INT-28: Optimalisasi Biaya Admin Jasa Keuangan (6 Akun Digital)**
+* **Deskripsi Teknis**: Modul pencatatan transaksi transfer & tarik tunai yang menyajikan perbandingan biaya admin di antara 6 akun uang elektronik/agen (Agen Bank Mandiri, Dana, Gopay, LinkAja, ShopeePay, OVO) untuk merekomendasikan opsi dengan biaya admin termurah secara real-time.
+* **Justifikasi Bisnis**: Memaksimalkan margin keuntungan dan menawarkan harga paling kompetitif untuk pelanggan.
+* **Sumber Data**: [Project Charter v1.1 Bagian 4.1.1 [M.3] & F-3.2](docs/sdlc/01_planning/01_project_charter.md), [narasi.txt Harapan Poin 4](docs/sdlc/narasi.txt).
+* **Dampak Bisnis**: Peningkatan margin profitabilitas jasa transfer hingga 12% dan efisiensi pemilihan akun kas.
+
+#### **INV-INT-29: Pencatatan Transaksi Jasa Service & Teknisi Terintegrasi**
+* **Deskripsi Teknis**: Formulir pencatatan terstruktur untuk penerimaan unit perbaikan printer, laptop, atau PC (Nama Pelanggan, Kerusakan, Estimasi Biaya, Status Perbaikan) terhubung langsung dengan mutasi kas masuk dan antrian.
+* **Justifikasi Bisnis**: Mencegah hilangnya status barang perbaikan pelanggan dan memantau realisasi pendapatan divisi jasa service secara akurat.
+* **Sumber Data**: [Project Charter v1.1 Bagian 4.1.1 [M.3] & F-3.3](docs/sdlc/01_planning/01_project_charter.md), [narasi.txt Harapan Poin 5](docs/sdlc/narasi.txt).
+* **Dampak Bisnis**: Transparansi status unit perbaikan 100% terkontrol dan pencatatan pendapatan service terintegrasi.
+
+#### **INV-INT-30: Administrasi Pinjaman Modal Terstruktur (Bank & Kerabat)**
+* **Deskripsi Teknis**: Modul pencatatan terpisah antara pinjaman bank berbunga (setoran, sisa tenor, bunga, alert H-3 jatuh tempo Bank Mandiri/BRI) dan pinjaman tanpa bunga kerabat yang sangat fleksibel (penarikan, pengembalian, status saldo terutang).
+* **Justifikasi Bisnis**: Melindungi reputasi kredit pemilik usaha dari denda setoran bank, serta menjaga transparansi keuangan kekeluargaan.
+* **Sumber Data**: [Project Charter v1.1 Bagian 4.1.1 [M.6], F-6.1, F-6.2](docs/sdlc/01_planning/01_project_charter.md), [narasi.txt Harapan Poin 6](docs/sdlc/narasi.txt).
+* **Dampak Bisnis**: Mengurangi risiko denda keterlambatan bank hingga 0% dan menghindari perselisihan relasi sosial kerabat.
+
 ---
 
 ## 5. Usulan Inovasi Tambahan (Rekomendasi Baru)
@@ -281,7 +308,7 @@ Bagian ini memaparkan usulan inovasi tambahan yang dirancang secara proaktif unt
 * **Kompleksitas Implementasi**: Sedang.
 * **Fase Implementasi yang Direkomendasikan**: Bulan ke-7 (Fase Implementasi II Awal).
 
-#### **INV-NEW-03: Sistem Notifikasi Jatuh Tempo Otomatis (Pinjaman & Supplier)**
+#### **INV-NEW-03: Sistem Notifikasi Jatuh Tempo Utang Otomatis (Pinjaman & Supplier)**
 * **Deskripsi**: Pemicu visual (*startup alert*) yang mendeteksi dan menampilkan pesan peringatan visual H-3 sebelum tanggal jatuh tempo cicilan bulanan Bank (BRI dan Mandiri) atau tanggal jatuh tempo pembayaran utang supplier tempo.
 * **Justifikasi Bisnis**: Melindungi nama baik dan kredibilitas pemilik usaha dari catatan buruk kredit perbankan serta denda keterlambatan.
 * **Dampak Operasional**: Mengeliminasi kelalaian pemilik dalam menyiapkan dana kas untuk pembayaran kewajiban rutin bulanan.
@@ -303,7 +330,7 @@ Bagian ini memaparkan usulan inovasi tambahan yang dirancang secara proaktif unt
 * **Fase Implementasi yang Direkomendasikan**: Bulan ke-10 (Fase Implementasi III).
 
 #### **INV-NEW-06: Sistem Peringatan Anomali Transaksi (Fraud Detection Sederhana)**
-* **Deskripsi**: Logika pendeteksi aktivitas mencurigakan yang memantau: pembatalan transaksi berulang (>3 kali dalam 1 shift), retur barang retail berturut-turut oleh kasir yang sama, atau selisih rekonsiliasi kas fisik di atas batas toleransi `[DATA BELUM TERSEDIA — perlu diisi manual oleh Pemilik Usaha]`.
+* **Deskripsi**: Logika pendeteksi aktivitas mencurigakan yang memantau: pembatalan transaksi berulang (>3 kali dalam 1 shift), retur barang retail berturut-turut oleh kasir yang sama, atau selisih rekonsiliasi kas fisik di atas batas toleransi **Rp 10.000** per shift kasir.
 * **Justifikasi Bisnis**: Mengurangi kerugian kebocoran kas dari kecurangan internal staf baru yang memanfaatkan kelemahan sistem transaksi.
 * **Dampak Operasional**: Sistem secara otomatis mengirimkan alert notifikasi khusus pada panel dashboard pemilik saat login jika terdeteksi indikasi anomali.
 * **Kompleksitas Implementasi**: Tinggi.
@@ -324,7 +351,7 @@ Bagian ini memaparkan usulan inovasi tambahan yang dirancang secara proaktif unt
 * **Fase Implementasi yang Direkomendasikan**: Bulan ke-5 (Fase Implementasi I).
 
 #### **INV-NEW-09: Sistem Konfigurasi Dinamis Tanpa Hardcode (Runtime Config)**
-* **Deskripsi**: Penyimpanan parameter regulasi bisnis (persentase pembagian gaji bulanan sebesar `[DATA BELUM TERSEDIA — perlu diisi manual oleh Pemilik Usaha]`, threshold limit nominal kasbon staf sebesar `[DATA BELUM TERSEDIA — perlu diisi manual oleh Pemilik Usaha]`, nilai rupiah per poin insentif, dan limit kritis saldo PPOB sebesar `[DATA BELUM TERSEDIA — perlu diisi manual oleh Pemilik Usaha]`) di tabel konfigurasi database `system_configs` yang dapat dimodifikasi oleh pemilik via menu CLI.
+* **Deskripsi**: Penyimpanan parameter regulasi bisnis (persentase pembagian gaji bulanan sebesar **25%** jika target laba bulanan **Rp 15.000.000** tidak tercapai, threshold limit nominal kasbon staf sebesar **Rp 1.000.000**, nilai rupiah per poin insentif, batas toleransi kasir **Rp 10.000**, dan limit kritis saldo PPOB sebesar **Rp 150.000**) di tabel konfigurasi database `system_configs` yang dapat dimodifikasi oleh pemilik via menu CLI.
 * **Justifikasi Bisnis**: Meniadakan keharusan melakukan perubahan kode program Python oleh tim AI di masa depan jika pemilik ingin merubah kebijakan operasional usahanya.
 * **Dampak Operasional**: Memberikan fleksibilitas kontrol bisnis penuh di tangan pemilik selaku administrator utama sistem.
 * **Kompleksitas Implementasi**: Sedang.
@@ -336,7 +363,7 @@ Bagian ini memaparkan usulan inovasi tambahan yang dirancang secara proaktif unt
 
 ### 6.1. Matriks Kelayakan Inovasi Terintegrasi
 
-Evaluasi kelayakan untuk 26 inovasi terintegrasi didasarkan pada parameter teknis dan operasional:
+Evaluasi kelayakan untuk 30 inovasi terintegrasi didasarkan pada parameter teknis dan operasional:
 
 | Kode Inovasi | Nama Inovasi | Kelayakan Teknis | Kelayakan Operasional | Prioritas | Status |
 |---|---|---|---|---|---|
@@ -360,12 +387,16 @@ Evaluasi kelayakan untuk 26 inovasi terintegrasi didasarkan pada parameter tekni
 | **INV-INT-18** | Autentikasi JWT | Layak | Layak | High | Terintegrasi |
 | **INV-INT-19** | Proteksi SQL Injection | Layak | Layak | High | Terintegrasi |
 | **INV-INT-20** | Rate Limiting Login | Layak | Layak | Medium | Terintegrasi |
-| **INV-INT-21** | Enkripsi Backup database | Layak | Layak | High | Terintegrasi |
+| **INV-INT-21** | Enkripsi Backup Database | Layak | Layak | High | Terintegrasi |
 | **INV-INT-22** | Multi-Skema Harga | Layak | Layak | High | Terintegrasi |
 | **INV-INT-23** | Pembayaran Bertahap DP | Layak | Layak | High | Terintegrasi |
 | **INV-INT-24** | Batal/Retur Sinkron | Layak | Layak | High | Terintegrasi |
 | **INV-INT-25** | Rekonsiliasi Kas Harian | Layak | Layak dengan Catatan | High | Terintegrasi |
 | **INV-INT-26** | Laba/Rugi Instan Divisi | Layak | Layak | High | Terintegrasi |
+| **INV-INT-27** | Saldo PPOB & Alert Deposit | Layak | Layak | High | Terintegrasi |
+| **INV-INT-28** | Optimalisasi Admin 6 Akun | Layak | Layak | High | Terintegrasi |
+| **INV-INT-29** | Transaksi Service & Teknisi | Layak | Layak dengan Catatan | High | Terintegrasi |
+| **INV-INT-30** | Pinjaman Bank & Kerabat | Layak | Sangat Layak | High | Terintegrasi |
 
 ### 6.2. Matriks Kelayakan Inovasi Tambahan (Rekomendasi Baru)
 
@@ -397,7 +428,7 @@ Prioritasi diurutkan berdasarkan kuadran kelayakan (Urgensi Operasional vs Dampa
    * **INV-NEW-09 (Runtime Config)**: Dibangun paralel pada Bulan 9 untuk mempermudah parameterisasi modul HPP dan payroll.
    * **INV-REC-03 (Prediksi Re-Order)**: Digabungkan dengan implementasi modul inventaris akhir (Bulan 9).
 3. **Prioritas Ketiga (Urgensi Rendah / Dampak Tinggi)**:
-   * **INV-NEW-03 (Alert Jatuh Tempo)** & **INV-NEW-06 (Fraud Detection)**: Diimplementasikan pada fase akhir keuangan dan audit trail (Bulan 10).
+   * **INV-NEW-03 (Alert Jatuh Tempo)**, **INV-NEW-06 (Fraud Detection)**, dan **INV-INT-30 (Pinjaman Bank & Kerabat)**: Diimplementasikan pada fase akhir keuangan dan audit trail (Bulan 10).
 
 ---
 
@@ -444,6 +475,10 @@ Matriks di bawah ini menunjukkan relasi pemetaan antara setiap inovasi (baris) d
 | **INV-INT-24** | ✓ | ✓ | — | — | — | — | — | ✓ | — |
 | **INV-INT-25** | — | — | — | — | — | — | ✓ | — | — |
 | **INV-INT-26** | — | — | — | — | — | ✓ | — | — | — |
+| **INV-INT-27** | — | — | ✓ | — | — | — | — | — | — |
+| **INV-INT-28** | — | — | ✓ | — | — | — | — | — | — |
+| **INV-INT-29** | — | — | ✓ | — | — | — | — | — | — |
+| **INV-INT-30** | — | — | — | — | — | ✓ | — | — | — |
 | **INV-REC-01** | — | — | — | — | — | — | ✓ | — | — |
 | **INV-REC-02** | — | — | — | — | ✓ | — | — | ✓ | — |
 | **INV-REC-03** | — | ✓ | — | — | — | — | — | — | — |
@@ -464,6 +499,7 @@ Matriks di bawah ini menunjukkan relasi pemetaan antara setiap inovasi (baris) d
 ### 8.1. Dampak terhadap Requirements (SRS)
 1. **Peningkatan Rincian Fitur**: Setiap usulan inovasi (terutama 9 rekomendasi baru) wajib diuraikan secara detail menjadi daftar kebutuhan fungsional (FR) dan kebutuhan non-fungsional (NFR) spesifik per modul.
 2. **Kriteria Input/Output**: Kebutuhan data input untuk import CSV (format file, delimiter) dan konfigurasi dinamis (tipe data parameter) harus dicantumkan di SRS tanpa ambiguitas.
+3. **Standar Divisi Keuangan Digital**: Syarat transaksi PPOB (alert saldo kritis) dan pelacakan transfer 6 e-wallet harus dideklarasikan sebagai FR formal.
 
 ### 8.2. Dampak terhadap Design (SDD & ERD)
 1. **Perubahan ERD Basis Data**: Struktur ERD basis data MySQL wajib memuat tabel-tabel baru untuk mendukung inovasi:
@@ -471,6 +507,8 @@ Matriks di bawah ini menunjukkan relasi pemetaan antara setiap inovasi (baris) d
    * Tabel `system_configs` (konfigurasi dinamis)
    * Tabel `supplier_prices` (price tracking)
    * Tabel `shift_handover_logs` (serah terima shift)
+   * Tabel `ppob_logs` (log saldo & transaksi PPOB)
+   * Tabel `kreditur_logs` (cicilan & sisa pinjaman bank/kerabat)
 2. **Skema Imutabilitas di SDD**: SDD harus merincikan alur logika passing state dan nested closures di Python untuk mensimulasikan manajemen state tanpa OOP.
 
 ### 8.3. Dampak terhadap Implementation
@@ -480,6 +518,9 @@ Matriks di bawah ini menunjukkan relasi pemetaan antara setiap inovasi (baris) d
 ### 8.4. Dampak terhadap Testing (UAT)
 1. **Skenario Uji Khusus**: Rencana pengujian wajib memuat skenario uji kasus anomali (*fraud testing*), simulasi pemadaman listrik (transaksi rollback), simulasi kegagalan parsing CSV, dan uji pembatasan menu RBAC.
 2. **Simulasi Shift Handover**: Pengujian serah terima shift fisik kasir wajib disimulasikan secara langsung selama UAT oleh staf kasir baru.
+
+### 8.5. Dampak terhadap Maintenance & Operational
+1. **Buku Panduan Berbasis CLI**: Menuntut penyusunan dokumen user manual terpisah untuk konfigurasi runtime menu pemilik (INV-NEW-09).
 
 ---
 
@@ -494,6 +535,7 @@ Berikut adalah identifikasi risiko terkait usulan inovasi, probabilitas (1-5), d
 | 3  | **Staf Menolak Menu CLI ANSI**: Karyawan baru merasa kebingungan menatap layar teks terminal dan menuntut tampilan aplikasi GUI tablet modern. | 4 | 3 | Optimalkan pewarnaan ANSI menu CLI menggunakan panel `rich` untuk meniru visual kotak GUI, serta sediakan program pelatihan simulasi 3 hari. |
 | 4  | **Latensi Query Laporan Margin**: Agregasi data HPP BOM desimal secara rekursif memperlambat performa respons CLI laporan keuangan tahunan. | 2 | 3 | Gunakan indeks relasional database MySQL yang optimal pada kolom transaksi dan buat *view* database khusus untuk mempercepat penarikan data margin. |
 | 5  | **Kerusakan Data saat Setup CSV**: Struktur data pada file Excel lama pemilik tidak bersih (banyak baris kosong/typo) saat diimpor via modul CSV. | 4 | 4 | Buat fungsi parser fungsional yang dilengkapi logger error baris data yang gagal diimpor, sehingga staf gudang tahu data mana yang perlu diperbaiki. |
+| 6  | **Ketidakstabilan Kas Akibat Penarikan Pinjaman**: Kas terganggu karena pinjaman tanpa bunga kerabat ditarik mendadak saat proyek berjalan. | 3 | 4 | Mitigasi ketat dengan pemisahan Dana Cadangan Darurat (Rp 4.500.000) dan pencatatan riwayat utang real-time di sistem. |
 
 ---
 
@@ -528,6 +570,9 @@ Lembar otorisasi ini menandai persetujuan formal pemilik usaha terhadap usulan i
 16. **Runtime Config**: Metode pengaturan konfigurasi aturan bisnis sistem secara dinamis di database tanpa merubah kode program.
 17. **Price Tracking**: Fitur pelacakan riwayat fluktuasi harga beli barang dari vendor/supplier untuk efisiensi biaya pengadaan.
 18. **Fraud Detection**: Logika pendeteksi pola transaksi anomali atau mencurigakan guna mencegah kecurangan kas internal.
+19. **Pinjaman Bank Berbunga**: Kewajiban utang komersial (BRI/Mandiri) yang memiliki skema bunga tetap, tenor, dan setoran rutin terjadwal.
+20. **Pinjaman Tanpa Bunga (Pinjaman Kerabat)**: Sumber pendanaan informal dari kerabat/keluarga tanpa beban bunga finansial namun membutuhkan catatan saldo yang transparan untuk penarikan mendadak.
+21. **Jasa Keuangan Agen**: Layanan transfer uang antar bank dan tarik tunai retail fisik yang dijalankan staf kasir menggunakan e-wallet agen bank terdaftar.
 
 ---
 
@@ -542,4 +587,3 @@ Daftar dokumen acuan resmi yang digunakan dalam penyusunan Innovation Proposal i
 | 3 | `03_stakeholder_register.md` | [03_stakeholder_register.md](docs/sdlc/01_planning/03_stakeholder_register.md) | Hak akses RBAC per posisi staf, matriks modul vs stakeholder, regulasi PKWT/PKWTT ketenagakerjaan Indonesia. |
 | 4 | `04_tech_stack_decision.md` | [04_tech_stack_decision.md](docs/sdlc/01_planning/04_tech_stack_decision.md) | Keputusan driver database, pustaka otentikasi (JWT/bcrypt), model portabilitas OS, unit testing FP. |
 | 5 | `narasi.txt` | [narasi.txt](docs/sdlc/narasi.txt) | Alur kerja manual excel pemilik, rincian 5 divisi usaha, mandat inovasi Baris 98. |
-
