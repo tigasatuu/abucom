@@ -1,7 +1,7 @@
 ---
 dokumen    : Workflow Diagram
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.0
+versi      : 1.1
 tanggal    : 2026-05-23
 status     : Final
 penyusun   : Senior Business Process Analyst & Workflow Modeling Specialist
@@ -13,6 +13,7 @@ penyusun   : Senior Business Process Analyst & Workflow Modeling Specialist
 
 | Versi | Tanggal    | Perubahan | Oleh |
 |---|---|---|---|
+| 1.1 | 2026-05-23 | Audit dan pemutakhiran menyeluruh. Penambahan alur ubah password (WF-M7-08), sinkronisasi matriks traceability (44 UC, 40 BR, 40 SRS), pemutakhiran decision points dan exception flow, sinkronisasi glosarium, dan pemutakhiran Bagian 9 dengan berkas studi kelayakan. | Senior Business Process Analyst & Workflow Modeling Specialist |
 | 1.0   | 2026-05-23 | Pembuatan awal dokumen secara komprehensif berdasarkan analisis berkas BRD v1.1, SRS v1.1, UCD v1.1, dan narasi operasional pemilik usaha. Menyediakan legenda notasi, diagram makro, 6 alur kerja As-Is manual, 38 alur kerja To-Be sistem per modul, 3 alur lintas modul (cross-module), serta matriks ketelusuran (traceability) lengkap. | Senior Business Process Analyst & Workflow Modeling Specialist |
 
 ---
@@ -1395,6 +1396,37 @@ flowchart TD
 3.  Jika valid, utilitas setup dijalankan di CLI.
 4.  Sistem memanggil sub-workflow import CSV untuk memasukkan seluruh baris data ke database MySQL secara transaksional, lalu memvalidasi kesiapan skema database dan mengaktifkan terminal kasir go-live.
 
+#### 4.8.8. Alur Mengubah Password Akun Sendiri (WF-M7-08)
+*   **Derivasi**: UC-044, Tambahan, Tambahan.
+
+```mermaid
+flowchart TD
+    Start([Start]) --> InputPass[Aktor: Input Password Lama, Password Baru & Konfirmasi]
+    InputPass --> GetHash[Sistem: Tarik Hash Password User dari MySQL]
+    
+    GetHash --> VerifyOld{Sistem: bcrypt.checkpw Password Lama == Hash Database?}
+    VerifyOld -->|Tidak| ErrMismatch([Sistem: Tampilkan ERR-PASSWORD-MISMATCH & Batal])
+    
+    VerifyOld -->|Ya| VerifyNew{Sistem: Panjang Sandi Baru >= 8 Karakter & Kombinasi Angka?}
+    VerifyNew -->|Tidak| ErrWeak([Sistem: Tampilkan ERR-WEAK-PASSWORD & Batal])
+    
+    VerifyNew -->|Ya| EncryptNew[Sistem: Enkripsi Password Baru dengan bcrypt Cost 12]
+    EncryptNew --> UpdateDB[Sistem: Update password_hash di MySQL & Catat ke Audit Trail JSON]
+    UpdateDB --> ForceLogout[Sistem: Tampilkan Notifikasi Sukses & Hapus Session JWT]
+    ForceLogout --> End([End / Force Logout])
+    
+    style Start fill:#1b5e20,stroke:#2e7d32,color:#fff
+    style End fill:#1b5e20,stroke:#2e7d32,color:#fff
+    style ErrMismatch fill:#b71c1c,stroke:#c62828,color:#fff
+    style ErrWeak fill:#b71c1c,stroke:#c62828,color:#fff
+```
+**Narasi Prosedural**:
+1.  Aktor membuka menu Ubah Kata Sandi Akun pada terminal CLI.
+2.  Aktor menginput kata sandi lama, kata sandi baru, dan konfirmasi kata sandi baru.
+3.  Sistem memuat hash kata sandi lama milik user dari database, lalu melakukan verifikasi menggunakan `bcrypt.checkpw()`. Jika salah, sistem menghentikan proses dan memancarkan `ERR-PASSWORD-MISMATCH`.
+4.  Jika sandi lama valid, sistem mengevaluasi kriteria kekuatan sandi baru (minimal 8 karakter dan mengandung kombinasi angka). Jika lemah, sistem menolak dan melempar `ERR-WEAK-PASSWORD`.
+5.  Jika sandi baru kuat, sistem mengenkripsi sandi baru menggunakan `bcrypt` dengan cost factor 12, memperbarui basis data MySQL secara atomik, mencatat modifikasi di log audit trail JSON, dan secara paksa mengakhiri session JWT aktif (menghapus session) agar pengguna login ulang menggunakan kata sandi baru.
+
 ---
 
 ### 4.9. Workflow Modul M.8 — CRM & Riwayat Pelanggan
@@ -1594,7 +1626,7 @@ Tabel di bawah memetakan keterhubungan dua arah antara ID Workflow Diagram denga
 
 | ID Workflow | Nama Workflow Diagram | Use Case Terkait (UCD) | BRD Terkait (BRD) | SRS Terkait (SRS) | Status Kelengkapan |
 |---|---|---|---|---|---|
-| **WF-OP-01** | Daily Operation Master Workflow | UC-041, UC-042, UC-043 | Tambahan | SRS-F-ADD-01 | Lengkap (100%) |
+| **WF-OP-01** | Daily Operation Master Workflow | UC-041, UC-042, UC-043 | Tambahan | SRS-F-ADD-01, SRS-F-ADD-03, SRS-F-ADD-04, SRS-F-ADD-05 | Lengkap (100%) |
 | **WF-M1-01** | Pencatatan Transaksi Penjualan Multi-Divisi | UC-001 | BR-F-01 | SRS-F-001 | Lengkap (100%) |
 | **WF-M1-02** | Penentuan Skema Harga Dinamis | UC-002 | BR-F-02 | SRS-F-002 | Lengkap (100%) |
 | **WF-M1-03** | Pembayaran Bertahap (DP & Pelunasan) | UC-003 | BR-F-03 | SRS-F-003 | Lengkap (100%) |
@@ -1626,13 +1658,14 @@ Tabel di bawah memetakan keterhubungan dua arah antara ID Workflow Diagram denga
 | **WF-M6-03** | Notifikasi Jatuh Tempo Utang H-3 | UC-029 | BR-F-27 | SRS-F-027 | Lengkap (100%) |
 | **WF-M6-04** | Pengelolaan Aset Tetap, Depresiasi & Tabungan| UC-030 | BR-F-28 | SRS-F-028 | Lengkap (100%) |
 | **WF-M6-05** | Pengelolaan Pengeluaran & Biaya | UC-031 | BR-F-29 | SRS-F-029 | Lengkap (100%) |
-| **WF-M7-01** | Otentikasi Login & Session JWT | UC-041 | Tambahan | SRS-F-ADD-02 | Lengkap (100%) |
+| **WF-M7-01** | Otentikasi Login & Session JWT | UC-041 | Tambahan | SRS-F-ADD-02, SRS-F-ADD-04 | Lengkap (100%) |
 | **WF-M7-02** | Pembatasan Akses Menu RBAC Multi-Level | UC-032 | BR-F-30 | SRS-F-030 | Lengkap (100%) |
 | **WF-M7-03** | Pencatatan Audit Trail Log JSON | UC-033 | BR-F-31 | SRS-F-031 | Lengkap (100%) |
 | **WF-M7-04** | Serah Terima Shift Karyawan | UC-034 | BR-F-32 | SRS-F-032 | Lengkap (100%) |
 | **WF-M7-05** | Rekonsiliasi Kas Harian Laci Kasir | UC-035 | BR-F-33 | SRS-F-033 | Lengkap (100%) |
 | **WF-M7-06** | Pemantauan Anomali Transaksi (Fraud) | UC-036 | BR-F-34 | SRS-F-034 | Lengkap (100%) |
 | **WF-M7-07** | Input Data Awal dari Excel (Setup) | UC-037 | BR-F-35 | SRS-F-035 | Lengkap (100%) |
+| **WF-M7-08** | Alur Mengubah Password Akun Sendiri | UC-044 | Tambahan | Tambahan | Lengkap (100%) |
 | **WF-M8-01** | Pengelolaan Database CRM Pelanggan | UC-038 | BR-F-36 | SRS-F-036 | Lengkap (100%) |
 | **WF-M9-01** | Penerapan Identifikasi Multi-Cabang | UC-039 | BR-F-37 | SRS-F-037 | Lengkap (100%) |
 | **WF-M10-01**| Konfigurasi Parameter Bisnis Runtime | UC-040 | BR-F-38 | SRS-F-038 | Lengkap (100%) |
@@ -1656,6 +1689,16 @@ Tabel di bawah mendokumentasikan seluruh titik keputusan (percabangan kondisiona
 | **DP-M4-04** | Karyawan memiliki Kasbon Aktif? | Potong gaji kotor dengan sisa utang kasbon (WF-M4-04)| Cetak slip gaji bersih tanpa nominal potongan |
 | **DP-M7-02** | Peran User Terdaftar pada RBAC Menu? | Buka menu CLI & berikan fungsionalitas (WF-M7-02)| Blokir menu, lemparkan error `ERR-AUTH-004` |
 | **DP-M7-05** | Hasil Rekonsiliasi Kas Sesuai / Cocok? | Catat status MATCH, selisih Rp 0, shift ditutup | Catat VARIANCE, selisih Rp X, picu fraud alarm |
+| **DP-M1-04** | Status Transaksi == BELUM LUNAS? | Batalkan pesanan, kurangi kas laci & hapus antrian | Blokir pembatalan, lemparkan error `ERR-TX-005` |
+| **DP-M2-03** | Aturan Konversi UoM Valid? | Simpan satuan & aturan konversi ke MySQL | Batalkan penyimpanan, lemparkan error `ERR-UOM-002` |
+| **DP-M2-10** | Kunci Dekripsi AES-256 Valid? | Dekripsi file SQL & jalankan rekonstruksi MySQL | Batalkan restore database, lemparkan error `ERR-DB-009` |
+| **DP-M4-02b** | Hasil Bagi Gaji Karyawan >= Rp 1.600.000 (50% UMR)? | Terapkan skema Bagi Hasil Gaji 25% Laba | Terapkan jaminan gaji minimum Rp 1.600.000 |
+| **DP-M6-05** | Total Pengeluaran Bulanan > Rp 4.500.000? | Tampilkan peringatan banner kuning Over-Budget di CLI | Selesaikan pencatatan pengeluaran tanpa alert |
+| **DP-M7-01** | bcrypt.checkpw Password Input == Hash Database? | Buat token session JWT terenkripsi & masuk dashboard | Tolak login, lemparkan error `ERR-AUTH-003` |
+| **DP-M7-08-01** | Password Lama == Hash Database? | Lanjutkan ke evaluasi kekuatan sandi baru | Batalkan proses, lemparkan error `ERR-PASSWORD-MISMATCH` |
+| **DP-M7-08-02** | Panjang Sandi Baru >= 8 Karakter & Kombinasi Angka? | Enkripsi sandi baru dengan bcrypt Cost 12 & simpan ke MySQL | Batalkan proses, lemparkan error `ERR-WEAK-PASSWORD` |
+| **DP-M8-01** | Nomor WA Pelanggan Sudah Terdaftar? | Hubungkan transaksi aktif ke pelanggan terdaftar | Daftarkan pelanggan baru ke tabel CRM & hubungkan |
+| **DP-M9-01** | Peran Pengguna == Pemilik? | Izinkan bypass filter cabang & tampilkan laporan konsolidasi | Batasi tampilan CLI hanya menampilkan data cabang user |
 
 ### 7.2. Daftar Exception Flow pada Workflow
 Tabel di bawah mendaftar seluruh penanganan pengecualian (exception flow/error handling) pada workflow beserta kode error SRS dan aksi pemulihannya:
@@ -1670,6 +1713,8 @@ Tabel di bawah mendaftar seluruh penanganan pengecualian (exception flow/error h
 | **ERR-UOM-002**  | Validasi UoM Gagal | Konversi UoM (WF-M2-03)| Sistem membatalkan penyimpanan aturan konversi, menuntut input parameter rasio numerik positif, dan membuang draft. |
 | **ERR-SDM-008**  | Plafon Kasbon Terlampaui | Kasbon SDM (WF-M4-01)| Sistem memblokir penyimpanan record kasbon baru dan menampilkan dialog peringatan batas limit utang kasbon aktif karyawan. |
 | **ERR-DB-009**   | Kunci Dekripsi SQL Salah | Restore DB (WF-M2-10) | Sistem membatalkan penulisan ulang database MySQL, membuang data memori terdekripsi parsial, dan memicu audit log anomali. |
+| **ERR-PASSWORD-MISMATCH** | Sandi Lama Salah | Ubah Password (WF-M7-08) | Sistem memblokir penggantian sandi baru, mengembalikan pengguna ke form sandi lama. |
+| **ERR-WEAK-PASSWORD** | Sandi Baru Lemah | Ubah Password (WF-M7-08) | Sistem menolak sandi baru yang di bawah 8 karakter atau tidak mengandung angka, meminta input sandi kuat. |
 
 ---
 
@@ -1690,6 +1735,9 @@ Berikut adalah penjelasan istilah khusus modeling workflow, notasi diagram, dan 
 12. **Swimlane**: Pembagian visual secara horizontal atau vertikal dalam diagram alir untuk memperjelas aktor atau divisi mana yang bertanggung jawab atas suatu langkah.
 13. **To-Be**: Desain atau representasi alur kerja masa depan toko yang telah diintegrasikan, diperbaiki, dan diotomasi oleh sistem CLI target.
 14. **UoM (Unit of Measure)**: Satuan ukuran persediaan stok barang (Rim, Lembar, Mililiter, Pcs) yang mendukung perhitungan presisi desimal.
+15. **JWT (JSON Web Token)**: Token string terenkripsi berstandar terbuka (RFC 7519) yang digunakan untuk pertukaran data secara aman antar client dan server dalam sesi login.
+16. **Audit Trail**: Catatan log kronologis terstruktur yang menyimpan setiap modifikasi data sensitif untuk keperluan pelacakan dan keamanan sistem.
+17. **Stock Opname**: Kegiatan fisik pencocokan kuantitas persediaan barang di gudang dengan catatan kuantitas di database sistem secara berkala.
 
 ---
 
@@ -1707,3 +1755,4 @@ Berikut adalah daftar berkas referensi resmi dalam siklus SDLC AbuCom yang digun
 | 6 | `02_software_requirements.md` | `docs/sdlc/02_analysis/02_software_requirements.md` | Dokumen SRS v1.1 — Referensi spesifikasi teknis input/proses/output, non-fungsional, dan penanganan exception. |
 | 7 | `03_use_case_diagram.md` | `docs/sdlc/02_analysis/03_use_case_diagram.md` | Dokumen UCD v1.1 — Referensi 44 use case naratif dengan Main Flow, Alternative Flow, dan Exception Flow. |
 | 8 | `narasi.txt` | `docs/sdlc/narasi.txt` | Narasi Asli Pemilik Usaha — Referensi orisinal alur bisnis manual As-Is dan harapan UMKM AbuCom. |
+| 9 | `02_feasibility_study.md` | `docs/sdlc/01_planning/02_feasibility_study.md` | Dokumen Feasibility Study v1.1 — Referensi kelayakan ekonomi (ROI, NPV, BEP) proyek AbuCom. |
