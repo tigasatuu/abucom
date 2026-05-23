@@ -1,9 +1,9 @@
 ---
 dokumen    : Business Requirements Document (BRD)
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.0
+versi      : 1.1
 tanggal    : 2026-05-23
-status     : Draft
+status     : Revised
 penyusun   : Senior Business Analyst & Requirements Engineering Specialist
 ---
 
@@ -14,6 +14,7 @@ penyusun   : Senior Business Analyst & Requirements Engineering Specialist
 | Versi | Tanggal    | Perubahan | Oleh |
 |---|---|---|---|
 | 1.0   | 2026-05-23 | Pembuatan awal dokumen berdasarkan analisis komprehensif seluruh dokumen fase Planning (Project Charter v1.1, Feasibility Study v1.1, Stakeholder Register v1.1, Tech Stack Decision v1.1, Innovation Proposal v1.1) dan narasi asli pemilik usaha. | Senior Business Analyst & Requirements Engineering Specialist |
+| 1.1   | 2026-05-23 | Revisi menyeluruh v1.1 berdasarkan analisis kelayakan & inovasi. Menambahkan modul supplier & utang usaha (BR-F-40), melengkapi BEP, mengeliminasi placeholder privat ke format instruksi pemilik, menyelaraskan pain points, dan memperbaiki matriks traceability. | Senior Business Analyst & Requirements Engineering Specialist |
 
 ---
 
@@ -23,7 +24,7 @@ penyusun   : Senior Business Analyst & Requirements Engineering Specialist
 Dokumen *Business Requirements Document* (BRD) ini disusun untuk mengidentifikasi, menganalisis, dan mendokumentasikan secara formal seluruh kebutuhan bisnis, aturan operasional, serta batasan strategis yang wajib dipenuhi dalam pembangunan **AbuCom — Sistem Manajemen Terpadu Usaha Percetakan**. Dokumen ini berfokus pada perspektif bisnis ("*Apa yang dibutuhkan oleh bisnis?*") guna memastikan keselarasan antara solusi perangkat lunak yang dikembangkan dengan visi operasional pemilik usaha.
 
 ### 1.2. Cakupan Dokumen
-Dokumen ini mencakup analisis mendalam terhadap lima divisi bisnis AbuCom (produksi percetakan, retail ATK, layanan digital/PPOB, jasa keuangan agen, dan jasa perbaikan teknis), pemetaan 19 pemangku kepentingan, hak akses berbasis peran (RBAC), aturan bisnis numerik eksplisit, 42 kebutuhan fungsional dan non-fungsional, manajemen risiko operasional, kriteria penerimaan bisnis, serta glosarium istilah domain percetakan. Dokumen ini membatasi diri pada kebutuhan tingkat tinggi dan logis bisnis, serta sengaja mengabaikan detail implementasi teknis kode program yang menjadi domain dari dokumen spesifikasi berikutnya.
+Dokumen ini mencakup analisis mendalam terhadap lima divisi bisnis AbuCom (produksi percetakan, retail ATK, layanan digital/PPOB, jasa keuangan agen, dan jasa perbaikan teknis), pemetaan 19 pemangku kepentingan, hak akses berbasis peran (RBAC), aturan bisnis numerik eksplisit, 43 kebutuhan fungsional dan non-fungsional, manajemen risiko operasional, kriteria penerimaan bisnis, serta glosarium istilah domain percetakan. Dokumen ini membatasi diri pada kebutuhan tingkat tinggi dan logis bisnis, serta sengaja mengabaikan detail implementasi teknis kode program yang menjadi domain dari dokumen spesifikasi berikutnya.
 
 ### 1.3. Posisi Dokumen dalam Siklus SDLC
 Dalam siklus pengembangan perangkat lunak (*Software Development Life Cycle* - SDLC) AbuCom, dokumen ini merupakan output pertama pada **Fase 02 Analysis (Analisis Kebutuhan)**. Dokumen ini menjadi jembatan formal pertama yang mentransisikan visi konseptual dari Fase 01 Planning (Perencanaan) menuju fase pendefinisan teknis berikutnya.
@@ -41,9 +42,9 @@ Target pembaca formal dari dokumen ini meliputi:
 
 ## 2. Ringkasan Eksekutif (Executive Summary)
 
-Usaha UMKM AbuCom mengoperasikan lima unit bisnis yang sangat kompleks di satu lokasi fisik secara simultan. Saat ini, pemilik usaha mengelola seluruh kegiatan tersebut sendirian (*single-fighter*) secara manual dengan mengandalkan berkas Microsoft Excel yang berserakan dan tidak tersinkronisasi. Kompleksitas ini menyebabkan pemilik usaha mengalami stres berat, keletihan mental (*burnout*), serta memicu tingginya risiko operasional seperti pesanan pelanggan yang terlewat, kebocoran kas laci kasir, selisih persediaan gudang yang tidak terukur (limbah produksi), dan denda setoran bank akibat keterlambatan pelacakan jatuh tempo.
+Usaha UMKM AbuCom mengoperasikan lima unit bisnis yang sangat kompleks di satu lokasi fisik secara simulatan. Saat ini, pemilik usaha mengelola seluruh kegiatan tersebut sendirian (*single-fighter*) secara manual dengan mengandalkan berkas Microsoft Excel yang berserakan dan tidak tersinkronisasi. Kompleksitas ini menyebabkan pemilik usaha mengalami stres berat, keletihan mental (*burnout*), serta memicu tingginya risiko operasional seperti pesanan pelanggan yang terlewat, kebocoran kas laci kasir, selisih persediaan gudang yang tidak terukur (limbah produksi), dan denda setoran bank akibat keterlambatan pelacakan jatuh tempo.
 
-Untuk mengatasi isu kritis ini, diputuskan untuk melakukan rekrutmen **7 staf karyawan baru** yang didukung oleh penerapan aplikasi kustom internal terpadu berbasis *Command Line Interface* (CLI) Python dan database MySQL lokal. Studi Kelayakan (*Feasibility Study v1.1*) menetapkan keputusan investasi proyek ini berada pada status **GO WITH CONDITIONS (GO DENGAN CATATAN)**. Proyek ini sangat layak secara ekonomi dengan proyeksi tingkat pengembalian investasi (ROI) sebesar **26.0%** pada tahun pertama, nilai bersih saat ini (NPV) yang sangat positif sebesar **Rp 47.471.075**, dan periode pengembalian modal (*Payback Period*) yang cepat yaitu **9,5 bulan** berdasarkan total investasi (CAPEX) sebesar **Rp 40.000.000**.
+Untuk mengatasi isu kritis ini, diputuskan untuk melakukan rekrutmen **7 staf karyawan baru** yang didukung oleh penerapan aplikasi kustom internal terpadu berbasis *Command Line Interface* (CLI) Python dan database MySQL lokal. Studi Kelayakan (*Feasibility Study v1.1*) menetapkan keputusan investasi proyek ini berada pada status **GO WITH CONDITIONS (GO DENGAN CATATAN)**. Proyek ini sangat layak secara ekonomi dengan proyeksi tingkat pengembalian investasi (ROI) sebesar **26,0%** pada tahun pertama, nilai bersih saat ini (NPV) yang sangat positif sebesar **Rp 47.471.075**, dan periode pengembalian modal (*Payback Period*) yang cepat yaitu **9,5 bulan** berdasarkan total investasi (CAPEX) sebesar **Rp 40.000.000**. Berdasarkan analisis kelayakan ekonomi, Titik Impas (*Break-Even Point* - BEP) investasi CAPEX dicapai pada **bulan ke-9,5** operasional dengan akumulasi **800 transaksi** percetakan kustom, sedangkan BEP OPEX bulanan sebesar **Rp 500.000** dapat ditutupi dengan minimal **10 transaksi** kustom per bulan.
 
 Dokumen BRD ini secara formal merinci seluruh kebutuhan bisnis terstruktur yang mencakup otomatisasi persediaan menggunakan skema *Bill of Materials* (BOM) presisi desimal, pembukuan laba rugi instan, pelacakan antrian (*job tracking*) tanpa pesanan terlewat (*zero-missed orders*), sistem penggajian cerdas pelindung kas harian, serta pengamanan privasi data (kepatuhan UU PDP No. 27/2022) melalui enkripsi bcrypt, token otentikasi JWT, sistem peran RBAC, dan Audit Trail terstruktur JSON guna mengeliminasi celah fraud internal.
 
@@ -53,7 +54,8 @@ Dokumen BRD ini secara formal merinci seluruh kebutuhan bisnis terstruktur yang 
 
 ### 3.1. Deskripsi Usaha
 UMKM AbuCom adalah sebuah unit usaha mikro, kecil, dan menengah (UMKM) mandiri yang menyediakan jasa pelayanan percetakan terpadu, perdagangan eceran alat tulis kantor, serta berbagai layanan transaksi digital dan perbaikan perangkat teknologi. Usaha ini beroperasi secara fisik di toko lokal terdedikasi dengan alamat operasional yang terdaftar sebagai:
-`[BELUM TERSEDIA — Diisi oleh Pemilik Usaha. Contoh: {Alamat Lengkap Toko Fisik AbuCom, Jalan, No, Kecamatan, Kabupaten/Kota, Provinsi}]`
+
+> ⚠️ PERLU DIISI PEMILIK: [Alamat lengkap toko fisik AbuCom, nomor jalan, kecamatan, kabupaten/kota, dan provinsi tempat usaha beroperasi secara fisik.]
 
 ### 3.2. Struktur Organisasi (Saat Ini dan Rencana)
 *   **Kondisi Saat Ini**: Dijalankan murni secara tunggal oleh **Pemilik Usaha AbuCom** yang memegang seluruh peran operasional, administratif, keuangan, logistik, hingga pelayanan WhatsApp.
@@ -132,6 +134,7 @@ Operasional dan investasi pengembangan AbuCom didanai dari dua sumber modal terp
 ### 4.2. Identifikasi Titik Kelemahan (Pain Points)
 Berdasarkan investigasi terhadap alur kerja As-Is di atas, diidentifikasi titik kelemahan bisnis sebagai berikut:
 *   **Burnout Ekstrim Pemilik Usaha**: Pemilik bertindak sebagai *single point of failure* yang memicu kelelahan fisik/mental akut dan menurunkan produktivitas strategis.
+*   **Kebocoran Transaksi akibat Pesanan Terlewat (WhatsApp & Fisik)**: Pesanan masuk lewat konter atau pesan WhatsApp seringkali lupa dikerjakan akibat tidak adanya pelacakan status pekerjaan terpadu.
 *   **Ketidakakuratan HPP & Nilai Persediaan**: Formula HPP tidak akurat karena perhitungan bahan baku stempel/baliho kustom berbasis ukuran panjang x lebar desimal tidak didukung oleh Excel standar, sehingga sisa stok bahan di gudang selalu mengalami selisih terhadap pencatatan sistem.
 *   **Kebocoran Stok Limbah Produksi**: Bahan baku yang rusak atau salah cetak (limbah) dibuang begitu saja tanpa pencatatan kuantitas, menyembunyikan inefisiensi biaya operasional.
 *   **Risiko Kebocoran Kas & Fraud**: Ketiadaan pembatasan hak akses keuangan sensitif, ketiadaan rekap aktivitas modifikasi data (*Audit Trail*), dan tidak adanya pencocokan uang kasir laci kas fisik (*Cash Reconciliation*) memicu celah fraud yang tinggi saat karyawan baru masuk.
@@ -157,7 +160,7 @@ graph TD
     J --> K[Produksi Set Status Selesai & Kasir Terima Pelunasan]
     
     D --> L[Kasir Selesaikan Pembayaran & Stok Terpotong Otomatis]
-    E --> M[Sistem Kurangi Saldo PPOB & Berikan Alert jika Saldo < Rp 150rb]
+    E --> M[Sistem Kurangi Saldo PPOB & Berikan Alert jika Saldo < Rp 150.000]
     F --> N[Kasir Kirim Uang Fisik & Catat Mutasi E-Wallet]
     G --> O[Teknisi Perbaiki Unit & Kasir Terima Pelunasan Jasa]
     
@@ -190,14 +193,13 @@ graph TD
 
 ### 5.2. Kebutuhan dan Ekspektasi per Aktor
 *   **Pemilik Usaha (STK-001)**:
-    *   *Kebutuhan*: Otomatisasi 100% laporan keuangan, pembukuan laba rugi instan divisi, kalkulasi HPP otomatis berbasis BOM desimal, monitoring kasbon, Smart Payroll penggajian cerdas, dan keamanan data pinjaman pribadi.
-    *   *Ekspektasi*: Meniadakan Excel manual, membebaskan diri dari burnout, mendelegasikan operasional ke staf baru dengan jaminan sistem 100% bebas dari kebocoran/kecurangan keuangan.
+    *   *Kebutuhan*: Otomatisasi 100% Laporan Keuangan, pembukuan laba rugi instan divisi, kalkulasi HPP otomatis berbasis BOM desimal, monitoring kasbon, Smart Payroll penggajian cerdas, dan keamanan data pinjaman pribadi.
+    *   *Ekspektasi*: Meniadaan Excel manual, membebaskan diri dari burnout, mendelegasikan operasional ke staf baru dengan jaminan sistem 100% bebas dari kebocoran/kecurangan keuangan.
 *   **Staf Kasir, Pramuniaga, Gudang, & Teknisi (STK-002 s.d STK-008)**:
     *   *Kebutuhan*: Antarmuka CLI yang intuitif dengan panduan input yang jelas, navigasi keyboard terstruktur, notifikasi alert stok kritis, dan menu pencatatan serah terima shift yang cepat.
     *   *Ekspektasi*: Kemudahan mencatat transaksi penjualan tanpa menghafal lembar Excel manual harga, keadilan insentif via sistem poin otomatis, transparansi slip gaji & sisa utang kasbon.
 
 ### 5.3. Hak Akses dan Pembatasan Menu per Aktor (RBAC)
-
 Untuk melindungi data sensitif pemilik dan kas usaha, hak akses terminal CLI dibatasi secara ketat berdasarkan aturan peran (*Role-Based Access Control*):
 
 | Peran Pengguna (Role) | Transaksi & Kasir | Antrian & Desain | Gudang & Opname | Absensi Staf | Keuangan & Laba/Rugi | Pinjaman & Aset | Payroll Gaji | Audit Trail |
@@ -231,16 +233,17 @@ Untuk melindungi data sensitif pemilik dan kas usaha, hak akses terminal CLI dib
 Membangun sistem aplikasi manajemen internal AbuCom berbasis CLI Python & MySQL yang modular, aman, dan berkinerja tinggi untuk mengotomatisasi seluruh alur kerja operasional 5 divisi usaha, meniadakan ketergantungan pada Excel manual yang tidak terintegrasi, serta menyajikan laporan persediaan stok dan laba rugi instan demi mendukung kebebasan mental pemilik dari keletihan harian (*burnout*).
 
 ### 6.2. Tujuan Spesifik (SMART Goals)
-*   **S.1 (Otomatisasi Persediaan & BOM)**: Mengurangi selisih kuantitas stok barang fisik di gudang terhadap catatan sistem hingga di bawah **1.0%** melalui fitur potong stok otomatis berbasis skema *Bill of Materials* (BOM) dengan input dimensi desimal panjang x lebar atau volume desimal presisi.
+*   **S.1 (Otomatisasi Persediaan & BOM)**: Mengurangi selisih kuantitas stok barang fisik di gudang terhadap catatan sistem hingga di bawah **1,0%** melalui fitur potong stok otomatis berbasis skema *Bill of Materials* (BOM) dengan input dimensi desimal panjang x lebar atau volume desimal presisi.
 *   **S.2 (Keuangan Instan & Laba/Rugi)**: Menyajikan laporan keuangan laba/rugi, pengeluaran rutin harian, dan tabungan aset secara instan (waktu pemrosesan data **< 5 detik**) per divisi operasional usaha.
 *   **S.3 (Zero-Missed Orders)**: Mencapai tingkat kekeliruan pesanan pelanggan yang terlewat hingga **0%** menggunakan visualisasi dashboard antrian pekerjaan digital (*job tracking*) dengan 5 tahapan transisi status.
 *   **S.4 (Smart Payroll & SDM)**: Memfasilitasi kesiapan operasional rekrutmen 7 staf baru melalui modul absensi terintegrasi penggajian cerdas bulanan (gaji bulanan tetap vs persentase keuntungan laba usaha) dan sistem pemotongan utang kasbon terotomatisasi.
 *   **S.5 (Kesiapan Multi-Cabang)**: Menjamin rancangan struktur basis data MySQL memiliki kesiapan **100% Multi-Branch Ready** dengan kolom ID cabang di setiap tabel utama untuk mendukung ekspansi cabang baru di masa depan tanpa merombak kode sistem.
+*   **S.6 (Break-Even Point)**: Mencapai titik impas investasi CAPEX **Rp 40.000.000** pada bulan ke-**9,5** masa operasional Go-Live dengan memproses akumulasi **800 transaksi** percetakan kustom.
 
 ### 6.3. Manfaat Bisnis Kuantitatif
 *   **Reduksi Waktu Pembukuan**: Memotong waktu pengerjaan rekap transaksi harian dan penyusunan laporan keuangan bulanan dari rata-rata **2-3 jam per hari** menjadi **instan (< 5 detik)** secara otomatis setelah penutupan rekonsiliasi kasir selesai.
 *   **Efisiensi Limbah Produksi**: Menurunkan kerugian finansial akibat persediaan bahan baku percetakan kustom yang rusak, cacat, atau salah cetak sebesar **15%** per tahun melalui pencatatan log *Waste Management* terstruktur.
-*   **Penyelamatan Transaksi Terlewat**: Mengeliminasi insiden pesanan WhatsApp atau pesanan fisik yang lupa dikerjakan hingga **0% (Zero-Missed Orders)**, menyelamatkan potensi hilangnya transaksi senilai rata-rata Rp 2.000.000 per bulan.
+*   **Penyelamatan Transaksi Terlewat**: Mengeliminasi insiden pesanan WhatsApp atau pesanan fisik yang lupa dikerjakan hingga **0% (Zero-Missed Orders)**, menyelamatkan potensi hilangnya transaksi senilai rata-rata **Rp 2.000.000** per bulan.
 *   **Efisiensi OPEX Biaya Admin**: Meningkatkan margin laba bersih dari divisi jasa keuangan transfer uang hingga **12%** menggunakan modul visual rekomendasi akun dengan biaya admin termurah dari 6 e-wallet digital.
 
 ### 6.4. Manfaat Bisnis Kualitatif
@@ -253,7 +256,7 @@ Membangun sistem aplikasi manajemen internal AbuCom berbasis CLI Python & MySQL 
 
 ## 7. Kebutuhan Bisnis Fungsional
 
-Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 9 Modul Utama AbuCom.
+Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 10 Modul Utama AbuCom.
 
 ### 7.1. Modul Manajemen Transaksi & Kebijakan Harga (M.1)
 
@@ -261,7 +264,7 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 9 Mod
 *   **Deskripsi**: Sistem harus mampu mencatat transaksi penjualan dari kelima divisi usaha (produk percetakan kustom, retail ATK, pulsa/token PPOB, transfer/tarik tunai, jasa service) secara terpisah namun terintegrasi dalam satu database.
 *   **Aktor Terkait**: `pramuniaga`, `kasir`, `fotocopy_print`
 *   **Aturan Bisnis**: Pencatatan transaksi wajib menyertakan timestamp, ID User kasir aktif, ID Cabang default, detail barang/jasa, kuantitas, subtotal, dan metode pembayaran.
-*   **Kriteria Penerimaan**: Staf kasir dapat memasukkan dan menyimpan transaksi multi-divisi dalam satu layar struk transaksi tunggal di CLI dengan waktu penyimpanan database < 1 detik.
+*   **Kriteria Penerimaan**: Staf kasir dapat memasukkan dan menyimpan transaksi multi-divisi dalam satu layar struk transaksi tunggal di CLI dengan waktu penyimpanan database **< 1 detik**.
 *   **Prioritas**: High
 *   **Sumber Data**: Project Charter v1.1 Bagian 8.1 [F-1.1], Narasi Asli Harapan Poin 1.
 
@@ -285,7 +288,7 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 9 Mod
 *   **Deskripsi**: Sistem harus memfasilitasi alur pembatalan transaksi (pengembalian DP) dan retur barang retail yang rusak/salah cetak dengan melakukan pengembalian stok gudang & penyesuaian kas laci yang sinkron secara otomatis.
 *   **Aktor Terkait**: `kasir`
 *   **Aturan Bisnis**: Pembatalan pesanan mengembalikan DP 100% dan memotong saldo kas laci kasir aktif. Retur barang ATK mengembalikan kuantitas barang ke database stok dan mencatat pengeluaran kas retur di database keuangan.
-*   **Kriteria Penerimaan**: Kasir kasir dapat memproses retur barang, kuantitas stok barang di tabel persediaan bertambah otomatis, dan kas laci terpotong secara transaksional aman (ACID compliance di MySQL).
+*   **Kriteria Penerimaan**: Kasir dapat memproses retur barang, kuantitas stok barang di tabel persediaan bertambah otomatis, dan kas laci terpotong secara transaksional aman (ACID compliance di MySQL).
 *   **Prioritas**: High
 *   **Sumber Data**: Project Charter v1.1 Bagian 8.1 [F-1.4], Innovation Proposal v1.1 [INV-INT-24].
 
@@ -329,7 +332,7 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 9 Mod
 *   **Deskripsi**: Sistem harus mendukung pengelolaan data persediaan dengan berbagai jenis satuan ukur (Rim, Lembar, Pcs, Mililiter, Gram, Dimensi) dan konversi dinamis di database.
 *   **Aktor Terkait**: `gudang`, `produksi_cetak`
 *   **Aturan Bisnis**: Angka sisa stok persediaan desimal presisi wajib didukung penuh untuk bahan baku eceran di gudang percetakan.
-*   **Kriteria Penerimaan**: Staf gudang dapat mendaftarkan bahan baku dengan satuan UoM pecahan desimal (seperti sisa kertas foto 0.75 pack) dan sistem menyimpan nilai kuantitas tersebut dengan valid.
+*   **Kriteria Penerimaan**: Staf gudang dapat mendaftarkan bahan baku dengan satuan UoM pecahan desimal (seperti sisa kertas foto 0,75 pack) dan sistem menyimpan nilai kuantitas tersebut dengan valid.
 *   **Prioritas**: High
 *   **Sumber Data**: Project Charter v1.1 Bagian 4.1.1 [M.2], Innovation Proposal v1.1 [INV-INT-06].
 
@@ -358,7 +361,7 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 9 Mod
 *   **Sumber Data**: Project Charter v1.1 Bagian 8.3 [N-3.3], Innovation Proposal v1.1 [INV-REC-03].
 
 #### **BR-F-13: Fitur Riwayat Harga Beli Supplier (Price Tracking)**
-*   **Deskripsi**: Sistem harus merekam riwayat perubahan harga beli barang baku/retail dari setiap supplier fisik setiap kali staf gudang menginput transaksi pengadaan barang masuk.
+*   **Deskripsi**: Sistem harus merekam riwayat fluktuasi harga beli barang baku atau retail dari setiap supplier fisik setiap kali staf gudang menginput transaksi pengadaan barang masuk.
 *   **Aktor Terkait**: `gudang`
 *   **Aturan Bisnis**: Data disimpan di tabel riwayat harga untuk menyajikan komparasi harga supplier termurah untuk produk sejenis secara real-time.
 *   **Kriteria Penerimaan**: Staf gudang dapat mengakses data barang, melihat daftar harga beli historis dari 3 supplier berbeda, dan memilih supplier paling murah secara cepat.
@@ -369,9 +372,17 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 9 Mod
 *   **Deskripsi**: Sistem harus menyediakan skrip utilitas CLI independen untuk mengimpor data awal persediaan barang, supplier, dan aset dari file CSV ekspor Excel lama pemilik setelah divalidasi kebersihan formatnya.
 *   **Aktor Terkait**: `pemilik`, `gudang`
 *   **Aturan Bisnis**: Skrip harus menyaring data kosong, format data tidak sesuai, atau baris data duplikat secara fungsional sebelum dimasukkan ke database MySQL.
-*   **Kriteria Penerimaan**: Pemilik dapat menjalankan skrip import CSV, data 1000+ barang retail terisi ke tabel persediaan database secara bersih dalam waktu < 5 detik.
+*   **Kriteria Penerimaan**: Pemilik dapat menjalankan skrip import CSV, data 1000+ barang retail terisi ke tabel persediaan database secara bersih dalam waktu **< 5 detik**.
 *   **Prioritas**: High
 *   **Sumber Data**: Narasi Asli Poin 7 (Pekerjaan Administratif), Innovation Proposal v1.1 [INV-NEW-08].
+
+#### **BR-F-40: Manajemen Data Supplier & Pencatatan Utang Usaha**
+*   **Deskripsi**: Sistem harus mampu mencatat profil data supplier/vendor bahan baku dan ATK serta mencatat riwayat transaksi utang usaha atas pembelian barang tempo.
+*   **Aktor Terkait**: `gudang`, `kepala_percetakan`
+*   **Aturan Bisnis**: Pembelian barang tempo wajib menyertakan nominal utang, tanggal transaksi, nama supplier, dan tanggal jatuh tempo pembayaran. Pelunasan utang memotong saldo kas keluar.
+*   **Kriteria Penerimaan**: Staf gudang dapat merekam utang supplier baru di CLI, daftar utang tampil di laporan, dan status berubah menjadi `LUNAS` saat pembayaran dicatat.
+*   **Prioritas**: High
+*   **Sumber Data**: Project Charter v1.1 Bagian 8.1 [F-2.4], Narasi Asli Poin 7.
 
 ---
 
@@ -381,7 +392,7 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 9 Mod
 *   **Deskripsi**: Sistem harus melacak saldo virtual PPOB pada 2 akun terpisah (akun pulsa/data dan akun token/tagihan) secara manual dan memicu alert visual otomatis jika saldo di bawah **Rp 150.000**.
 *   **Aktor Terkait**: `kasir`
 *   **Aturan Bisnis**: Sistem harus mencatat riwayat top-up saldo virtual dengan nilai deposit minimal yang direkomendasikan sebesar **Rp 500.000**.
-*   **Kriteria Penerimaan**: Ketika transaksi pulsa dicatat dan menyebabkan saldo virtual akun PPOB tersisa Rp 140.000, terminal CLI kasir langsung memancarkan notifikasi peringatan "SALDO PPOB KRITIS - SEGERA DEPOSIT MINIMAL RP 500.000".
+*   **Kriteria Penerimaan**: Ketika transaksi pulsa dicatat dan menyebabkan saldo virtual akun PPOB tersisa **Rp 140.000**, terminal CLI kasir langsung memancarkan notifikasi peringatan "SALDO PPOB KRITIS - SEGERA DEPOSIT MINIMAL RP 500.000".
 *   **Prioritas**: High
 *   **Sumber Data**: Project Charter v1.1 Bagian 8.1 [F-3.1], Innovation Proposal v1.1 [INV-INT-27].
 
@@ -389,7 +400,7 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 9 Mod
 *   **Deskripsi**: Sistem harus merekam transaksi transfer & tarik tunai dengan menyajikan perbandingan biaya admin di antara 6 e-wallet (Mandiri Agen, Dana, Gopay, LinkAja, ShopeePay, OVO) untuk merekomendasikan opsi paling hemat bagi pelanggan secara real-time.
 *   **Aktor Terkait**: `kasir`
 *   **Aturan Bisnis**: Tabel data biaya admin statis disimpan di database untuk perbandingan. Komisi keuntungan jasa transfer dihitung dari selisih tarif biaya admin toko ke pelanggan dengan biaya admin asli e-wallet.
-*   **Kriteria Penerimaan**: Kasir menginput transfer ke OVO nominal Rp 500.000, sistem merekomendasikan akun "Dana" karena memiliki tarif admin termurah (misal Rp 1.000 vs Agen Mandiri Rp 3.000), meminimalkan potongan saldo.
+*   **Kriteria Penerimaan**: Kasir menginput transfer ke OVO nominal **Rp 500.000**, sistem merekomendasikan akun "Dana" karena memiliki tarif admin termurah (misal **Rp 1.000** vs Agen Mandiri **Rp 3.000**), meminimalkan potongan saldo.
 *   **Prioritas**: High
 *   **Sumber Data**: Project Charter v1.1 Bagian 8.1 [F-3.2], Innovation Proposal v1.1 [INV-INT-28].
 
@@ -414,11 +425,13 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 9 Mod
 *   **Sumber Data**: Project Charter v1.1 Bagian 8.1 [F-4.1], Narasi Asli Poin 6.
 
 #### **BR-F-19: Sistem Penggajian Otomatis Cerdas (Smart Payroll)**
-*   **Deskripsi**: Sistem harus menghitung payroll bulanan staf secara otomatis berdasarkan skema cerdas: Gaji Bulanan Tetap jika laba bersih usaha mencapai target **Rp 15.000.000**, atau skema pembagian Gaji Persentase Laba sebesar **25%** dari laba bersih bulanan toko secara proporsional kepada staf aktif dengan jaminan minimum 50% UMR daerah jika target tidak tercapai.
+*   **Deskripsi**: Sistem harus menghitung payroll bulanan staf secara otomatis berdasarkan skema cerdas: Gaji Bulanan Tetap jika laba bersih usaha mencapai target **Rp 15.000.000**, atau skema pembagian Gaji Persentase Laba sebesar **25,0%** dari laba bersih bulanan toko secara proporsional kepada staf aktif dengan jaminan minimum **50,0%** UMR daerah jika target tidak tercapai.
 *   **Aktor Terkait**: `pemilik`
-*   **Aturan Bisnis**: Nilai target laba Rp 15.000.000 dan persentase 25% bersifat dinamis (diambil dari tabel konfigurasi). UMR daerah operasional diisi secara manual oleh pemilik berdasarkan data berikut:
-`[BELUM TERSEDIA — Diisi oleh Pemilik Usaha. Contoh: {Nominal Rupiah UMR Daerah Operasional Toko AbuCom}]`
-*   **Kriteria Penerimaan**: Pemilik memproses payroll bulanan saat laba bersih toko tercatat Rp 12.000.000 (di bawah target), sistem membagi Rp 3.000.000 (25% dari Rp 12jt) secara proporsional kepada karyawan aktif dengan jaminan batas bawah 50% UMR.
+*   **Aturan Bisnis**: Nilai target laba **Rp 15.000.000** dan persentase **25,0%** bersifat dinamis (diambil dari tabel konfigurasi). UMR daerah operasional diisi secara manual oleh pemilik berdasarkan data berikut:
+
+> ⚠️ PERLU DIISI PEMILIK: [Nominal Rupiah standar UMR (Upah Minimum Regional) daerah setempat yang berlaku untuk dijadikan basis penentuan jaminan gaji minimum 50% UMR daerah.]
+
+*   **Kriteria Penerimaan**: Pemilik memproses payroll bulanan saat laba bersih toko tercatat **Rp 12.000.000** (di bawah target), sistem membagi **Rp 3.000.000** (25% dari 12jt) secara proporsional kepada karyawan aktif dengan jaminan batas bawah **50,0%** UMR.
 *   **Prioritas**: High
 *   **Sumber Data**: Project Charter v1.1 Bagian 8.1 [F-4.2], Innovation Proposal v1.1 [INV-INT-09].
 
@@ -426,19 +439,19 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 9 Mod
 *   **Deskripsi**: Sistem harus mencatat akumulasi poin insentif staf per transaksi berdasarkan 4-tier tingkat kesulitan tugas untuk ditambahkan sebagai bonus bulanan pada payroll.
 *   **Aktor Terkait**: `kasir`, `pemilik`
 *   **Aturan Bisnis**: Nilai komisi rupiah per poin diatur dinamis di database. Karyawan yang terlibat langsung (misal desainer & kasir) mendapatkan pembagian poin sesuai alur transaksional.
-    *   1 Poin (Rp 500): Transaksi rutin/mudah (ATK, Pulsa, Transfer uang nominal kecil).
+    *   1 Poin (Rp 500): Transaksi rutin/mudah (ATK, Pulsa, Jasa Transfer nominal kecil).
     *   3 Poin (Rp 1.500): Jasa dasar (Fotokopi, Print, Pengetikan, Jasa Transfer nominal besar).
-    *   5 Poin (Rp 2.500): Produk kustom (Stempel flash, cetak foto, stiker, cetak nama dada).
-    *   10 Poin (Rp 5.000): Pekerjaan berat/teknis (Cetak baliho, yasin, undangan pernikahan, service printer, install laptop).
-*   **Kriteria Penerimaan**: Setelah kasir menyelesaikan pembayaran cetak buku yasin (pekerjaan berat), sistem secara otomatis menambahkan 10 poin (setara Rp 5.000) ke akun insentif karyawan produksi/desainer terkait.
+    *   5 Poin (Rp 2.500): Produk kustom (Stempel flash, cetak foto, stiker eceran, pin nama dada).
+    *   10 Poin (Rp 5.000): Pekerjaan berat/teknis (Cetak baliho, buku yasin, undangan pernikahan, service printer, install laptop).
+*   **Kriteria Penerimaan**: Setelah kasir menyelesaikan pembayaran cetak buku yasin (pekerjaan berat), sistem secara otomatis menambahkan 10 poin (setara **Rp 5.000**) ke akun insentif karyawan produksi/desainer terkait.
 *   **Prioritas**: High
 *   **Sumber Data**: Project Charter v1.1 Bagian 8.1 [F-4.4], Innovation Proposal v1.1 [INV-INT-10].
 
 #### **BR-F-21: Pemotongan Gaji Otomatis atas Kasbon Aktif**
 *   **Deskripsi**: Sistem harus memotong total nominal gaji bulanan karyawan secara otomatis pada slip payroll jika karyawan bersangkutan memiliki sisa utang kasbon aktif.
 *   **Aktor Terkait**: `pemilik`
-*   **Aturan Bisnis**: Batas limit nominal kasbon aktif karyawan dibatasi maksimal **Rp 1.000.000** atau maksimal 30% dari gaji standar bulanan karyawan.
-*   **Kriteria Penerimaan**: Karyawan memiliki kasbon aktif Rp 200.000, saat pemilik menyetujui slip gaji bulanan karyawan sebesar Rp 3.000.000, slip gaji otomatis tercetak bersih senilai Rp 2.800.000 dengan catatan penutupan kasbon.
+*   **Aturan Bisnis**: Batas limit nominal kasbon aktif karyawan dibatasi maksimal **Rp 1.000.000** atau maksimal **30,0%** dari gaji standar bulanan karyawan.
+*   **Kriteria Penerimaan**: Karyawan memiliki kasbon aktif **Rp 200.000**, saat pemilik menyetujui slip gaji bulanan karyawan sebesar **Rp 3.000.000**, slip gaji otomatis tercetak bersih senilai **Rp 2.800.000** dengan catatan penutupan kasbon.
 *   **Prioritas**: High
 *   **Sumber Data**: Project Charter v1.1 Bagian 8.1 [F-4.3], Innovation Proposal v1.1 [INV-INT-11].
 
@@ -478,16 +491,18 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 9 Mod
 *   **Deskripsi**: Sistem harus mampu mencatat secara terpisah dan transparan pinjaman modal tanpa bunga kerabat yang sangat fleksibel (penarikan, pengembalian, sisa saldo) dan pinjaman modal bank komersial berbunga (BRI dan Mandiri) yang memuat nominal, tenor, bunga, setoran bulanan, dan tanggal jatuh tempo.
 *   **Aktor Terkait**: `pemilik`
 *   **Aturan Bisnis**: Pinjaman tanpa bunga kerabat harus memiliki rekap log mutasi transparan. Pinjaman bank dihitung sisa tenor dan bunga secara matematis. Data detail pinjaman bank pemilik diisi secara manual berdasarkan data berikut:
-`[BELUM TERSEDIA — Diisi oleh Pemilik Usaha. Contoh: {Rincian Plafon Nominal Kredit, Persentase Bunga, Sisa Tenor Bulan, dan Tanggal Jatuh Tempo Bank BRI & Mandiri}]`
+
+> ⚠️ PERLU DIISI PEMILIK: [Detail spesifik nominal plafon kredit, persentase bunga kredit bulanan/tahunan, sisa tenor pelunasan dalam bulan, dan tanggal jatuh tempo bulanan untuk Bank BRI dan Bank Mandiri.]
+
 *   **Kriteria Penerimaan**: Pemilik dapat melihat layar administrasi pinjaman terpadu di mana sisa utang bank dan pinjaman keluarga tersaji akurat sesuai transaksi pembayaran yang dicatatkan di CLI.
 *   **Prioritas**: High
 *   **Sumber Data**: Project Charter v1.1 Bagian 8.1 [F-6.1] & [F-6.2], Innovation Proposal v1.1 [INV-INT-30].
 
 #### **BR-F-26: Laporan Laba/Rugi Komprehensif Instan per Divisi**
-*   **Deskripsi**: Sistem harus menyajikan laporan laba rugi komprehensif harian, bulanan, dan tahunan yang dapat dianalisis per kategori layanan usaha dengan waktu pemrosesan < 5 detik.
+*   **Deskripsi**: Sistem harus menyajikan laporan laba rugi komprehensif harian, bulanan, dan tahunan yang dapat dianalisis per kategori layanan usaha dengan waktu pemrosesan **< 5 detik**.
 *   **Aktor Terkait**: `pemilik`
 *   **Aturan Bisnis**: Perhitungan laba bersih diperoleh dari akumulasi pendapatan kotor multi-divisi dikurangi total HPP bahan baku (BOM desimal), dikurangi pengeluaran operasional rutin, limbah produksi (*waste cost*), dan bonus poin karyawan.
-*   **Kriteria Penerimaan**: Pemilik memilih menu laporan keuangan bulanan, terminal CLI menampilkan tabel ringkasan laba kotor, HPP, pengeluaran operasional, dan laba bersih per divisi secara instan (< 2 detik).
+*   **Kriteria Penerimaan**: Pemilik memilih menu laporan keuangan bulanan, terminal CLI menampilkan tabel ringkasan laba kotor, HPP, pengeluaran operasional, dan laba bersih per divisi secara instan (**< 2 detik**).
 *   **Prioritas**: High
 *   **Sumber Data**: Project Charter v1.1 Bagian 8.1 [F-6.4], Innovation Proposal v1.1 [INV-INT-26].
 
@@ -520,12 +535,12 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 9 Mod
 ### 7.7. Modul Keamanan, Audit Trail & Hak Akses (M.7)
 
 #### **BR-F-30: Role-Based Access Control (RBAC) Multi-Level CLI**
-*   **Deskripsi**: Sistem harus membatasi akses menu di tingkat aplikasi CLI untuk membedakan antara menu Pemilik (sensitif/keuangan) dan menu Staf (operasional) berdasarkan login session terotentikasi.
+*   **Deskripsi**: Sistem harus membatasi akses menu di tingkat aplikasi CLI untuk membedakan antara menu Pemilik (sensitif/keuangan) and menu Staf (operasional) berdasarkan login session terotentikasi.
 *   **Aktor Terkait**: `pemilik`, `kepala_percetakan`, `kasir`, `pramuniaga`, `desainer`, `produksi_cetak`, `fotocopy_print`, `gudang`
 *   **Aturan Bisnis**: User tidak diizinkan mengetik perintah atau membuka menu di luar daftar menu otorisasi perannya. Sistem harus menolak akses dengan pesan error otorisasi yang sesuai.
 *   **Kriteria Penerimaan**: Staf dengan peran `kasir` mencoba mengakses menu penggajian atau modal pinjaman bank di CLI, sistem menolak akses, menampilkan pesan "Akses Ditolak: Hak Akses Pemilik Dibutuhkan", dan mencatat insiden ke Audit Trail.
 *   **Prioritas**: High
-*   **Sumber Data**: Project Charter v1.1 Bagian 8.2 [N-2.1], Tech Stack Decision v1.1 Bagian 8.3.
+*   **Sumber Data**: Project Charter v1.1 Bagian 8.2 [N-2.1], Tech Stack Decision v1.1 Bagian 8.3, Innovation Proposal v1.1 [INV-INT-15].
 
 #### **BR-F-31: Audit Trail Kronologis Terstruktur (Format JSON)**
 *   **Deskripsi**: Sistem wajib mencatat setiap aktivitas modifikasi data sensitif (hapus transaksi harian, edit manual persediaan stok, retur barang, persetujuan kasbon) ke tabel log audit basis data MySQL.
@@ -533,7 +548,7 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 9 Mod
 *   **Aturan Bisnis**: Log Audit Trail harus mencatat secara kronologis: ID User pelaksana, Timestamp kejadian, Tipe Aksi (INSERT/UPDATE/DELETE), Nama Tabel yang dimanipulasi, serta data sebelum (*old_value*) dan sesudah (*new_value*) dalam format JSON terstruktur.
 *   **Kriteria Penerimaan**: Pemilik membuka menu log Audit Trail di CLI, sistem menyajikan tabel daftar aktivitas yang menunjukkan siapa kasir yang mengedit transaksi nominal rupiah tertentu, lengkap dengan data asli lama dan data baru secara instan.
 *   **Prioritas**: High
-*   **Sumber Data**: Project Charter v1.1 Bagian 8.2 [N-2.2], Tech Stack Decision v1.1 Bagian 8.4.
+*   **Sumber Data**: Project Charter v1.1 Bagian 8.2 [N-2.2], Tech Stack Decision v1.1 Bagian 8.4, Innovation Proposal v1.1 [INV-INT-16].
 
 #### **BR-F-32: Log Serah Terima Shift Karyawan (Shift Handover Log)**
 *   **Deskripsi**: Sistem harus mencatat peristiwa serah terima shift kasir aktif di terminal kasir, mencakup ID staf keluar, ID staf masuk, timestamp, total uang kasir fisik saat diserahterimakan, dan catatan operasional khusus.
@@ -547,15 +562,15 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 9 Mod
 *   **Deskripsi**: Sistem harus memfasilitasi menu rekonsiliasi kas (pencocokan jumlah uang tunai fisik di laci kasir toko vs jumlah uang kas tercatat di sistem aplikasi) di setiap akhir shift/hari kerja kasir.
 *   **Aktor Terkait**: `kasir`
 *   **Aturan Bisnis**: Batas toleransi selisih uang kas fisik laci kasir vs sistem dibatasi maksimal **Rp 10.000** per shift kasir. Selisih di atas toleransi wajib mencantumkan catatan tertulis justifikasi dan memicu alert audit.
-*   **Kriteria Penerimaan**: Kasir menginput uang laci fisik Rp 1.505.000 saat sistem mencatat Rp 1.500.000, sistem merekam selisih lebih Rp 5.000 (di bawah batas toleransi Rp 10.000) dan mencetak tanda serah terima kas harian yang valid.
+*   **Kriteria Penerimaan**: Kasir menginput uang laci fisik **Rp 1.505.000** saat sistem mencatat **Rp 1.500.000**, sistem merekam selisih lebih **Rp 5.000** (di bawah batas toleransi Rp 10.000) dan mencetak tanda serah terima kas harian yang valid.
 *   **Prioritas**: High
 *   **Sumber Data**: Project Charter v1.1 Bagian 8.1 [F-6.5], Innovation Proposal v1.1 [INV-INT-25].
 
 #### **BR-F-34: Sistem Peringatan Anomali Transaksi (Fraud Detection Sederhana)**
 *   **Deskripsi**: Sistem harus memantau dan memancarkan notifikasi peringatan visual anomali pada panel dashboard pemilik saat terdeteksi aktivitas mencurigakan staf di toko.
 *   **Aktor Terkait**: `pemilik`
-*   **Aturan Bisnis**: Indikator anomali meliputi: pembatalan pesanan berulang (> 3 kali dalam 1 shift kasir), transaksi retur berturut-turut oleh kasir yang sama, atau selisih kas fisik melebihi batas toleransi Rp 10.000.
-*   **Kriteria Penerimaan**: Terjadi selisih kas Rp 25.000 di shift kasir 1, ketika pemilik login ke sistem CLI keesokan harinya, sistem langsung memancarkan notifikasi merah: "PERINGATAN FRAUD: TERDETEKSI SELISIH KAS RP 25.000 PADA SHIFT KASIR PADA TANGGAL [TGL]".
+*   **Aturan Bisnis**: Indikator anomali meliputi: pembatalan pesanan berulang (> 3 kali dalam 1 shift kasir), transaksi retur berturut-turut oleh kasir yang sama, atau selisih kas fisik melebihi batas toleransi **Rp 10.000**.
+*   **Kriteria Penerimaan**: Terjadi selisih kas **Rp 25.000** di shift kasir 1, ketika pemilik login ke sistem CLI keesokan harinya, sistem langsung memancarkan notifikasi merah: "PERINGATAN FRAUD: TERDETEKSI SELISIH KAS RP 25.000 PADA SHIFT KASIR PADA TANGGAL [TGL]".
 *   **Prioritas**: High
 *   **Sumber Data**: Feasibility Study v1.1 Bagian 10 [Baris 483], Innovation Proposal v1.1 [INV-NEW-06].
 
@@ -575,7 +590,7 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 9 Mod
 *   **Deskripsi**: Sistem harus menyimpan database pelanggan sederhana yang memuat nama lengkap, nomor WhatsApp, serta log kronologis riwayat transaksi pesanan mereka untuk kebutuhan promosi terarah di masa depan.
 *   **Aktor Terkait**: `pramuniaga`, `kasir`, `pemilik`
 *   **Aturan Bisnis**: Data pelanggan dilindungi enkripsi lokal dengan pembatasan hak ekspor data (UU PDP). Database CRM terhubung dengan ID pesanan di database penjualan.
-*   **Kriteria Penerimaan**: Pramuniaga mencari nomor WhatsApp pelanggan di CLI, sistem menyajikan nama pelanggan, total kuantitas transaksi lampau, dan riwayat pesanan kustom stempel flash mereka secara detail dalam waktu < 1 detik.
+*   **Kriteria Penerimaan**: Pramuniaga mencari nomor WhatsApp pelanggan di CLI, sistem menyajikan nama pelanggan, total kuantitas transaksi lampau, dan riwayat pesanan kustom stempel flash mereka secara detail dalam waktu **< 1 detik**.
 *   **Prioritas**: Medium
 *   **Sumber Data**: Project Charter v1.1 Bagian 8.1 [F-5.3], Innovation Proposal v1.1 [INV-INT-14].
 
@@ -589,17 +604,17 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 9 Mod
 *   **Aturan Bisnis**: Pada fase satu cabang fisik pertama saat ini, kolom `cabang_id` diisi secara otomatis dengan nilai default `1` (Kantor Pusat/Toko Utama) pada setiap penyimpanan data.
 *   **Kriteria Penerimaan**: Seluruh skema database MySQL ter-setup dengan relasi `cabang_id` yang konsisten, siap digunakan untuk replikasi data multi-cabang terpusat tanpa memerlukan restrukturisasi database di masa depan.
 *   **Prioritas**: High
-*   **Sumber Data**: Project Charter v1.1 Bagian 8.1 [F-5.3], Innovation Proposal v1.1 [INV-INT-01].
+*   **Sumber Data**: Project Charter v1.1 Bagian 4.1.1 [M.9], Innovation Proposal v1.1 [INV-INT-01].
 
 ---
 
-### 7.10. Modul Konfigurasi Sistem (Runtime Config)
+### 7.10. Modul Konfigurasi Sistem (Runtime Config) (M.10)
 
 #### **BR-F-38: Sistem Konfigurasi Dinamis Tanpa Hardcode (Runtime Config)**
 *   **Deskripsi**: Sistem harus menyediakan menu pengelolaan parameter regulasi bisnis yang tersimpan di tabel konfigurasi database `system_configs` agar dapat dimodifikasi oleh pemilik usaha secara dinamis tanpa mengubah kode program.
 *   **Aktor Terkait**: `pemilik`
-*   **Aturan Bisnis**: Parameter dinamis meliputi: target laba smart payroll bulanan (Rp 15.000.000), persentase penggajian gaji laba (25%), limit kasbon karyawan (Rp 1.000.000), threshold deposit saldo PPOB (Rp 150.000), batas toleransi selisih kas (Rp 10.000), dan nilai rupiah per poin insentif karyawan.
-*   **Kriteria Penerimaan**: Pemilik mengubah target laba smart payroll bulanan dari Rp 15.000.000 menjadi Rp 18.000.000 di menu CLI, sistem menyimpan konfigurasi baru, dan komputasi penggajian bulanan langsung mengevaluasi target baru tersebut.
+*   **Aturan Bisnis**: Parameter dinamis meliputi: target laba smart payroll bulanan (**Rp 15.000.000**), persentase penggajian gaji laba (**25,0%**), limit kasbon karyawan (**Rp 1.000.000**), threshold deposit saldo PPOB (**Rp 150.000**), batas toleransi selisih kas (**Rp 10.000**), dan nilai rupiah per poin insentif karyawan.
+*   **Kriteria Penerimaan**: Pemilik mengubah target laba smart payroll bulanan dari **Rp 15.000.000** menjadi **Rp 18.000.000** di menu CLI, sistem menyimpan konfigurasi baru, dan komputasi penggajian bulanan langsung mengevaluasi target baru tersebut.
 *   **Prioritas**: High
 *   **Sumber Data**: Innovation Proposal v1.1 [INV-NEW-09].
 
@@ -613,19 +628,19 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 9 Mod
 *   **Deskripsi**: Seluruh logika bisnis kalkulasi (HPP, BOM desimal, komisi poin, payroll gaji, depresiasi aset) wajib ditulis menggunakan paradigma pemrograman fungsional murni (*Functional Programming*) di Python (fungsi murni, imutabilitas, menolak penggunaan class/OOP di alur bisnis inti).
 *   **Kriteria Penerimaan**: Kode program Python terverifikasi bebas dari efek samping (*side-effects*), terbebas dari mutasi state variabel acak, dan mempermudah unit testing modular.
 *   **Prioritas**: High
-*   **Sumber Data**: Project Charter v1.1 Bagian 8.2 [N-2.4], Tech Stack Decision v1.1 Bagian 3.2.
+*   **Sumber Data**: Project Charter v1.1 Bagian 8.2 [N-2.4], Tech Stack Decision v1.1 Bagian 3.2, Innovation Proposal v1.1 [INV-INT-02].
 
 #### **BR-NF-02: Arsitektur Infrastruktur Client-Server LAN Lokal**
 *   **Deskripsi**: Aplikasi CLI Python di kasir Windows 11 wajib terhubung ke server database MySQL lokal pada Mini PC Debian 12 melalui topologi jaringan kabel fisik UTP Cat6 LAN lokal di toko.
-*   **Kriteria Penerimaan**: Koneksi data kasir ke database server tetap berjalan lancar dengan latensi jaringan < 1ms meskipun koneksi internet eksternal ISP toko dalam keadaan terputus (jaringan mati).
+*   **Kriteria Penerimaan**: Koneksi data kasir ke database server tetap berjalan lancar dengan latensi jaringan **< 1ms** meskipun koneksi internet eksternal ISP toko dalam keadaan terputus (jaringan mati).
 *   **Prioritas**: High
-*   **Sumber Data**: Tech Stack Decision v1.1 Bagian 6.2.
+*   **Sumber Data**: Tech Stack Decision v1.1 Bagian 6.2, Innovation Proposal v1.1 [INV-INT-03].
 
 #### **BR-NF-03: Proteksi SQL Injection & Injeksi Karakter Control CLI**
 *   **Deskripsi**: Sistem wajib mengamankan data MySQL dari celah SQL injection dengan menerapkan *parameterized queries* (`%s`) resmi driver, menolak manipulasi f-string SQL, serta menyaring masukan terminal yang mengandung karakter kontrol ANSI perusak visual teks.
 *   **Kriteria Penerimaan**: Percobaan input tanda petik tunggal (`'`) atau sintaks SQL (seperti `OR 1=1`) oleh kasir pada input pencarian nama barang ditolak aman oleh sistem tanpa merusak sintaks query basis data.
 *   **Prioritas**: High
-*   **Sumber Data**: Tech Stack Decision v1.1 Bagian 8.6 & 8.8.
+*   **Sumber Data**: Tech Stack Decision v1.1 Bagian 8.6 & 8.8, Innovation Proposal v1.1 [INV-INT-19].
 
 ### 8.2. Audit dan Pelacakan Aktivitas
 *(Kebutuhan log kronologis Audit Trail terstruktur JSON telah dideklarasikan secara detail pada fungsional `BR-F-31`).*
@@ -634,27 +649,27 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 9 Mod
 
 #### **BR-NF-04: Enkripsi Kredensial Sandi (bcrypt Cost 12)**
 *   **Deskripsi**: Kata sandi akun login seluruh pengguna wajib disimpan di basis data menggunakan enkripsi satu arah *bcrypt* dengan parameter Cost Factor = 12.
-*   **Kriteria Penerimaan**: Sandi polos tidak tersimpan di database MySQL. Kecepatan verifikasi login saat shift dimulai berjalan cepat di bawah 0.5 detik tanpa membebani utilisasi CPU PC kasir harian.
+*   **Kriteria Penerimaan**: Sandi polos tidak tersimpan di database MySQL. Kecepatan verifikasi login saat shift dimulai berjalan cepat di bawah **0,5 detik** tanpa membebani utilisasi CPU PC kasir harian.
 *   **Prioritas**: High
-*   **Sumber Data**: Tech Stack Decision v1.1 Bagian 8.1.
+*   **Sumber Data**: Tech Stack Decision v1.1 Bagian 8.1, Innovation Proposal v1.1 [INV-INT-17].
 
 #### **BR-NF-05: Otentikasi Session CLI Stateless (JWT 8 Jam)**
 *   **Deskripsi**: Otorisasi session pengguna aktif di terminal CLI wajib diamankan menggunakan token berbasis JSON Web Token (JWT) terenkripsi algoritma HS256 dengan masa kedaluwarsa dibatasi selama **8 jam** (1 shift kerja).
 *   **Kriteria Penerimaan**: Staf kasir yang meninggalkan aplikasi CLI aktif melebihi 8 jam otomatis ter-logout dari sistem dan diarahkan ke layar login utama demi mencegah pembobolan menu Pemilik.
 *   **Prioritas**: High
-*   **Sumber Data**: Tech Stack Decision v1.1 Bagian 8.2.
+*   **Sumber Data**: Tech Stack Decision v1.1 Bagian 8.2, Innovation Proposal v1.1 [INV-INT-18].
 
 #### **BR-NF-06: Keamanan Brute-Force Login (Rate Limiting 5x Locked 10 Menit)**
 *   **Deskripsi**: Sistem wajib membatasi kegagalan autentikasi login staf maksimal **5 kali berturut-turut** sebelum mengunci akses akun pengguna bersangkutan selama **10 menit** (menyimpan timestamp locked di database).
 *   **Kriteria Penerimaan**: Percobaan menebak kata sandi kasir secara salah sebanyak 5 kali berturut-turut langsung ditolak masuk, menampilkan pesan penguncian akun, dan menolak proses login selama 10 menit ke depan.
 *   **Prioritas**: High
-*   **Sumber Data**: Tech Stack Decision v1.1 Bagian 8.7.
+*   **Sumber Data**: Tech Stack Decision v1.1 Bagian 8.7, Innovation Proposal v1.1 [INV-INT-20].
 
 #### **BR-NF-07: Enkripsi Ekspor Database Cadangan (AES-256 Kepatuhan UU PDP)**
 *   **Deskripsi**: File cadangan database .sql ekspor harian wajib dikompresi ke berkas zip terenkripsi algoritma kuat AES-256 bit dan diletakkan pada folder dengan hak akses terproteksi penuh administrative Linux (`chmod 700`).
 *   **Kriteria Penerimaan**: File cadangan database yang disalin secara ilegal melalui flashdisk tidak dapat diekstrak atau dibaca oleh pihak ketiga luar, menjamin kepatuhan regulasi perlindungan data UU PDP No. 27/2022.
 *   **Prioritas**: High
-*   **Sumber Data**: Tech Stack Decision v1.1 Bagian 8.5.
+*   **Sumber Data**: Tech Stack Decision v1.1 Bagian 8.5, Innovation Proposal v1.1 [INV-INT-21].
 
 ### 8.4. Keandalan Sistem
 
@@ -668,7 +683,7 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 9 Mod
 
 #### **BR-NF-09: Portabilitas Runtime Dual-OS Lintas Windows & Linux**
 *   **Deskripsi**: Aplikasi CLI Python 3.14.2+ wajib dapat dijalankan lancar secara Dual-OS lintas lingkungan terminal Linux Debian 12 Bookworm (Mini PC Server) maupun Windows 11 (PC Kasir) tanpa ada modifikasi file logika program inti.
-*   **Kriteria Penerimaan**: Pustaka standard OS path (`pathlib`), standard encoding `utf-8`, dan modul platform diimplementasikan fungsional untuk menyesuaikan perintah bersihkan layar (`cls` / `clear`) di Windows dan Linux secara mulus.
+*   **Kriteria Penerimaan**: Pustaka standard OS path (`pathlib`), standard encoding `utf-8`, and modul platform diimplementasikan fungsional untuk menyesuaikan perintah bersihkan layar (`cls` / `clear`) di Windows dan Linux secara mulus.
 *   **Prioritas**: High
 *   **Sumber Data**: Tech Stack Decision v1.1 Bagian 6.1.
 
@@ -676,7 +691,7 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 9 Mod
 
 #### **BR-NF-10: Latensi Pemrosesan Laporan Tahunan & Stock Opname**
 *   **Deskripsi**: Agregasi pencarian laporan laba rugi tahunan konsolidasi dan kalkulasi rekonsiliasi data stock opname di database wajib diselesaikan dalam waktu kurang dari **5 detik** pada spesifikasi Mini PC server standar.
-*   **Kriteria Penerimaan**: Ketika menu pencarian laporan laba/rugi tahunan dipilih oleh pemilik, sistem memproses dan menampilkan data tabular dalam waktu kurang dari 2 detik.
+*   **Kriteria Penerimaan**: Ketika menu pencarian laporan laba/rugi tahunan dipilih oleh pemilik, sistem memproses dan menampilkan data tabular dalam waktu kurang dari **2 detik**.
 *   **Prioritas**: High
 *   **Sumber Data**: Project Charter v1.1 Bagian 8.2 [N-2.6], Feasibility Study v1.1 Bagian 4.2.6.
 
@@ -707,22 +722,22 @@ Berikut adalah kompilasi aturan kebijakan operasional numerik AbuCom yang wajib 
 3.  **Smart Payroll (Penggajian Cerdas)**:
     *   *Target Laba Bersih Usaha*: Ditetapkan sebesar **Rp 15.000.000** per bulan.
     *   *Skenario A (Laba Bersih Bulanan >= Rp 15.000.000)*: Karyawan aktif dibayar menggunakan Gaji Bulanan Tetap penuh sesuai kesepakatan kontrak kerja staf.
-    *   *Skenario B (Laba Bersih Bulanan < Rp 15.000.000)*: Karyawan aktif dibayar menggunakan porsi pembagian Gaji Persentase Laba sebesar **25%** dari laba bersih bulanan berjalan yang dibagi secara proporsional kepada staf aktif.
-    *   *Batas Jaminan Gaji Minimum*: Staf aktif dijamin mendapatkan bayaran minimal sebesar **50% dari UMR daerah** operasional setempat, guna menjaga perlindungan hak staf sesuai regulasi ketenagakerjaan Indonesia.
+    *   *Skenario B (Laba Bersih Bulanan < Rp 15.000.000)*: Karyawan aktif dibayar menggunakan porsi pembagian Gaji Persentase Laba sebesar **25,0%** dari laba bersih bulanan berjalan yang dibagi secara proporsional kepada staf aktif.
+    *   *Batas Jaminan Gaji Minimum*: Staf aktif dijamin mendapatkan bayaran minimal sebesar **50,0% dari UMR daerah** operasional setempat, guna menjaga perlindungan hak staf sesuai regulasi ketenagakerjaan Indonesia.
 4.  **Batas Limit Kasbon Karyawan**:
-    *   Setiap staf aktif dibatasi melakukan penarikan kasbon (pinjaman karyawan) maksimal sebesar **Rp 1.000.000** atau maksimal **30%** dari upah standar bulanan mereka secara kumulatif.
+    *   Setiap staf aktif dibatasi melakukan penarikan kasbon (pinjaman karyawan) maksimal sebesar **Rp 1.000.000** atau maksimal **30,0%** dari upah standar bulanan mereka secara kumulatif.
     *   Sistem secara otomatis memotong gaji bersih staf pada siklus payroll bulanan jika terdapat utang kasbon aktif.
 5.  **Poin Insentif Karyawan per Transaksi harian**:
-    *   *Tier 1 (1 Poin = Rp 500)*: Transaksi rutin/mudah (Penjualan ATK retail, Top-up Pulsa, Transfer uang nominal kecil).
-    *   *Tier 2 (3 Poin = Rp 1.500)*: Jasa dasar (Jasa fotocopi cepat, Print data hitam-putih/warna, Pengetikan dokumen, Jasa Transfer uang nominal besar).
-    *   *Tier 3 (5 Poin = Rp 2.500)*: Produk kustom (Pembuatan stempel flash, Cetak foto, Cetak stiker eceran, Pembuatan pin nama dada).
-    *   *Tier 4 (10 Poin = Rp 5.000)*: Pekerjaan berat/teknis (Cetak baliho format lebar, Cetak buku yasin kustom, Cetak undangan pernikahan, Service printer, Install Laptop/PC).
+    *   *Tier 1 (1 Poin = Rp 500)*: Transaksi rutin/mudah (Penjualan ATK retail, Top-up Pulsa, Jasa Transfer nominal kecil).
+    *   *Tier 2 (3 Poin = Rp 1.500)*: Jasa dasar (Jasa fotocopi cepat, Print data hitam-putih/warna, Pengetikan dokumen, Jasa Transfer nominal besar).
+    *   *Tier 3 (5 Poin = Rp 2.500)*: Produk kustom (Stempel flash, cetak foto, stiker eceran, pin nama dada).
+    *   *Tier 4 (10 Poin = Rp 5.000)*: Pekerjaan berat/teknis (Cetak baliho format lebar, cetak yasin kustom, undangan pernikahan, service printer, install laptop/PC).
 6.  **Akun Deposit PPOB**:
     *   *Saldo Kritis PPOB*: Batas minimum saldo virtual PPOB diatur sebesar **Rp 150.000** untuk memicu visual alert.
     *   *Deposit Top-up Rekomendasi*: Nilai minimal transaksi pengisian saldo virtual PPOB direkomendasikan sebesar **Rp 500.000** setiap kali top-up dilakukan demi efisiensi biaya.
 7.  **Rekonsiliasi Kas Laci Kasir**:
     *   Batas maksimal toleransi selisih antara nominal uang kas fisik di laci kasir terhadap catatan sistem di akhir shift kasir adalah sebesar **Rp 10.000** per shift.
-    *   Segala selisih melebihi batas Rp 10.000 wajib merekam catatan tertulis justifikasi fisik dan memicu peringatan anomali audit ke pemilik.
+    *   Segala selisih melebihi batas **Rp 10.000** wajib merekam catatan tertulis justifikasi fisik dan memicu peringatan anomali audit ke pemilik.
 8.  **Keamanan Akun CLI**:
     *   *Rate Limiting*: Maksimal kegagalan input sandi login berturut-turut dibatasi sebanyak **5 kali**.
     *   *Penangguhan Akun*: Penguncian akun sementara dilakukan selama **10 menit** (`locked_until`) setelah batas terlampaui.
@@ -732,13 +747,13 @@ Berikut adalah kompilasi aturan kebijakan operasional numerik AbuCom yang wajib 
 
 ## 10. Inovasi dan Rekomendasi Best Practice
 
-Penyusunan BRD ini mematuhi **Mandat Inovasi & Best Practice** dari pemilik dengan merancang integrasi 42 inovasi terstruktur yang dibagi sebagai berikut:
+Penyusunan BRD ini mematuhi **Mandat Inovasi & Best Practice** dari pemilik dengan merancang integrasi 43 inovasi terstruktur yang dibagi sebagai berikut:
 
 ### 10.1. Inovasi Terintegrasi
-Sebanyak 30 inovasi terintegrasi (`INV-INT-01` s.d `INV-INT-30`) disematkan secara penuh untuk memperkuat keandalan logika fungsional sistem, persediaan, logistik, administrasi SDM/Kasbon, dan skema keamanan kredensial. Inovasi arsitektur database *Multi-Branch Ready* sejak awal (INV-INT-01) memastikan kesiapan ekspansi ribuan cabang di masa depan. Paradigma *Functional Programming* murni (INV-INT-02) mengeliminasi bug pembulatan keuangan dan persediaan desimal.
+Sebanyak 30 inovasi terintegrasi (`INV-INT-01` s.d `INV-INT-30`) disematkan secara penuh untuk memperkuat keandalan logika fungsional sistem, persediaan, logistik, administrasi SDM/Kasbon, dan skema keamanan kredensial. Inovasi arsitektur database *Multi-Branch Ready* sejak awal (`INV-INT-01`) memastikan kesiapan ekspansi ribuan cabang di masa depan. Paradigma *Functional Programming* murni (`INV-INT-02`) mengeliminasi bug pembulatan keuangan dan persediaan desimal.
 
 ### 10.2. Inovasi Tambahan Baru
-Sebanyak 12 inovasi tambahan baru (3 rekomendasi lama `INV-REC-01 s.d 03` dan 9 usulan baru AI `INV-NEW-01 s.d 09`) disematkan untuk meningkatkan kualitas interaksi visual user (Rich CLI Dashboard), optimalisasi pengadaan barang (Price Tracking Supplier), proteksi likuiditas kas pemilik (Dana Cadangan Darurat Rp 4.500.000), penegakan akuntabilitas kas kasir (Shift Handover Log & Toleransi Kasir Rp 10.000), serta sistem pencegahan kecurangan (Fraud Detection Alert).
+Sebanyak 13 inovasi tambahan baru (3 rekomendasi lama `INV-REC-01 s.d 03` dan 10 usulan baru AI `INV-NEW-01 s.d 09` dan `BR-F-40`) disematkan untuk meningkatkan kualitas interaksi visual user (Rich CLI Dashboard), optimalisasi pengadaan barang (Price Tracking Supplier & Manajemen Supplier/Utang), proteksi likuiditas kas pemilik (Dana Cadangan Darurat **Rp 4.500.000**), penegakan akuntabilitas kas kasir (Shift Handover Log & Toleransi Kasir **Rp 10.000**), serta sistem pencegahan kecurangan (Fraud Detection Alert).
 
 ### 10.3. Dampak dan Prioritas Implementasi
 Inovasi diatur prioritas pengembangannya secara taktis:
@@ -765,6 +780,11 @@ Inovasi diatur prioritas pengembangannya secara taktis:
 *   **Ketersediaan Data Awal**: Pemilik usaha meluangkan waktu melakukan pembersihan data (*cleansing*) dan migrasi awal dari Excel yang berserakan agar database awal bersih.
 *   **Infrastruktur Fisik Stabil**: Toko fisik memiliki pasokan listrik yang stabil (dilindungi UPS server lokal) dan koneksi jaringan kabel LAN UTP Cat6 stabil untuk topologi client-server.
 
+### 11.4. Ketergantungan Proyek (Project Dependencies)
+*   **Keandalan Akses & Saldo Akun Pihak Ketiga**: Kelangsungan transaksi kas PPOB dan 6 e-wallet bergantung penuh pada ketersediaan operasional fisik perangkat EDC/HP eksternal dan saldo minimal yang terjaga.
+*   **Stabilitas Pasokan Listrik & Jaringan LAN**: Mengingat database MySQL dipasang secara lokal, integritas transaksi sangat bergantung pada jaringan LAN kabel UTP Cat6 dan perlindungan UPS dari mati listrik mendadak.
+*   **Kompatibilitas Runtime Python**: Ketergantungan penuh pada tersedianya Python versi minimal 3.14.2+ beserta pustaka pendukung yang terinstal secara tepat lintas Windows 11 dan Linux Debian 12.
+
 ---
 
 ## 12. Risiko Bisnis dan Mitigasi
@@ -776,7 +796,7 @@ Berikut adalah identifikasi risiko operasional bisnis, probabilitas (1-5), dampa
 | **Burnout Kronis Pemilik Usaha**: Pemilik sakit/kelelahan ekstrim sebelum aplikasi go-live, menghentikan operasional toko fisik. | 3 | 5 | Optimalkan asisten AI untuk penulisan dokumentasi rutin, batasi ulasan berkala pemilik hanya pada testing fungsional CLI yang kritis. |
 | **Ketidakakuratan Migrasi Data Excel**: Data stok/keuangan lama yang berserakan diimpor dalam kondisi kotor dan rusak. | 4 | 4 | Gunakan modul import data CSV semiautomatis (INV-NEW-08) yang dilengkapi validasi tipe data masukan di Python sebelum masuk ke MySQL. |
 | **Penarikan Dana Mendadak Pinjaman Tanpa Bunga**: Kerabat dekat menarik dana modal secara mendadak, melumpuhkan kas toko. | 3 | 4 | **[KRITIS]** Amankan alokasi Dana Cadangan Darurat sebesar **Rp 4.500.000** ke rekening terdedikasi terpisah, terisolasi dari kas operasional harian toko. |
-| **Kecurangan Kas & Persediaan (Fraud Staf Baru)**: Staf kasir atau gudang melakukan manipulasi entry kas atau pencurian stok bahan. | 3 | 5 | Terapkan rekonsiliasi kas harian wajib (toleransi selisih Rp 10.000), log serah terima shift kasir, RBAC level pemilik, dan log Audit Trail JSON. |
+| **Kecurangan Kas & Persediaan (Fraud Staf Baru)**: Staf kasir atau gudang melakukan manipulasi entry kas atau pencurian stok bahan. | 3 | 5 | Terapkan rekonsiliasi kas harian wajib (toleransi selisih **Rp 10.000**), log serah terima shift kasir, RBAC level pemilik, dan log Audit Trail JSON. |
 | **Ketidaksesuaian Adaptasi Staf Baru**: Staf baru dengan literasi komputer rendah mengalami kesulitan mengoperasikan terminal CLI teks. | 3 | 3 | Sediakan buku panduan visual *CLI User Manual* yang interaktif dan jadwalkan pelatihan simulasi sistem selama 3 hari berturut-turut sebelum go-live. |
 
 ---
@@ -786,11 +806,11 @@ Berikut adalah identifikasi risiko operasional bisnis, probabilitas (1-5), dampa
 Sistem AbuCom dinyatakan sukses dan layak diterima secara bisnis apabila memenuhi kriteria definisi selesai (*Definition of Done*) objektif berikut:
 
 1.  **Otomatisasi Laporan Finansial (100% Bebas Excel)**:
-    *   *Indikator*: Seluruh laporan laba/rugi per divisi harian/bulanan/tahunan, pengeluaran rutin, dan rekonsiliasi kas ter-generate instan (< 5 detik) di terminal CLI.
+    *   *Indikator*: Seluruh laporan laba/rugi per divisi harian/bulanan/tahunan, pengeluaran rutin, dan rekonsiliasi kas ter-generate instan (**< 5 detik**) di terminal CLI.
     *   *Metode Uji*: Verifikasi biner (Ya/Tidak) bahwa pemilik tidak perlu menyalin data transaksi secara manual ke Excel untuk menghitung laporan laba rugi.
-2.  **Akurasi Sinkronisasi Stok Bahan Baku (< 1.0% Selisih)**:
-    *   *Indikator*: Selisih kuantitas stok bahan baku cetak di gudang fisik terhadap catatan sistem di bawah 1.0% saat stock opname berkala.
-    *   *Metode Uji*: Formula `(Jumlah Selisih Stok / Total Stok Sistem) * 100% <= 1.0%` diuji setelah 1 bulan berjalan penuh menggunakan HPP BOM dimensi/volume desimal.
+2.  **Akurasi Sinkronisasi Stok Bahan Baku (< 1,0% Selisih)**:
+    *   *Indikator*: Selisih kuantitas stok bahan baku cetak di gudang fisik terhadap catatan sistem di bawah **1,0%** saat stock opname berkala.
+    *   *Metode Uji*: Formula `(Jumlah Selisih Stok / Total Stok Sistem) * 100% <= 1,0%` diuji setelah 1 bulan berjalan penuh menggunakan HPP BOM dimensi/volume desimal.
 3.  **Efisiensi Antrian Produksi (Zero-Missed Orders)**:
     *   *Indikator*: 0 pesanan kustom pelanggan terlewat, terlambat, atau lupa dikerjakan akibat kelalaian staf toko.
     *   *Metode Uji*: Verifikasi log database antrian menunjukkan status transisi selesai 100% dari status `Antri` hingga `Diambil` untuk seluruh ID pesanan bulanan terdaftar.
@@ -829,6 +849,7 @@ Berikut adalah glosarium alfabetis penjelasan istilah domain percetakan, retail,
 20. **Stock Opname**: Proses penghitungan fisik persediaan barang/bahan baku di gudang secara langsung untuk dicocokkan dengan catatan stok sistem guna menyesuaikan selisih.
 21. **Uang Muka / DP (Down Payment)**: Pembayaran sebagian dari total harga transaksi yang diserahkan pelanggan di awal sebagai tanda jadi pesanan terdaftar.
 22. **UU PDP (Undang-Undang Pelindungan Data Pribadi)**: Undang-Undang Republik Indonesia Nomor 27 Tahun 2022 yang mengatur mengenai hak subjek data pribadi, kewajiban pengelola data pribadi (CRM Pelanggan), dan sanksi kebocoran data.
+23. **Utang Usaha (Accounts Payable)**: Kewajiban keuangan kepada supplier/vendor atas pengadaan bahan baku atau retail ATK dengan skema pembayaran tempo/tertunda.
 
 ---
 
