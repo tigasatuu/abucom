@@ -1,9 +1,9 @@
 ---
 dokumen    : Access Control Matrix (ACM)
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.0
+versi      : 1.1
 tanggal    : 2026-05-24
-status     : Draft
+status     : Review
 penyusun   : Senior Security Analyst & RBAC Specialist
 ---
 
@@ -14,6 +14,7 @@ penyusun   : Senior Security Analyst & RBAC Specialist
 | Versi | Tanggal    | Perubahan | Oleh |
 |---|---|---|---|
 | 1.0   | 2026-05-24 | Pembuatan dokumen Access Control Matrix (ACM) pertama kali berdasarkan derivasi komprehensif BRD v1.1, SRS v1.1, Use Case Diagram v1.1, Workflow Diagram v1.1, dan Data Dictionary v1.1. Menghasilkan pemetaan granular hak akses 8 peran terhadap 44 use case dan 28 tabel CRUD database MySQL. | Senior Security Analyst & RBAC Specialist |
+| 1.1   | 2026-05-24 | Hasil audit dan perbaikan menyeluruh. Memperbaiki statistik akses Bab 9 agar 100% akurat secara matematis, menyelaraskan string kode error di Bab 6 dengan SRS v1.1, dan mengurutkan secara berurutan tabel traceability Bab 8 berdasarkan ACM Entry ID. | Senior Software Architect & RBAC Security Specialist |
 
 ---
 
@@ -99,7 +100,7 @@ Peran internal adalah subjek otentikasi yang melakukan login ke terminal AbuCom 
 | **ACT-08** | Staf Gudang | `gudang` | Pengelola barang masuk/keluar, data supplier, utang tempo, dan draf Stock Opname. | **Level 3 (Staf Operasional)** |
 
 ### 2.2. Hierarki dan Generalisasi Peran
-Kebijakan kontrol akses AbuCom didasarkan pada prinsip **Least Privilege** (hanya memberikan hak minimum mutlak yang dibutuhkan staf untuk bekerja) dan **Separation of Duties** (pemisahan peran keuangan sensitif untuk mencegah fraud internal, misalnya kasir penginput retur tidak bisa meloloskannya sendiri tanpa sandi pemilik).
+Kebijakan kontrol akses AbuCom didasarkan pada prinsip **Least Privilege** (hanya memberikan hak minimum mutlak yang dibutuhkan staf untuk bekerja) and **Separation of Duties** (pemisahan peran keuangan sensitif untuk mencegah fraud internal, misalnya kasir penginput retur tidak bisa meloloskannya sendiri tanpa sandi pemilik).
 
 ```mermaid
 graph TD
@@ -389,19 +390,19 @@ Operasi kritis yang tidak dapat dieksekusi oleh staf secara langsung, melainkan 
 
 | No | Operasi Kritis | Pemicu Eskalasi Keamanan | Peran Pemohon | Peran Penyetuju | Respon Jika Sandi Salah (ERR) |
 |---|---|---|---|---|---|
-| 1 | **Pembatalan Transaksi (Retur DP)** | Memilih menu retur/batal pesanan. | `kasir` | `pemilik` | `ERR-AUTH-003: Hak Akses Pemilik Dibutuhkan!` |
-| 2 | **Retur Barang Retail ATK** | Input kuantitas retur barang ATK. | `kasir` | `pemilik` | `ERR-AUTH-003: Hak Akses Pemilik Dibutuhkan!` |
-| 3 | **Pengeluaran Besar (> Rp 500.000)** | Input nominal `pengeluaran.nominal` > Rp 500.000. | `kasir` / `kepala_percetakan` | `pemilik` | `ERR-AUTH-029: Verifikasi sandi Pemilik gagal!` |
-| 4 | **Restorasi Database Manual** | Memilih menu pemulihan basis data. | `gudang` | `pemilik` | `ERR-FILE-039: Sandi enkripsi salah!` |
+| 1 | **Pembatalan Transaksi (Retur DP)** | Memilih menu retur/batal pesanan. | `kasir` | `pemilik` | `ERR-AUTH-003: Akses Ditolak: Hak Akses Pemilik Dibutuhkan!` |
+| 2 | **Retur Barang Retail ATK** | Input kuantitas retur barang ATK. | `kasir` | `pemilik` | `ERR-AUTH-003: Akses Ditolak: Hak Akses Pemilik Dibutuhkan!` |
+| 3 | **Pengeluaran Besar (> Rp 500.000)** | Input nominal `pengeluaran.nominal` > Rp 500.000. | `kasir` / `kepala_percetakan` | `pemilik` | `ERR-AUTH-029: Verifikasi sandi Pemilik gagal. Pengeluaran besar dibatalkan!` |
+| 4 | **Restorasi Database Manual** | Memilih menu pemulihan basis data. | `gudang` | `pemilik` | `ERR-FILE-039: Gagal memulihkan data. Berkas cadangan korup atau sandi enkripsi salah!` |
 
 ### 6.2. Aturan Otorisasi Kepala Percetakan
 Operasi verifikasi harian toko yang memerlukan persetujuan otorisasi digital dari Kepala Percetakan:
 
 | No | Operasi Verifikasi | Pemicu Otorisasi | Peran Pemohon | Peran Penyetuju | Respon Jika Penyetuju Salah (ERR) |
 |---|---|---|---|---|---|
-| 1 | **Persetujuan Stock Opname** | Mengubah status `stock_opname` 'DRAFT' &rarr; 'APPROVED'. | `gudang` | `kepala_percetakan` | `ERR-AUTH-011: Hak akses supervisor dibutuhkan!` |
-| 2 | **Serah Terima Shift (Normal)** | Validasi biner kecocokan kas laci fisik vs sistem. | `kasir` | `kepala_percetakan` | `ERR-AUTH-011: Hak akses supervisor dibutuhkan!` |
-| 3 | **Serah Terima Shift (Anomali)** | Validasi anomali selisih kas > Rp 10.000. | `kasir` | `kepala_percetakan` (ditambah memo alasan) | `ERR-CASH-001: Selisih melebihi batas Rp 10.000!` |
+| 1 | **Persetujuan Stock Opname** | Mengubah status `stock_opname` 'DRAFT' &rarr; 'APPROVED'. | `gudang` | `kepala_percetakan` | `ERR-AUTH-011: Hak akses supervisor dibutuhkan untuk menyetujui Stock Opname!` |
+| 2 | **Serah Terima Shift (Normal)** | Validasi biner kecocokan kas laci fisik vs sistem. | `kasir` | `kepala_percetakan` | `ERR-AUTH-011: Hak akses supervisor dibutuhkan untuk menyetujui Stock Opname!` |
+| 3 | **Serah Terima Shift (Anomali)** | Validasi anomali selisih kas > Rp 10.000. | `kasir` | `kepala_percetakan` (ditambah memo alasan) | `ERR-CASH-001: Selisih Gagal: Selisih Rp [Nominal] melebihi batas Rp 10.000!` |
 
 ### 6.3. Aturan Pembatasan Akses Data Sensitif
 Seluruh staf operasional (ACT-03 s.d ACT-08) mutlak dilarang mengakses data keuangan privat milik Pemilik.
@@ -410,12 +411,12 @@ Seluruh staf operasional (ACT-03 s.d ACT-08) mutlak dilarang mengakses data keua
 
 ### 6.4. Aturan Session dan Timeout Akses (JWT)
 * **Session Token**: Autentikasi login menggunakan model stateless session **JSON Web Token (JWT)** yang dikunci menggunakan algoritma tanda tangan **HS256** dan kunci rahasia (*secret key*) dari berkas `.env` lokal.
-* **Masa Aktif Sesi**: Masa berlaku token sesi dikunci selama **28.800 detik (8 jam)**. Setelah 8 jam berlalu, logic Python menangkap kedaluwarsa token JWT (`jwt.ExpiredSignatureError`), membersihkan memory session local, dan memaksa terminal keluar ke layar login awal (`ERR-SESSION-002`).
+* **Masa Aktif Sesi**: Masa berlaku token sesi dikunci selama **28.800 detik (8 jam)**. Setelah 8 jam berlalu, logic Python menangkap kedaluwarsa token JWT (`jwt.ExpiredSignatureError`), membersihkan memory session local, dan memaksa terminal keluar ke layar login awal dengan pesan: `ERR-SESSION-002: Sesi login tidak sah/rusak. Harap login kembali!`.
 
 ### 6.5. Aturan Rate Limiting dan Penguncian Akun
 Untuk menghindari serangan tebakan kata sandi kamus (*brute-force attacks*) pada terminal kasir CLI:
 * **Batas Toleransi**: Kegagalan login berturut-turut dibatasi maksimal **5 kali**.
-* **Suspensi Akun**: Pada kegagalan ke-5, sistem menuliskan status `failed_login_attempts = 5` dan timestamp `locked_until` ke dalam baris tabel `pengguna` MySQL, menangguhkan akun selama **600 detik (10 menit)**. Selama masa suspensi, sistem menolak otentikasi login akun tersebut dengan pesan: `ERR-AUTH-002: Akun ditangguhkan selama 10 menit akibat brute-force!`.
+* **Suspensi Akun**: Pada kegagalan ke-5, sistem menuliskan status `failed_login_attempts = 5` dan timestamp `locked_until` ke dalam baris tabel `pengguna` MySQL, menangguhkan akun selama **600 detik (10 menit)**. Selama masa suspensi, sistem menolak otentikasi login akun tersebut dengan pesan: `ERR-AUTH-002: Sandi Gagal: Akun ditangguhkan selama 10 menit akibat brute-force!`.
 
 ### 6.6. Aturan Pencatatan Audit Trail pada Pelanggaran Akses
 Setiap kali sistem otorisasi RBAC Python CLI mendeteksi dan menggagalkan percobaan akses ilegal oleh peran staf yang tidak berhak:
@@ -555,7 +556,7 @@ flowchart TD
 ## 8. Matriks Ketertelusuran Kebutuhan (Traceability Matrix)
 
 ### 8.1. Pemetaan ACM terhadap BRD
-Memastikan seluruh kebijakan hak akses pada bisnis requirements (BRD v1.1) terpetakan di ACM:
+Memastikan seluruh kebijakan hak akses pada bisnis requirements (BRD v1.1) terpetakan di ACM secara berurutan:
 
 | ACM Entry ID | Menu / Fungsi Target | BRD Requirement ID | Prioritas | Status |
 |---|---|:---:|:---:|:---:|
@@ -565,18 +566,20 @@ Memastikan seluruh kebijakan hak akses pada bisnis requirements (BRD v1.1) terpe
 | **ACM-M1-004** | Memproses Pembatalan & Retur | **BR-F-04** | High | Terpetakan |
 | **ACM-M1-005** | Melacak Margin Keuntungan | **BR-F-05** | Medium | Terpetakan |
 | **ACM-M1-006** | Ekspor Struk Thermal | **BR-F-06** | Medium | Terpetakan |
+| **ACM-M2-001** | Mengelola Barang & Satuan UoM | **BR-F-09** | High | Terpetakan |
 | **ACM-M2-002** | Menghitung HPP BOM Desimal | **BR-F-07** | High | Terpetakan |
 | **ACM-M2-003** | Mencatat Limbah Produksi | **BR-F-08** | High | Terpetakan |
-| **ACM-M2-001** | Mengelola Barang & Satuan UoM | **BR-F-09** | High | Terpetakan |
 | **ACM-M2-004** | Sinkronisasi Barang ATK Internal | **BR-F-10** | Medium | Terpetakan |
 | **ACM-M2-005** | Memproses Stock Opname | **BR-F-11** | High | Terpetakan |
 | **ACM-M2-006** | Prediksi Re-Order Stok | **BR-F-12** | High | Terpetakan |
 | **ACM-M2-007** | Price Tracking Supplier | **BR-F-13** | Medium | Terpetakan |
 | **ACM-M2-008** | Impor Data CSV | **BR-F-14** | High | Terpetakan |
+| **ACM-M2-009** | Mengelola Supplier & Utang | **BR-F-40** | High | Terpetakan |
+| **ACM-M2-010** | Backup & Restore DB | **BR-F-39** | High | Terpetakan |
 | **ACM-M3-001** | Mengelola Saldo PPOB | **BR-F-15** | High | Terpetakan |
 | **ACM-M3-002** | Akun Keuangan Terhemat | **BR-F-16** | High | Terpetakan |
 | **ACM-M3-003** | Transaksi Jasa Service | **BR-F-17** | High | Terpetakan |
-| **ACM-M4-001** | Mengelola Absensi & Kasbon | **BR-F-18** | High | Terpetakan |
+| **ACM-M4-001** | Mengelola Data Karyawan, Absensi, dan Kasbon | **BR-F-18** | High | Terpetakan |
 | **ACM-M4-002** | Memproses Gaji (Smart Payroll) | **BR-F-19** | High | Terpetakan |
 | **ACM-M4-003** | Poin Insentif Karyawan | **BR-F-20** | High | Terpetakan |
 | **ACM-M4-004** | Potongan Gaji Kasbon | **BR-F-21** | High | Terpetakan |
@@ -597,11 +600,9 @@ Memastikan seluruh kebijakan hak akses pada bisnis requirements (BRD v1.1) terpe
 | **ACM-M8-001** | Database CRM | **BR-F-36** | Medium | Terpetakan |
 | **ACM-M9-001** | Multi-Cabang | **BR-F-37** | High | Terpetakan |
 | **ACM-M10-001**| Parameter Runtime Config | **BR-F-38** | High | Terpetakan |
-| **ACM-M2-010** | Backup & Restore DB | **BR-F-39** | High | Terpetakan |
-| **ACM-M2-009** | Mengelola Supplier & Utang | **BR-F-40** | High | Terpetakan |
 
 ### 8.2. Pemetaan ACM terhadap SRS
-Memastikan ketertelusuran teknis dari spesifikasi kebutuhan sistem (SRS v1.1) ke ACM:
+Memastikan ketertelusuran teknis dari spesifikasi kebutuhan sistem (SRS v1.1) ke ACM secara berurutan:
 
 | ACM Entry ID | Target Fungsi / Menu | SRS Requirement ID | Modul Kode Target | Status |
 |---|---|:---:|---|:---:|
@@ -611,43 +612,43 @@ Memastikan ketertelusuran teknis dari spesifikasi kebutuhan sistem (SRS v1.1) ke
 | **ACM-M1-004** | Pembatalan & Retur | **SRS-F-004** | `logic/refund.py` | Cocok |
 | **ACM-M1-005** | Margin per Produk | **SRS-F-005** | `logic/reporting.py` | Cocok |
 | **ACM-M1-006** | Ekspor Struk Thermal | **SRS-F-006** | `utils/printer.py` | Cocok |
+| **ACM-M2-001** | Mengelola Barang & Satuan UoM | **SRS-F-009** | `logic/inventory.py` | Cocok |
 | **ACM-M2-002** | Menghitung HPP BOM Desimal | **SRS-F-007** | `logic/bom_hpp.py` | Cocok |
 | **ACM-M2-003** | Mencatat Limbah Produksi | **SRS-F-008** | `logic/waste.py` | Cocok |
-| **ACM-M2-001** | Mengelola Barang & Satuan UoM | **SRS-F-009** | `logic/inventory.py` | Cocok |
 | **ACM-M2-004** | Sinkronisasi Barang ATK Internal | **SRS-F-010** | `logic/inventory.py` | Cocok |
 | **ACM-M2-005** | Memproses Stock Opname | **SRS-F-011** | `logic/opname.py` | Cocok |
 | **ACM-M2-006** | Prediksi Re-Order Stok | **SRS-F-012** | `logic/analytics.py` | Cocok |
 | **ACM-M2-007** | Price Tracking Supplier | **SRS-F-013** | `logic/supplier.py` | Cocok |
-| **ACM-M2-008** | Impor Data CSV | **SRS-F-014** | `utils/csv_importer.py`| Cocok |
+| **ACM-M2-008** | Impor Data CSV | **SRS-F-014** | `utils/csv_importer.py` | Cocok |
+| **ACM-M2-009** | Mengelola Supplier & Utang | **SRS-F-040** | `logic/supplier.py` | Cocok |
+| **ACM-M2-010** | Backup & Restore DB | **SRS-F-039** | `utils/backup.py` | Cocok |
 | **ACM-M3-001** | Mengelola Saldo PPOB | **SRS-F-015** | `logic/ppob.py` | Cocok |
 | **ACM-M3-002** | Akun Keuangan Terhemat | **SRS-F-016** | `logic/ppob_admin.py` | Cocok |
 | **ACM-M3-003** | Transaksi Jasa Service | **SRS-F-017** | `logic/service.py` | Cocok |
 | **ACM-M4-001** | Mengelola Absensi & Kasbon | **SRS-F-018** | `logic/employee.py` | Cocok |
 | **ACM-M4-002** | Memproses Gaji (Smart Payroll) | **SRS-F-019** | `logic/payroll.py` | Cocok |
-| **ACM-M4-003** | Poin Insentif Karyawan | **SRS-F-020** | `logic/employee_poin.py`| Cocok |
+| **ACM-M4-003** | Poin Insentif Karyawan | **SRS-F-020** | `logic/employee_poin.py` | Cocok |
 | **ACM-M4-004** | Potongan Gaji Kasbon | **SRS-F-021** | `logic/payroll.py` | Cocok |
-| **ACM-M5-001** | Pelacakan Status Antrian | **SRS-F-022** | `logic/job_tracking.py`| Cocok |
-| **ACM-M5-002** | Mengelola Arsip Desain | **SRS-F-023** | `logic/job_tracking.py`| Cocok |
+| **ACM-M5-001** | Pelacakan Status Antrian | **SRS-F-022** | `logic/job_tracking.py` | Cocok |
+| **ACM-M5-002** | Mengelola Arsip Desain | **SRS-F-023** | `logic/job_tracking.py` | Cocok |
 | **ACM-M5-003** | Link WhatsApp Web | **SRS-F-024** | `utils/wa_notifier.py` | Cocok |
-| **ACM-M6-001** | Pinjaman Modal | **SRS-F-025** | `logic/finance_loan.py`| Cocok |
+| **ACM-M6-001** | Pinjaman Modal | **SRS-F-025** | `logic/finance_loan.py` | Cocok |
 | **ACM-M6-002** | Laba/Rugi per Divisi | **SRS-F-026** | `logic/reporting.py` | Cocok |
-| **ACM-M6-003** | Alert Jatuh Tempo Utang H-3 | **SRS-F-027** | `logic/finance_alert.py`| Cocok |
-| **ACM-M6-004** | Depresiasi & Tabungan Aset | **SRS-F-028** | `logic/finance_asset.py`| Cocok |
+| **ACM-M6-003** | Alert Jatuh Tempo Utang H-3 | **SRS-F-027** | `logic/finance_alert.py` | Cocok |
+| **ACM-M6-004** | Depresiasi & Tabungan Aset | **SRS-F-028** | `logic/finance_asset.py` | Cocok |
 | **ACM-M6-005** | Mengelola Pengeluaran Rutin | **SRS-F-029** | `logic/finance_cost.py` | Cocok |
 | **ACM-M7-001** | Otorisasi Akses RBAC | **SRS-F-030** | `middleware/rbac.py` | Cocok |
 | **ACM-M7-002** | Log Audit Trail JSON | **SRS-F-031** | `middleware/logger.py` | Cocok |
 | **ACM-M7-003** | Serah Terima Shift (Handover) | **SRS-F-032** | `logic/handover.py` | Cocok |
 | **ACM-M7-004** | Rekonsiliasi Kas | **SRS-F-033** | `logic/handover.py` | Cocok |
 | **ACM-M7-005** | Fraud Detection | **SRS-F-034** | `logic/fraud_alert.py` | Cocok |
-| **ACM-M7-006** | Setup Awal Wizard | **SRS-F-035** | `utils/setup_wizard.py`| Cocok |
+| **ACM-M7-006** | Setup Awal Wizard | **SRS-F-035** | `utils/setup_wizard.py` | Cocok |
 | **ACM-M8-001** | Database CRM | **SRS-F-036** | `logic/crm.py` | Cocok |
-| **ACM-M9-001** | Multi-Cabang | **SRS-F-037** | `database/connection.py`| Cocok |
-| **ACM-M10-001**| Parameter Runtime Config | **SRS-F-038** | `database/config_cache.py`| Cocok |
-| **ACM-M2-010** | Backup & Restore DB | **SRS-F-039** | `utils/backup.py` | Cocok |
-| **ACM-M2-009** | Mengelola Supplier & Utang | **SRS-F-040** | `logic/supplier.py` | Cocok |
+| **ACM-M9-001** | Multi-Cabang | **SRS-F-037** | `database/connection.py` | Cocok |
+| **ACM-M10-001**| Parameter Runtime Config | **SRS-F-038** | `database/config_cache.py` | Cocok |
 
 ### 8.3. Pemetaan ACM terhadap Use Case Diagram
-Memastikan seluruh use case logis di UML Model Diagram (UCD v1.1) tercover kebijakan otorisasi:
+Memastikan seluruh use case logis di UML Model Diagram (UCD v1.1) tercover kebijakan otorisasi secara berurutan:
 
 | ACM Entry ID | Nama Fungsi Menu | Use Case ID | Status Otorisasi |
 |---|---|---|---|
@@ -657,9 +658,9 @@ Memastikan seluruh use case logis di UML Model Diagram (UCD v1.1) tercover kebij
 | **ACM-M1-004** | Memproses Pembatalan Transaksi & Retur Barang | **UC-004** | Tercover |
 | **ACM-M1-005** | Melacak Margin Keuntungan per Produk | **UC-005** | Tercover |
 | **ACM-M1-006** | Mengekspor Struk Nota format Thermal | **UC-006** | Tercover |
+| **ACM-M2-001** | Mengelola Satuan & Atribut Barang (Unit of Measure) | **UC-009** | Tercover |
 | **ACM-M2-002** | Menghitung HPP Otomatis Berbasis BOM Desimal | **UC-007** | Tercover |
 | **ACM-M2-003** | Mencatat Limbah Produksi (Waste Management) | **UC-008** | Tercover |
-| **ACM-M2-001** | Mengelola Satuan & Atribut Barang (Unit of Measure) | **UC-009** | Tercover |
 | **ACM-M2-004** | Sinkronisasi Pengambilan ATK untuk Produksi Internal | **UC-010** | Tercover |
 | **ACM-M2-005** | Memproses Rekonsiliasi Stok (Stock Opname) | **UC-011** | Tercover |
 | **ACM-M2-006** | Menganalisis Prediksi Re-Order Stok Bahan Baku | **UC-012** | Tercover |
@@ -700,18 +701,18 @@ Memastikan seluruh use case logis di UML Model Diagram (UCD v1.1) tercover kebij
 
 ## 9. Ringkasan Statistik Hak Akses
 
-Berikut adalah statistik kuantitatif penyebaran hak akses fungsi/menu CLI AbuCom terhadap 8 peran pengguna internal:
+Berikut adalah statistik kuantitatif penyebaran hak akses fungsi/menu CLI AbuCom terhadap 8 peran pengguna internal yang telah divalidasi dan diperbaiki secara matematis:
 
 | No | Peran Pengguna (Role) | Jumlah Fungsi CLI Diakses | Persentase Akses Menu | Jumlah Tabel DB Diakses (CRUD) | Keterangan Batasan Keamanan |
 |---|---|:---:|:---:|:---:|---|
 | 1 | **pemilik** | 44 / 44 | 100.0% | 28 / 28 | Memegang wewenang administratif mutlak biner. |
-| 2 | **kepala_percetakan**| 18 / 44 | 40.9% | 15 / 28 | Pengawas toko (Dilarang akses modul payroll & margin). |
-| 3 | **pramuniaga** | 10 / 44 | 22.7% | 6 / 28 | Garda depan (Input order, CRM, servis printer). |
-| 4 | **kasir** | 15 / 44 | 34.1% | 8 / 28 | Laci kas (Pembayaran, retur/batal lewat supervisor). |
-| 5 | **desainer** | 6 / 44 | 13.6% | 4 / 28 | Mockup cetak (Melihat antrian desain, input path file). |
-| 6 | **produksi_cetak** | 9 / 44 | 20.5% | 7 / 28 | Cetak fisik (Input BOM riil, limbah cetak). |
-| 7 | **fotocopy_print** | 5 / 44 | 11.4% | 3 / 28 | Retail cepat eceran (Mencatat penjualan cepat). |
-| 8 | **gudang** | 12 / 44 | 27.3% | 7 / 28 | Logistik gudang (Input stock masuk, supplier, draf opname). |
+| 2 | **kepala_percetakan**| 18 / 44 | 40.9% | 19 / 28 | Pengawas toko (Dilarang akses modul payroll & margin). |
+| 3 | **pramuniaga** | 12 / 44 | 27.3% | 11 / 28 | Garda depan (Input order, CRM, servis printer). |
+| 4 | **kasir** | 20 / 44 | 45.5% | 15 / 28 | Laci kas (Pembayaran, retur/batal lewat supervisor). |
+| 5 | **desainer** | 7 / 44 | 15.9% | 6 / 28 | Mockup cetak (Melihat antrian desain, input path file). |
+| 6 | **produksi_cetak** | 10 / 44 | 22.7% | 9 / 28 | Cetak fisik (Input BOM riil, limbah cetak). |
+| 7 | **fotocopy_print** | 6 / 44 | 13.6% | 8 / 28 | Retail cepat eceran (Mencatat penjualan cepat). |
+| 8 | **gudang** | 12 / 44 | 27.3% | 10 / 28 | Logistik gudang (Input stock masuk, supplier, draf opname). |
 
 * **Total Operasi Bisnis Kritis (Memerlukan Eskalasi sandi Pemilik)**: 4 Operasi.
 * **Total Operasi Verifikasi Harian (Memerlukan wewenang Kepala Toko)**: 3 Operasi.
@@ -741,7 +742,7 @@ Tabel berkas referensi resmi SDLC AbuCom yang digunakan sebagai basis penyusunan
 | No | Nama Berkas Referensi | Lokasi Path Relatif | Keterangan Versi |
 |---|---|---|---|
 | 1 | `01_business_requirements.md` | `docs/sdlc/02_analysis/01_business_requirements.md` | BRD v1.1 — Sumber utama tabel RBAC ringkas (Bab 5.3) dan 43 kebutuhan bisnis. |
-| 2 | `02_software_requirements.md` | `docs/sdlc/02_analysis/02_software_requirements.md` | SRS v1.1 — Sumber detail parameter JWT, bcrypt, rate limiting, dan RTM. |
+| 2 | `02_software_requirements.md` | `docs/sdlc/02_analysis/02_software_requirements.md` | SRS v1.1 — Sumber detail parameter JWT, bcrypt, rate limiting, and RTM. |
 | 3 | `03_use_case_diagram.md` | `docs/sdlc/02_analysis/03_use_case_diagram.md` | UCD v1.1 — Sumber daftar 44 use case dan alur Exception Flow otorisasi. |
 | 4 | `04_workflow_diagram.md` | `docs/sdlc/02_analysis/04_workflow_diagram.md` | WFD v1.1 — Sumber visualisasi swimlane interaksi otorisasi operasional staf. |
 | 5 | `05_data_dictionary.md` | `docs/sdlc/02_analysis/05_data_dictionary.md` | Data Dictionary v1.1 — Sumber skema CRUD 28 tabel MySQL dan kolom `cabang_id`. |
