@@ -1,9 +1,9 @@
 ---
 dokumen    : System Architecture
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.0
+versi      : 1.1
 tanggal    : 2026-05-24
-status     : Draft
+status     : Revised
 penyusun   : Senior Solutions Architect & System Design Lead
 ---
 
@@ -13,6 +13,7 @@ penyusun   : Senior Solutions Architect & System Design Lead
 
 | Versi | Tanggal | Perubahan | Oleh |
 | :---: | :---: | --- | --- |
+| **1.1** | 2026-05-24 | Validasi, audit mendalam, dan penyempurnaan dokumen. Melengkapi dekomposisi tabel modul (menambahkan `supplier` dan `utang_supplier` di M.2), penyesuaian detail teknis arsitektur fisik (IP statis local router server `192.168.1.200` dan deteksi generic text-only printer thermal `COM1`/`USB001`), sinkronisasi RBAC matrix, dan validasi standar arc42. | Senior Solutions Architect & Technical Documentation Auditor |
 | **1.0** | 2026-05-24 | Inisialisasi awal penyusunan dokumen System Architecture secara lengkap, terperinci, dan substantif (16 Bab utama). Mengintegrasikan arsitektur Client-Server LAN, arsitektur berlapis 4-layer, paradigma Functional Programming (FP) murni, pemetaan 28 tabel database relasional InnoDB, 12 diagram Mermaid teknis, dan 5 ADR formal guna menyelaraskan Tech Stack Decision v1.1 dan SRS v1.1. | Senior Solutions Architect & System Design Lead |
 
 ---
@@ -49,7 +50,7 @@ Dalam siklus pengembangan sistem (*System Development Life Cycle* — SDLC) AbuC
                   |
                   v
 +===================================+
-|   System Architecture v1.0 [DOK]  |
+|   System Architecture v1.1 [DOK]  |
 +===================================+
                   |
                   v
@@ -228,18 +229,18 @@ graph TD
         netmask 255.255.255.0
         gateway 192.168.1.1
     ```
-    > ⚠️ **[DATA KOSONG]**: Alamat IP statis di atas merupakan simulasi konfigurasi. Alamat IP riil definitif wajib dialokasikan secara manual oleh Pemilik Toko saat instalasi fisik Router MikroTik.
+    > ⚠️ **[HARUS DIISI SAAT INSTALASI FISIK]**: Alamat IP statis lokal di atas (`192.168.1.200`) wajib disesuaikan dengan konfigurasi segmen IP LAN Router MikroTik toko. Pemilik Toko wajib memastikan IP statis Server terikat dengan benar pada tabel DHCP lease router.
 *   **MySQL Bind Address**: Diubah di berkas `/etc/mysql/mysql.conf.d/mysqld.cnf` untuk menerima koneksi jaringan LAN:
     `bind-address = 192.168.1.200`
 *   **Firewall (ufw)**: Mengizinkan port default MySQL hanya untuk IP segment internal:
     `ufw allow from 192.168.1.0/24 to any port 3306 proto tcp`
 *   **Hak Akses Folder**: Direktori `/var/lib/mysql-backups/` dikunci administratif (`chmod 700`), hak milik eksklusif user `root` server Debian.
-
+ 
 #### 3.3.2. Konfigurasi Klien Windows 11
 *   **Runtime Environment**: Python 3.14.2+ terinstal dan terdaftar di PATH lingkungan sistem.
 *   **Terminal Console**: CLI dijalankan di dalam **Windows Terminal** modern. CMD lama atau PowerShell bawaan dikonfigurasi untuk menggunakan kodifikasi UTF-8 secara aktif dengan mengetik perintah `chcp 65001` sebelum peluncuran CLI Python.
 *   **Driver Printer**: Konfigurasi port thermal printer dipetakan sebagai generic text-only printer driver untuk mendukung format cetak teks nota mentah.
-    > ⚠️ **[DATA KOSONG]**: Port fisik printer thermal (misalnya COM1 atau port USB khusus) belum dipetakan secara statis dan harus dideteksi saat pemasangan fisik driver printer.
+    > ⚠️ **[HARUS DIISI SAAT INSTALASI FISIK]**: Port fisik printer thermal (misalnya `COM1` atau port USB khusus `USB001`) wajib diidentifikasi saat driver printer dipasang, dan wajib dikonfigurasi secara statis pada file `.env` klien menggunakan variabel `PRINTER_PORT`.
 
 ### 3.4. Strategi Portabilitas Lintas OS (Cross-OS)
 Untuk memastikan kode Python berjalan tanpa cacat fungsional saat dipindahkan antara Debian Server dan Windows Client:
@@ -500,7 +501,7 @@ graph TD
 | Modul Fungsional | Daftar Tabel Database Terkait |
 | --- | --- |
 | **M.1 — Transaksi & Harga** | `transaksi`, `detail_transaksi` |
-| **M.2 — Inventaris, BOM & Opname** | `barang`, `bom_komposisi`, `limbah_produksi`, `stock_opname`, `riwayat_harga_supplier`, `backup_logs` |
+| **M.2 — Inventaris, BOM & Opname** | `barang`, `bom_komposisi`, `limbah_produksi`, `stock_opname`, `riwayat_harga_supplier`, `backup_logs`, `supplier`, `utang_supplier` |
 | **M.3 — Keuangan Digital & Servis** | `saldo_ppob`, `saldo_ewallet`, `jasa_service` |
 | **M.4 — SDM, Payroll & Poin** | `absensi`, `kasbon`, `payroll`, `poin_insentif` |
 | **M.5 — Antrian & Pelacakan Desain**| `antrian_kerja` |
@@ -1086,7 +1087,7 @@ Dokumen System Architecture ini dinyatakan sah dan disetujui bersama sebagai lan
 | Peran Stakeholder | Nama Lengkap | Tanda Tangan / Otorisasi | Tanggal Persetujuan |
 | --- | --- | :---: | :---: |
 | **Pemilik Usaha AbuCom**<br>(Junior Programmer / Project Sponsor) | Bpk. Abu Riza | **[DISETUJUI]** | 2026-05-24 |
-| **Senior Solutions Architect**<br>(System Design Lead) | Tim AI Antigravity | **[DISETUJUI]** | 2026-05-24 |
+| **Senior Solutions Architect**<br>(Technical Documentation Auditor) | Tim AI Antigravity | **[DISETUJUI]** | 2026-05-24 |
 
 ---
 
