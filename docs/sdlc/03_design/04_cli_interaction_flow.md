@@ -1,9 +1,9 @@
 ---
 dokumen    : CLI Interaction Flow
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.0
+versi      : 1.1
 tanggal    : 2026-05-24
-status     : Draft
+status     : Review
 penyusun   : Senior UX/CLI Interaction Designer & Terminal Interface Architect
 ---
 
@@ -13,6 +13,7 @@ penyusun   : Senior UX/CLI Interaction Designer & Terminal Interface Architect
 
 | Versi | Tanggal    | Perubahan | Oleh |
 | :---: | :---: | --- | --- |
+| **1.1** | 2026-05-24 | Validasi, audit, dan penyempurnaan komprehensif. Menyelaraskan seluruh query SQL interaksi dengan database schema SQL v1.1 (SSoT), mengubah penamaan kolom (status_pembayaran, status_pengambilan, status_kasbon, dll.), memperbaiki data laci_kasir, mengisi placeholder nama pemilik (Hadi Wibowo), dan memperbarui daftar dokumen referensi. | Senior CLI UX Architect & SDLC Document Quality Auditor |
 | **1.0** | 2026-05-24 | Pembuatan awal dokumen CLI Interaction Flow secara komprehensif. Menjabarkan konvensi desain, hierarki menu, alur interaksi detail 44 Use Case (UC-001 s.d UC-044), wireframe ASCII terminal, matriks visibilitas menu per role, dan matriks ketertelusuran kebutuhan (traceability matrix). | Senior UX/CLI Interaction Designer & Terminal Interface Architect |
 
 ---
@@ -557,7 +558,7 @@ flowchart TD
 | 6 | Sistem | Lookup database transaksional, menyajikan detail belanja, nominal DP awal yang dibayar, and sisa tagihan terutang. | Output | `Total Belanja: Rp 150.000. DP Dibayar: Rp 50.000. SISA TAGIHAN: Rp 100.000. [YELLOW] Status: BELUM LUNAS.` |
 | 7 | Sistem | Meminta nominal uang tunai pelunasan yang diserahkan pelanggan. | Output | `Masukkan Nominal Uang Pelunasan: Rp ` |
 | 8 | Pengguna | Mengetikkan nominal Rupiah pelunasan. | Input | `100000` (decimal) |
-| 9 | Sistem | Melakukan query update database, mengubah kolom status pembayaran `'BELUM LUNAS'` &rarr; `'LUNAS'`, and status antrian ambil. | Proses | `UPDATE transaksi SET status_bayar = 'LUNAS', status_ambil = 'DIAMBIL' WHERE id = %s` |
+| 9 | Sistem | Melakukan query update database, mengubah kolom status pembayaran `'BELUM LUNAS'` &rarr; `'LUNAS'`, and status antrian ambil. | Proses | `UPDATE transaksi SET status_pembayaran = 'LUNAS', status_pengambilan = 'DIAMBIL' WHERE id = %s` |
 | 10 | Sistem | Menampilkan status transaksi lunas, nominal kembalian, and otomatis menyimpan track audit log. | Output | `[GREEN] Pelunasan Nota Berhasil! Status: LUNAS. Nota lunas siap dicetak.` |
 
 #### Pesan Error yang Mungkin Muncul
@@ -592,7 +593,7 @@ sequenceDiagram
     participant DB as MySQL Database
 
     Kasir->>CLI: Pilih "Menu Retur / Pembatalan" & Input ID Nota
-    CLI->>DB: SELECT total_bayar, laci_kas FROM transaksi WHERE id = x
+    CLI->>DB: SELECT total_bayar, status_pembayaran FROM transaksi WHERE id = %s
     DB-->>CLI: Data Transaksi
     CLI-->>Kasir: Meminta Otorisasi Sandi Pemilik (Eskalasi 🔐)
     Kasir->>Owner: Meminta verifikasi fisik di terminal
@@ -607,9 +608,9 @@ sequenceDiagram
         CLI-->>Kasir: Otorisasi Diterima! Izinkan Input Barang Retur
         Kasir->>CLI: Input ID Barang & Qty Retur
         CLI->>DB: START TRANSACTION
-        CLI->>DB: UPDATE transaksi SET status = 'RETUR'
+        CLI->>DB: UPDATE transaksi SET status_pembayaran = 'RETUR' WHERE id = %s
         CLI->>DB: UPDATE barang SET stok = stok + qty_retur
-        CLI->>DB: UPDATE laci_kasir SET saldo = saldo - cash_kembali
+        CLI->>DB: INSERT INTO pengeluaran (tipe_pengeluaran, nominal, deskripsi, tanggal_pengeluaran, kasir_id, disetujui_pemilik, cabang_id) VALUES (%s, %s, %s, CURRENT_DATE, %s, %s, %s) VALUES ('Tak_Terduga', %s, 'Pengembalian kas kasir akibat retur barang', CURRENT_DATE, %s, TRUE, %s)
         CLI->>DB: COMMIT TRANSACTION
         DB-->>CLI: Success Commit
         CLI->>DB: INSERT INTO audit_logs (manipulation='RETUR_TRANSACTION')
@@ -632,8 +633,8 @@ sequenceDiagram
 | 9 | Pengguna | Mengetikkan ID Barang retail ATK yang rusak/gagal. | Input | `102` (integer) |
 | 10 | Sistem | Meminta kuantitas unit barang retur. | Output | `Kuantitas barang retur: ` |
 | 11 | Pengguna | Mengetik kuantitas barang retur. | Input | `1` (integer) |
-| 12 | Sistem | Memproses rollback transaksional: start transaction, mengembalikan stok ATK di gudang master, mengurangi laci kas kasir aktif, commit data, and membuat log audit JSON detail. | Proses | Transaksi ACID MySQL InnoDB |
-| 13 | Sistem | Menampilkan status sukses retur barang and nominal uang yang dikembalikan ke pelanggan dari laci kas. | Output | `[GREEN] Retur Berhasil! Status: RETUR. Kembalikan uang pembeli: Rp 45.000. Laci kas terpotong.` |
+| 12 | Sistem | Memproses rollback transaksional: start transaction, mengembalikan stok ATK di gudang master, mencatat pengeluaran kas keluar, commit data, and membuat log audit JSON detail. | Proses | Transaksi ACID MySQL InnoDB |
+| 13 | Sistem | Menampilkan status sukses retur barang and nominal uang yang dikembalikan ke pelanggan dari laci kas. | Output | `[GREEN] Retur Berhasil! Status: RETUR. Kembalikan uang pembeli: Rp 45.000. Catatan pengeluaran kas ditambahkan.` |
 
 #### Pesan Error yang Mungkin Muncul
 
@@ -714,10 +715,10 @@ sequenceDiagram
 | 1 | Sistem | Menampilkan header path menu komputasi HPP BOM. | Output | `Dashboard > M.2 Inventaris > Penghitungan HPP Berbasis BOM` |
 | 2 | Sistem | Meminta ID Transaksi cetak kustom yang status antriannya diubah ke Produksi/Selesai. | Output | `Masukkan ID Transaksi Cetak Kustom: ` |
 | 3 | Pengguna | Mengetikkan ID transaksi pesanan kustom. | Input | `INV-20260524-003` (string) |
-| 4 | Sistem | Membaca racikan komponen bahan baku (Bill of Materials) dari tabel `bom_komposisi` database MySQL. | Proses | `SELECT bahan_id, qty_komposisi FROM bom_komposisi WHERE produk_id = %s` |
+| 4 | Sistem | Membaca racikan komponen bahan baku (Bill of Materials) dari tabel `bom_komposisi` database MySQL. | Proses | `SELECT bahan_baku_id, kuantitas_desimal FROM bom_komposisi WHERE barang_induk_id = %s` |
 | 5 | Sistem | Query harga beli terbaru dari supplier untuk komponen bahan baku. | Proses | `SELECT harga_beli FROM barang WHERE id = %s` |
 | 6 | Sistem | Melakukan perkalian & jumlahan presisi desimal: `HPP = sum(qty_komposisi * harga_beli)` via fungsional Python. | Proses | `decimal.Decimal` arithmetic |
-| 7 | Sistem | Mengupdate record HPP di database detail transaksi, and otomatis memotong stok bahan desimal di gudang. | Proses | `UPDATE detail_transaksi SET hpp = %s WHERE transaksi_id = %s` |
+| 7 | Sistem | Otomatis memotong stok bahan baku desimal secara transaksional di database master barang. | Proses | `UPDATE barang SET stok_saat_ini = stok_saat_ini - %s WHERE id = %s` |
 | 8 | Sistem | Menampilkan rincian HPP riil produk kustom di layar CLI staf produksi cetak. | Output | `[GREEN] HPP Komposisi BOM Berhasil Dihitung: Rp 56.400 / Pcs. Stok bahan baku terpotong DECIMAL(15,4) di database.` |
 
 ---
@@ -775,7 +776,7 @@ sequenceDiagram
 | 5 | Pengguna | Mengetikkan pilihan `2`. | Input | `2` (integer) |
 | 6 | Sistem | Meminta definisi faktor konversi ke unit terkecil (format desimal). | Output | `Masukkan faktor konversi (1 Rim = ... Lembar): ` |
 | 7 | Pengguna | Mengetikkan angka konversi. | Input | `500.0000` (decimal) |
-| 8 | Sistem | Memvalidasi input format desimal, lalu meng-update konfigurasi satuan barang ke database MySQL. | Proses | `UPDATE barang SET konversi_uom = %s WHERE id = %s` |
+| 8 | Sistem | Memvalidasi input format desimal, lalu meng-update konfigurasi satuan barang ke database MySQL. | Proses | `UPDATE barang SET satuan_uom = %s WHERE id = %s` |
 | 9 | Sistem | Menampilkan konfirmasi sukses update data. | Output | `[GREEN] Konfigurasi UoM Berhasil! 1 Rim dikonversi presisi = 500 Lembar di database.` |
 
 ---
@@ -803,7 +804,7 @@ sequenceDiagram
 | 5 | Pengguna | Mengetik kuantitas pengambilan. | Input | `1` (integer) |
 | 6 | Sistem | Meminta memasukkan detail rincian keperluan pemakaian internal. | Output | `Tulis Keperluan Pemakaian: ` |
 | 7 | Pengguna | Mengetik rincian keperluan. | Input | `Dipakai untuk print nota transaksi thermal kasir harian` |
-| 8 | Sistem | Memotong stok retail ATK, mengambil modal HPP barang, membukukan pengeluaran internal (OPEX): `Biaya = Qty * HPP_retail` ke MySQL database. | Proses | Mutasi stok transaksional |
+| 8 | Sistem | Memotong stok retail ATK (stok_saat_ini), mengambil modal HPP barang, membukukan pengeluaran internal (OPEX) tipe 'Tak_Terduga' ke MySQL database. | Proses | Mutasi stok transaksional |
 | 9 | Sistem | Menampilkan visual sukses hijau and biaya modal operasional yang didebit. | Output | `[GREEN] Sinkronisasi Berhasil! Stok ATK retail terpotong. Biaya modal operasional Rp 42.000 dibukukan.` |
 
 ---
@@ -907,7 +908,7 @@ flowchart TD
 | 1 | Pengguna | Memilih menu "Price Tracking Supplier" di terminal. | Input | `Pilihan menu: 7` |
 | 2 | Sistem | Meminta menginput ID Barang/Bahan Baku yang akan dilacak riwayat harganya. | Output | `Masukkan ID Barang / Bahan Baku: ` |
 | 3 | Pengguna | Mengetikkan ID barang. | Input | `102` (integer) |
-| 4 | Sistem | Melakukan query ke tabel `riwayat_harga_supplier` untuk menarik kronologi harga beli historis. | Proses | `SELECT tanggal, nama_supplier, harga_beli FROM riwayat_harga_supplier WHERE barang_id = %s ORDER BY tanggal DESC` |
+| 4 | Sistem | Melakukan query ke tabel `riwayat_harga_supplier` untuk menarik kronologi harga beli historis. | Proses | `SELECT r.tanggal_pembelian, s.nama_supplier, r.harga_beli FROM riwayat_harga_supplier r JOIN supplier s ON r.supplier_id = s.id WHERE r.barang_id = %s ORDER BY r.tanggal_pembelian DESC` |
 | 5 | Sistem | Menyajikan tabel tren harga beli dari berbagai supplier yang terurut dari tanggal paling baru. | Output | Tabel visual komparasi fluktuasi harga beli supplier |
 | 6 | Sistem | Menandai baris harga termurah dengan indikator warna biru. | Output | `[BLUE] Rekomendasi Supplier Termurah: Supplier Indah (Rp 40.000 / Rim)` |
 
@@ -963,7 +964,7 @@ flowchart TD
 | No. | Aktor/Sistem | Aksi | Tipe | Contoh Tampilan/Input |
 |---|---|---|---|---|
 | 1 | Sistem | Menampilkan header path menu supplier & utang. | Output | `Dashboard > M.2 Inventaris > Supplier & Utang Usaha` |
-| 2 | Sistem | Meminta memilih menu aksi logistik supplier. | Output | `Pilih Opsi: [1-Registrasi Supplier Baru, 2-Catat Pembelian Stok Tempo (Utang)] [0-Kembali]: ` |
+| 2 | Sistem | Meminta memilih menu aksi logistik supplier. | Output | `Pilih Opsi: [1-Registrasi Supplier Baru, 2-Catat Pembelian Stok Tempo (Utang Supplier)] [0-Kembali]: ` |
 | 3 | Pengguna | Mengetikkan pilihan `2`. | Input | `2` (integer) |
 | 4 | Sistem | Meminta memilih ID Supplier yang terdaftar. | Output | `Masukkan ID Supplier: ` |
 | 5 | Pengguna | Mengetikkan ID supplier. | Input | `12` (integer) |
@@ -1024,13 +1025,13 @@ flowchart TD
 | No. | Aktor/Sistem | Aksi | Tipe | Contoh Tampilan/Input |
 |---|---|---|---|---|
 | 1 | Sistem | Menampilkan header path menu saldo PPOB. | Output | `Dashboard > M.3 PPOB > Kelola Saldo & Deposit` |
-| 2 | Sistem | Membaca saldo akun virtual pulsa & token PPOB berjalan di database. | Proses | Query `SELECT saldo_pulsa, saldo_token FROM saldo_ppob WHERE id=1` |
+| 2 | Sistem | Membaca saldo akun virtual pulsa & token PPOB berjalan di database. | Proses | Query `SELECT saldo_terakhir FROM saldo_ppob WHERE akun_tipe = %s AND cabang_id = %s` |
 | 3 | Sistem | Menyajikan saldo di layar CLI kasir. | Output | `Saldo PPOB Aktif: Pulsa: Rp 120.000 (KRITIS), Token: Rp 800.000. [YELLOW] ⚠️ Saldo Pulsa di bawah batas kritis Rp 150.000!` |
 | 4 | Sistem | Menanyakan apakah ingin menginput pengisian deposit (top-up) saldo. | Output | `Pilih Opsi: [1-Top-up Saldo Pulsa, 2-Top-up Saldo Token] [0-Kembali]: ` |
 | 5 | Pengguna | Mengetikkan pilihan `1` untuk mengisi saldo pulsa. | Input | `1` (integer) |
 | 6 | Sistem | Meminta menginput nominal deposit baru (minimal Rp 500.000 sesuai SOP). | Output | `Masukkan Nominal Top-up Saldo Pulsa (Min Rp 500.000): Rp ` |
 | 7 | Pengguna | Mengetik nominal Rupiah top-up. | Input | `500000` (decimal) |
-| 8 | Sistem | Melakukan validasi nominal, start transaction, meng-update saldo virtual pulsa di MySQL: `saldo = 120.000 + 500.000 = Rp 620.000`, mencatatkan mutasi kas keluar di tabel pengeluaran operasional, commit data. | Proses | ACID Transaction MySQL |
+| 8 | Sistem | Melakukan validasi nominal, start transaction, meng-update saldo_terakhir pulsa di MySQL: `saldo_terakhir = 120.000 + 500.000 = Rp 620.000`, mencatatkan mutasi kas keluar di tabel pengeluaran operasional (OPEX) tipe 'Rutin', commit data. | Proses | ACID Transaction MySQL |
 | 9 | Sistem | Menampilkan visual sukses hijau, saldo terupdate, and mematikan alarm peringatan saldo kritis. | Output | `[GREEN] Pengisian Saldo Pulsa Berhasil! Saldo Pulsa Terupdate: Rp 620.000 (NORMAL). Kas keluar terdaftar.` |
 
 #### Pesan Error yang Mungkin Muncul
@@ -1060,7 +1061,7 @@ flowchart TD
 | 1 | Sistem | Menampilkan header path menu komparasi transfer. | Output | `Dashboard > M.3 PPOB > Akun Keuangan Terhemat (Jasa Transfer)` |
 | 2 | Sistem | Meminta memasukkan nominal uang yang ingin ditransfer pelanggan. | Output | `Masukkan Nominal Uang Transfer: Rp ` |
 | 3 | Pengguna | Mengetikkan nominal Rupiah transfer. | Input | `1500000` (decimal) |
-| 4 | Sistem | Melakukan query ke database tabel `saldo_ewallet` untuk mengambil data saldo e-wallet aktif and tabel tarif biaya admin tetap dari 6 dompet digital terdaftar. | Proses | Query `SELECT nama, saldo, biaya_admin FROM ewallet` |
+| 4 | Sistem | Melakukan query ke database tabel `saldo_ewallet` untuk mengambil data saldo e-wallet aktif and tabel tarif biaya admin tetap dari 6 dompet digital terdaftar. | Proses | Query `SELECT nama_ewallet, saldo_terakhir, biaya_admin_flat, biaya_admin_persen FROM saldo_ewallet WHERE cabang_id = %s` |
 | 5 | Sistem | Memproses perbandingan total biaya admin fungsional di memori Python. | Proses | decimal comparisons |
 | 6 | Sistem | Menyajikan tabel komparasi biaya admin dan saldo aktif 6 dompet digital menggunakan format tabular `tabulate` visual. | Output | Tabel visual komparasi biaya transfer 6 dompet digital |
 | 7 | Sistem | Merekomendasikan dompet digital termurah and memiliki saldo memadai. | Output | `[BLUE] Rekomendasi Platform Terhemat: DANA (Biaya Admin Terendah: Rp 1.000).` |
@@ -1094,7 +1095,7 @@ flowchart TD
 | 9 | Pengguna | Mengetik keluhan pelanggan. | Input | `Tinta warna merah tidak keluar saat print lembar dokumen` |
 | 10 | Sistem | Meminta estimasi biaya jasa servis awal. | Output | `Estimasi Biaya Jasa Servis: Rp ` |
 | 11 | Pengguna | Mengetikkan estimasi Rupiah jasa. | Input | `75000` (decimal) |
-| 12 | Sistem | Menyimpan log penerimaan ke tabel `jasa_service` MySQL, menetapkan status awal `'DITERIMA'`, and otomatis men-generate tanda terima visual teks siap ekspor struk nota thermal. | Proses | `INSERT INTO jasa_service (pelanggan, wa, unit, keluhan, biaya, status) VALUES (%s, %s, %s, %s, %s, 'DITERIMA')` |
+| 12 | Sistem | Menyimpan log penerimaan ke tabel `jasa_service` MySQL, menetapkan status awal `'DITERIMA'`, and otomatis men-generate tanda terima visual teks siap ekspor struk nota thermal. | Proses | `INSERT INTO jasa_service (pelanggan_id, nama_non_pelanggan, nama_unit, detail_kerusakan, estimasi_biaya, status_perbaikan, teknisi_id, cabang_id) VALUES (%s, %s, %s, %s, %s, 'Diterima', %s, %s)` |
 | 13 | Sistem | Menampilkan status sukses and ID perbaikan service. | Output | `[GREEN] Unit Service Berhasil Terdaftar! ID Service: SRV-20260524-001. Tanda terima tercetak.` |
 
 ---
@@ -1209,7 +1210,7 @@ flowchart TD
 | 1 | Sistem | Mendeteksi ID Transaksi yang berhasil dicommit di kasir (UC-001). | Proses | SQL transaction trigger |
 | 2 | Sistem | Membaca item barang kustom/jasa yang dibeli and mengidentifikasi tingkat kesulitan bebannya: Tier 1 (1 poin), Tier 2 (3 poin), Tier 3 (5 poin), Tier 4 (10 poin). | Proses | Difficulty categorization |
 | 3 | Sistem | Mengambil ID Karyawan desainer, kasir, or produksi cetak pelaksana yang terikat di detail transaksi. | Proses | Relational tables read |
-| 4 | Sistem | Mengakumulasikan poin secara transaksional ke tabel `poin_insentif` MySQL secara otomatis. | Proses | `INSERT INTO poin_insentif (karyawan_id, poin, detail_transaksi_id) VALUES (%s, %s, %s)` |
+| 4 | Sistem | Mengakumulasikan poin secara transaksional ke tabel `poin_insentif` MySQL secara otomatis. | Proses | `INSERT INTO poin_insentif (transaksi_id, pengguna_id, poin_diperoleh, rupiah_diperoleh, status_poin, cabang_id) VALUES (%s, %s, %s, %s, 'AKTIF', %s)` |
 | 5 | Sistem | Pada menu pribadi, staf dapat mengecek akumulasi poin: `Bonus Poin = Total Poin * Rp 500`. | Output | `Poin Insentif Anda: 45 Poin (Estimasi Bonus: Rp 22.500)` |
 
 ---
@@ -1231,9 +1232,9 @@ flowchart TD
 | No. | Aktor/Sistem | Aksi | Tipe | Contoh Tampilan/Input |
 |---|---|---|---|---|
 | 1 | Sistem | Memicu fungsi evaluasi kasbon saat pemrosesan payroll bulanan berjalan (UC-021). | Proses | Subprocess call |
-| 2 | Sistem | Melakukan query database ke tabel `kasbon` untuk mengekstrak sisa utang kasbon aktif milik ID Karyawan terkait. | Proses | `SELECT id, sisa_kasbon FROM kasbon WHERE karyawan_id = %s AND status = 'BELUM_LUNAS'` |
+| 2 | Sistem | Melakukan query database ke tabel `kasbon` untuk mengekstrak sisa utang kasbon aktif milik ID Karyawan terkait. | Proses | `SELECT id, sisa_utang FROM kasbon WHERE pengguna_id = %s AND status_kasbon = 'AKTIF'` |
 | 3 | Sistem | Membaca nominal sisa kasbon, lalu mengurangkan dari nominal gaji kotor bulanan staf: `gaji_bersih = gaji_kotor - sisa_kasbon`. | Proses | decimal subtraction |
-| 4a | Sistem | **Skenario Lunas**: Jika gaji kotor &ge; sisa kasbon, sistem memotong gaji penuh, and mengupdate status kasbon di MySQL &rarr; `'LUNAS'`. | Proses | `UPDATE kasbon SET status = 'LUNAS', sisa_kasbon = 0 WHERE id = %s` |
+| 4a | Sistem | **Skenario Lunas**: Jika gaji kotor &ge; sisa kasbon, sistem memotong gaji penuh, and mengupdate status kasbon di MySQL &rarr; `'LUNAS'`. | Proses | `UPDATE kasbon SET status_kasbon = 'LUNAS', sisa_utang = 0.0000 WHERE id = %s` |
 | 4b | Sistem | **Skenario Sisa**: Jika sisa kasbon > gaji kotor, sistem memotong gaji kotor hingga batas sisa minimal Rp 0, and mengupdate sisa kasbon staf. | Proses | Partial deduction update |
 | 5 | Sistem | Melampirkan detail nominal pemotongan kasbon tersebut pada struk slip gaji digital staf. | Output | `Potongan Kasbon: Rp 300.000 (Lunas)` |
 
@@ -1264,7 +1265,7 @@ flowchart TD
 | 5 | Pengguna | Mengetikkan ID antrian. | Input | `8` (integer) |
 | 6 | Sistem | Menyajikan status aktif pesanan, and meminta memilih transisi status berikutnya sesuai wewenang RBAC. | Output | `Pesanan: Cetak Banner. Status Aktif: 'Proses Desain'. Pilih status baru: [1-Produksi] [0-Kembali]: ` |
 | 7 | Pengguna | Desainer mengetikkan pilihan `1` setelah menyelesaikan mockup file. | Input | `1` (integer) |
-| 8 | Sistem | Memverifikasi wewenang aktor, memvalidasi urutan sekuensial tahapan status (tidak boleh melompati urutan), start transaction, meng-update status antrian ke `'Produksi'` di MySQL, commit data. | Proses | `UPDATE antrian_kerja SET status_kerja = 'Produksi' WHERE id = %s` |
+| 8 | Sistem | Memverifikasi wewenang aktor, memvalidasi urutan sekuensial tahapan status (tidak boleh melompati urutan), start transaction, meng-update status antrian ke `'Produksi'` di MySQL, commit data. | Proses | `UPDATE antrian_kerja SET status_antrian = 'Produksi' WHERE id = %s` |
 | 9 | Sistem | Menampilkan status sukses update antrian, and otomatis mengirim track log audit JSON. | Output | `[GREEN] Transaksi Antrian Berhasil! Status diupdate: Produksi. Staf Produksi Cetak segera memproses.` |
 
 #### Pesan Error yang Mungkin Muncul
@@ -1558,7 +1559,7 @@ flowchart TD
 |---|---|---|---|---|
 | 1 | Sistem | Memeriksa level login aktif (RBAC). Hanya Pemilik yang diizinkan (Absolute Lockdown). | Proses | Security guard check |
 | 2 | Pengguna | Memilih menu "Viewer Log Audit Trail JSON" di terminal. | Input | `Pilihan menu: 2` |
-| 3 | Sistem | Menarik baris data perubahan terenkode JSON dari tabel `audit_logs` MySQL. | Proses | Query `SELECT * FROM audit_logs ORDER BY id DESC` |
+| 3 | Sistem | Menarik baris data perubahan terenkode JSON dari tabel `audit_logs` MySQL. | Proses | Query `SELECT action_timestamp, pengguna_id, action_type, target_table, old_value, new_value FROM audit_logs WHERE cabang_id = %s ORDER BY id DESC` |
 | 4 | Sistem | Menyajikan tabel visual log audit terstruktur terformat tabular `tabulate` visual (mencakup: Timestamp, ID Staf, Jenis Aksi, Kolom `old_value` string JSON data lama, Kolom `new_value` string JSON data baru). | Output | Laporan Log Audit Trail JSON Tabular visual `rich` |
 | 5 | Sistem | Pemilik dapat memantau deteksi manipulasi and log akses ilegal staf secara real-time. | Output | Panel Audit Trail Log Viewer visual |
 
@@ -1734,7 +1735,7 @@ flowchart TD
 |---|---|---|---|---|
 | 1 | Sistem | Memeriksa hak akses (RBAC). Hanya Pemilik yang diizinkan (Absolute Lockdown). | Proses | Security guard check |
 | 2 | Pengguna | Memilih menu "Identifikasi Multi-Cabang" di terminal. | Input | `Pilihan menu: 1` |
-| 3 | Sistem | Membaca database tabel `cabang` MySQL untuk mengambil daftar unit cabang terdaftar. | Proses | Query `SELECT * FROM cabang` |
+| 3 | Sistem | Membaca database tabel `cabang` MySQL untuk mengambil daftar unit cabang terdaftar. | Proses | Query `SELECT id, nama_cabang, alamat, telp FROM cabang` |
 | 4 | Sistem | Menyajikan tabel visual daftar cabang `rich` terurut. | Output | Tabel visual daftar cabang terdaftar (ID Cabang, Nama Kota, Alamat) |
 | 5 | Sistem | Secara bawaan transaksional di sisi program, sistem otomatis menyisipkan parameter `cabang_id = 1` di setelan query data. | Proses | Query parameterized value setting |
 | 6 | Sistem | Menampilkan informasi setelan status cabang aktif di terminal CLI pemilik. | Output | `[BLUE] Identifikasi Cabang: Aktif Cabang ID: 1 (Toko Pusat Bandung). All tables InnoDB constraint OK.` |
@@ -1767,7 +1768,7 @@ flowchart TD
 | 6 | Pengguna | Mengetikkan pilihan parameter. | Input | `1` (Limit Kasbon Staf) |
 | 7 | Sistem | Meminta memasukkan nilai baru (format desimal). | Output | `Masukkan nilai baru untuk Limit Kasbon Staf: Rp ` |
 | 8 | Pengguna | Mengetikkan angka nilai parameter baru. | Input | `1200000` (decimal) |
-| 9 | Sistem | Memvalidasi input desimal, start transaction, meng-update parameter ke database MySQL, commit data. | Proses | `UPDATE system_configs SET value = %s WHERE id = %s` |
+| 9 | Sistem | Memvalidasi input desimal, start transaction, meng-update parameter ke database MySQL, commit data. | Proses | `UPDATE system_configs SET parameter_value = %s WHERE id = %s` |
 | 10 | Sistem | Menampilkan visual sukses hijau, and status nilai baru terupdate. | Output | `[GREEN] Konfigurasi Sukses! Parameter 'Limit Kasbon Staf' diubah = Rp 1.200.000. Tersimpan di database.` |
 
 #### Pesan Error yang Mungkin Muncul
@@ -2177,7 +2178,7 @@ Dokumen spesifikasi CLI Interaction Flow AbuCom v1.0 ini secara resmi disetujui 
 
 | Stakeholder Jabatan | Nama Stakeholder | Tanda Tangan | Tanggal |
 |---|---|---|---|
-| **Pemilik Usaha AbuCom**<br>(Junior PM & Developer) | [Nama Pemilik Usaha] | .............................. | 2026-05-24 |
+| **Pemilik Usaha AbuCom**<br>(Junior PM & Developer) | Hadi Wibowo | .............................. | 2026-05-24 |
 | **Senior System Design Lead**<br>(Antigravity IDE Persona) | **Terminal UX Architect** | _Authorized Digital_ | 2026-05-24 |
 
 ---
