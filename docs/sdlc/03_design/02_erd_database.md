@@ -1,9 +1,9 @@
 ---
 dokumen    : ERD Database
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.0
+versi      : 1.1
 tanggal    : 2026-05-24
-status     : Draft
+status     : Final
 penyusun   : Senior Database Architect & Data Modeling Specialist
 ---
 
@@ -13,6 +13,7 @@ penyusun   : Senior Database Architect & Data Modeling Specialist
 
 | Versi | Tanggal    | Perubahan | Oleh |
 |:---:|---|---|---|
+| **1.1** | 2026-05-24 | Validasi & perbaikan menyeluruh v1.1. Koreksi statistik model data (Unique=9, CHECK=42), melengkapi matriks FK (audit_logs FKs), menyinkronkan jumlah kolom (stock_opname=13, utang_supplier=11), menyinkronkan incoming FK pengguna=17, serta menambahkan catatan anti-normalisasi (7.6), index komposit (7.7), dan seed data (7.8). | Senior Database Architect & Data Modeling Specialist |
 | **1.0** | 2026-05-24 | Inisialisasi awal penyusunan dokumen ERD (Entity Relationship Diagram) Database AbuCom. Mengintegrasikan seluruh 28 entitas fisik, 58 relasi foreign key, dan diagram modular terkelompok untuk menjamin keselarasan 100% dengan Database Schema DDL SQL v1.1 dan Data Dictionary v1.1. | Senior Database Architect & Data Modeling Specialist |
 
 ---
@@ -34,7 +35,7 @@ Dalam siklus pengembangan sistem (*System Development Life Cycle* — SDLC) AbuC
 
 ```
 +-----------------------------+     +-------------------------------+     +===============================+
-|   Data Dictionary v1.1      | --> |  Database Schema DDL SQL v1.1 | --> |      ERD Database v1.0        |
+|   Data Dictionary v1.1      | --> |  Database Schema DDL SQL v1.1 | --> |      ERD Database v1.1        |
 |  Fase 02 — Analysis (F02)   |     |    Fase 03 — Design (F03)     |     |  Fase 03 — Design [DOKUMEN]   |
 +-----------------------------+     +-------------------------------+     +===============================+
 ```
@@ -42,7 +43,7 @@ Dalam siklus pengembangan sistem (*System Development Life Cycle* — SDLC) AbuC
 ### 1.4. Hubungan dengan Dokumen SDLC Lainnya
 * **Input (Dokumen Acuan)**: 
   - `docs/sdlc/03_design/01_database_schema.sql` (Sumber Kebenaran Tunggal fisik MySQL final).
-  - `docs/sdlc/02_analysis/05_data_dictionary.md` (Spesifikasi 282 atribut, kamus domain, dan aturan bisnis).
+  - `docs/sdlc/02_analysis/05_data_dictionary.md` (Spesifikasi 307 atribut, kamus domain, dan aturan bisnis).
   - `docs/sdlc/02_analysis/06_access_control_matrix.md` (Anotasi tingkat sensitivitas data dan kepatuhan privasi).
 * **Output (Dokumen Pengguna)**:
   - Menjadi acuan visual utama bagi pengembang backend saat mengimplementasikan API dan logic database Python.
@@ -85,10 +86,10 @@ Visualisasi dalam dokumen ini menggunakan sintaks standar **Mermaid erDiagram** 
 ### 2.1. Statistik Ringkasan
 Berdasarkan visualisasi ERD fisik dan skema DDL SQL v1.1, statistik arsitektur model data AbuCom diuraikan sebagai berikut:
 * **Total Tabel**: 28
-* **Total Kolom/Atribut**: 282
+* **Total Kolom/Atribut**: 307
 * **Total Relasi Foreign Key**: 58
-* **Total Unique Constraint**: 7 (tunggal & composite)
-* **Total CHECK Constraint**: 18
+* **Total Unique Constraint**: 9 (tunggal & composite)
+* **Total CHECK Constraint**: 42
 * **Total Index Tambahan (Composite)**: 4
 * **Tabel Multi-Cabang Ready (`cabang_id` Column)**: 100% (28 dari 28 tabel)
 * **Tabel Audit Trail Ready (`created_at`/`updated_at`)**: 100% (28 dari 28 tabel)
@@ -103,11 +104,11 @@ Guna menyederhanakan visualisasi model data berskala besar, ke-28 tabel basis da
                                                  |
        +--------------------+--------------------+--------------------+--------------------+
        |                    |                    |                    |                    |
-+--------------+     +--------------+     +--------------+     +--------------+     +--------------+
-|  KELOMPOK A  |     |  KELOMPOK B  |     |  KELOMPOK C  |     |  KELOMPOK D  |     |  KELOMPOK E  |
-| Tabel Induk  |     | Master Lvl 2 |     | Transaksional|     | Adm/Keuangan |     | Audit/Rekon  |
-| (1 Tabel)    |     | (7 Tabel)    |     | (12 Tabel)   |     | (4 Tabel)    |     | (4 Tabel)    |
-+--------------+     +--------------+     +--------------+     +--------------+     +--------------+
+ +--------------+     +--------------+     +--------------+     +--------------+     +--------------+
+ |  KELOMPOK A  |     |  KELOMPOK B  |     |  KELOMPOK C  |     |  KELOMPOK D  |     |  KELOMPOK E  |
+ | Tabel Induk  |     | Master Lvl 2 |     | Transaksional|     | Adm/Keuangan |     | Audit/Rekon  |
+ | (1 Tabel)    |     | (7 Tabel)    |     | (12 Tabel)   |     | (4 Tabel)    |     | (4 Tabel)    |
+ +--------------+     +--------------+     +--------------+     +--------------+     +--------------+
 ```
 
 | Kelompok | Deskripsi Fungsional | Daftar Tabel Basis Data |
@@ -394,7 +395,7 @@ erDiagram
     }
     supplier {
         int id PK "Identifikasi unik data supplier"
-        varchar nama_supplier "Nama badan usaha/perorangan supplier"
+        varchar nama_supplier "Nama badan usaha/supplier"
         text alamat "Alamat gudang/kantor supplier"
         varchar telp "Nomor telepon operasional supplier"
         int cabang_id FK "Cabang pencatat data supplier"
@@ -508,7 +509,7 @@ erDiagram
         int pelanggan_id FK "Pelanggan CRM (NULL jika walk-in)"
         int kasir_id FK "Kasir pencatat transaksi"
         timestamp tanggal_transaksi "Waktu transaksi dibayarkan"
-        decimal total_bayar "Total tagihan nota belanja"
+        decimal total_bayar "Total tagihan akhir belanja nota yang dibayar"
         decimal dp_bayar "Nilai Down Payment yang diterima"
         varchar status_pembayaran "LUNAS/BELUM LUNAS/BATAL/RETUR"
         varchar status_pengambilan "DIAMBIL/BELUM DIAMBIL"
@@ -764,8 +765,8 @@ erDiagram
     stock_opname {
         int id PK "Identifikasi unik opname"
         int barang_id FK "Item barang yang direkonsiliasi"
-        decimal stok_sistem "Saldo persediaan menurut sistem"
-        decimal kuantitas_fisik "Saldo riil hitungan manual staf"
+        decimal stok_sistem "Saldo persediaan menurut data database"
+        decimal kuantitas_fisik "Saldo riil hitungan fisik di toko"
         decimal selisih "Deviasi: fisik - sistem"
         timestamp tanggal_opname "Waktu penguncian opname"
         text catatan_opname "Catatan alasan deviasi stok (nullable)"
@@ -852,9 +853,9 @@ Matriks integritas referensial basis data relasional MySQL AbuCom dipetakan seca
 | 53 | `stock_opname` | `cabang_id` | `cabang` | `id` | Many-to-One | RESTRICT | CASCADE | Penyelarasan stok opname dieksekusi per gudang cabang. |
 | 54 | `riwayat_harga_supplier` | `barang_id` | `barang` | `id` | Many-to-One | RESTRICT | CASCADE | Item barang dilindungi dari penghapusan jika ada log harga. |
 | 55 | `riwayat_harga_supplier` | `supplier_id` | `supplier` | `id` | Many-to-One | RESTRICT | CASCADE | Vendor dilindungi dari penghapusan jika ada log harga. |
-| 56 | `riwayat_harga_supplier` | `cabang_id` | `cabang` | `id` | Many-to-One | RESTRICT | CASCADE | Pelacakan fluktuasi harga beli dibukukan per cabang. |
-| 57 | `saldo_ewallet` | `cabang_id` | `cabang` | `id` | Many-to-One | RESTRICT | CASCADE | Hak asasi limit saldo e-wallet dikelola per cabang. |
-| 58 | `system_configs` | `cabang_id` | `cabang` | `id` | Many-to-One | RESTRICT | CASCADE | Master config regulasi runtime terikat pada cabang. |
+| 56 | `riwayat_harga_supplier` | `cabang_id` | `cabang` | `id` | Many-to-One | RESTRICT | CASCADE | Pelacakan fluktuasi harga beli pengadaan dibukukan per cabang. |
+| 57 | `audit_logs` | `pengguna_id` | `pengguna` | `id` | Many-to-One | RESTRICT | CASCADE | Melacak akun staf pelaksana aksi/manipulasi data. |
+| 58 | `audit_logs` | `cabang_id` | `cabang` | `id` | Many-to-One | RESTRICT | CASCADE | Melacak cabang tempat terjadinya peristiwa log audit. |
 
 ### 5.2. Penjelasan Aturan Integritas Referensial (ON DELETE / ON UPDATE)
 * **`ON DELETE RESTRICT` (Proteksi Master)**: Diterapkan pada 90% relasi parent master. MySQL akan memblokir keras upaya penghapusan data induk (`cabang`, `pengguna`, `barang`, `supplier`) jika id kunci primer mereka sudah terlanjur direferensikan pada data sekunder/transaksi harian. Ini untuk mencegah hilangnya riwayat keuangan dan *orphaned records*.
@@ -921,7 +922,7 @@ Tabel ringkasan 28 entitas menyajikan peta statistik struktural dan administrasi
 | No | Nama Tabel | Kelompok | Jumlah Kolom | Modul Terkait | FK Keluar | FK Masuk | Sensitivitas | Jenis Derivasi |
 |:---:|---|---|:---:|---|:---:|:---:|---|---|
 | 1 | `cabang` | Kelompok A | 6 | M.9 — Skalabilitas | 0 | 27 | Operasional | SRS (SRS-F-037) |
-| 2 | `pengguna` | Kelompok B | 10 | M.7 — Keamanan | 1 | 11 | Operasional | SRS (SRS-F-030) |
+| 2 | `pengguna` | Kelompok B | 10 | M.7 — Keamanan | 1 | 17 | Operasional | SRS (SRS-F-030) |
 | 3 | `pelanggan` | Kelompok B | 7 | M.8 — CRM | 1 | 2 | Operasional | SRS (SRS-F-036) |
 | 4 | `supplier` | Kelompok B | 7 | M.2 — Persediaan | 1 | 2 | Operasional | SRS (SRS-F-040) |
 | 5 | `barang` | Kelompok B | 13 | M.2 — Persediaan | 1 | 6 | Operasional | SRS (SRS-F-009) |
@@ -940,13 +941,13 @@ Tabel ringkasan 28 entitas menyajikan peta statistik struktural dan administrasi
 | 18 | `jasa_service` | Kelompok C | 13 | M.3 — Layanan | 3 | 0 | Operasional | SRS (SRS-F-017) |
 | 19 | `poin_insentif` | Kelompok C | 10 | M.4 — SDM | 3 | 0 | Operasional | SRS (SRS-F-020) |
 | 20 | `shift_handover` | Kelompok C | 14 | M.7 — Keamanan | 4 | 0 | Sensitif | SRS (SRS-F-032) |
-| 21 | `utang_supplier` | Kelompok D | 10 | M.2 — Persediaan | 2 | 0 | Sensitif | SRS (SRS-F-040) |
+| 21 | `utang_supplier` | Kelompok D | 11 | M.2 — Persediaan | 2 | 0 | Sensitif | SRS (SRS-F-040) |
 | 22 | `pinjaman_bank` | Kelompok D | 14 | M.6 — Laporan | 1 | 0 | Sangat Sensitif | **Derivasi** |
 | 23 | `pinjaman_kerabat` | Kelompok D | 10 | M.6 — Laporan | 1 | 0 | Sangat Sensitif | **Derivasi** |
 | 24 | `aset` | Kelompok D | 13 | M.6 — Laporan | 1 | 0 | Sangat Sensitif | **Derivasi** |
 | 25 | `audit_logs` | Kelompok E | 11 | M.7 — Keamanan | 2 | 0 | Sangat Sensitif | SRS (SRS-F-031) |
 | 26 | `backup_logs` | Kelompok E | 9 | M.2 — Persediaan | 2 | 0 | Sangat Sensitif | SRS (SRS-F-039) |
-| 27 | `stock_opname` | Kelompok E | 14 | M.2 — Persediaan | 4 | 0 | Sensitif | **Derivasi** |
+| 27 | `stock_opname` | Kelompok E | 13 | M.2 — Persediaan | 4 | 0 | Sensitif | **Derivasi** |
 | 28 | `riwayat_harga_supplier` | Kelompok E | 8 | M.2 — Persediaan | 3 | 0 | Operasional | **Derivasi** |
 
 ---
@@ -967,10 +968,10 @@ Setiap tabel di basis data AbuCom dilengkapi dengan kolom:
 Tabel `bom_komposisi` dirancang khusus untuk memetakan formula racikan produk cetak kustom menggunakan pola *self-referencing* (relasi ke tabel yang sama):
 * Kolom `barang_induk_id` merujuk ke master `barang(id)` (berperan sebagai produk cetak kustom jadi, misal: Stempel Flash Flash Bulat).
 * Kolom `bahan_baku_id` merujuk ke master `barang(id)` (berperan sebagai komponen pembentuk, misal: Karet Gagang Bulat, Tinta Stempel).
-* **Keputusan Keamanan**: Relasi `barang_induk_id` dikonfigurasi `ON DELETE CASCADE` agar formula otomatis terhapus saat produk dihapus, sedangkan `bahan_baku_id` dikonfigurasi `ON DELETE RESTRICT` untuk mencegah bahan baku dihapus secara ilegal saat masih aktif digunakan dalam standar racikan formula toko.
+* **Keputusan Keamanan**: Relasi `barang_induk_id` dikonfigurasi `ON DELETE CASCADE` agar formula otomatis terhapus saat produk dihapus, whereas `bahan_baku_id` dikonfigurasi `ON DELETE RESTRICT` untuk mencegah bahan baku dihapus secara ilegal saat masih aktif digunakan dalam standar racikan formula toko.
 
 ### 7.4. Pola Nullable FK (Kasus Opsional Bisnis)
-Beberapa foreign key dikonfigurasi *nullable* (dapat bernilai NULL) untuk mendukung kelenturan alur kerja nyata:
+Several foreign keys dikonfigurasi *nullable* (dapat bernilai NULL) untuk mendukung kelenturan alur kerja nyata:
 1. `transaksi.pelanggan_id`: Bernilai `NULL` jika pembeli adalah pelanggan non-CRM (walk-in customer) yang tidak ingin mendaftarkan data WhatsApp-nya.
 2. `antrian_kerja.desainer_id` & `produksi_id`: Bernilai `NULL` di awal pemesanan kasir, menandakan pekerjaan baru masuk antrian dan belum dialokasikan kepada staf desainer visual maupun operator mesin cetak.
 3. `stock_opname.supervisor_id`: Bernilai `NULL` jika draf opname fisik baru dicatat oleh operator gudang dan sedang menunggu reviu/persetujuan supervisor (Kepala Percetakan / Pemilik).
@@ -981,6 +982,28 @@ Kami mendefinisikan 7 tabel tambahan di luar kebutuhan dasar SRS untuk memelihar
 * `saldo_ewallet` & `system_configs`: Memindahkan konstanta admin e-wallet dan parameter bisnis (seperti threshold limit kasbon, UMR, persentase payroll) dari hardcode program Python ke tabel basis data agar dapat diubah dinamis oleh Pemilik.
 * `pinjaman_bank`, `pinjaman_kerabat`, `aset`: Mengelola secara presisi depresiasi garis lurus, setoran bulanan, sisa tenor, dan pencadangan modal tunai.
 * `stock_opname` & `riwayat_harga_supplier`: Mengunci data logistik fisik harian untuk meminimalisir deviasi/fraud stok gudang serta memantau pergerakan fluktuasi harga bahan dari supplier.
+
+### 7.6. Derived Columns & Redundant Storage (Keputusan Anti-Normalisasi)
+Guna menjamin integritas data komputasi transaksional dan mencegah overhead kalkulasi JOIN runtime pada hardware server lokal Mini PC yang terbatas, basis data AbuCom sengaja menyimpan beberapa atribut derived secara redundan di tingkat kolom fisik:
+1. `detail_transaksi.subtotal`: Disimpan secara fisik dari hasil komputasi `kuantitas * harga_jual`. Keputusan ini untuk mengunci nilai belanja transaksional historis secara permanen sehingga bila di kemudian hari harga barang atau diskon berubah, nilai historis nota tidak ikut berubah, sekaligus mempercepat query agregasi kasir harian.
+2. `shift_handover.selisih`: Disimpan secara fisik dari hasil selisih matematis `kas_fisik - kas_sistem`. Keputusan ini untuk mengamankan data deviasi laci kasir demi memfasilitasi audit trail kepatuhan fraud secara instan tanpa perlu memicu kalkulasi ulang historis log transaksi kasir shift terkait.
+3. `limbah_produksi.kerugian_nominal`: Disimpan secara fisik dari komputasi `kuantitas_limbah * harga_beli` bahan baku pada tanggal kejadian. Hal ini berguna untuk melacak kerugian nominal nyata (*waste loss*) secara presisi sesuai dengan fluktuasi harga beli bahan baku supplier saat itu.
+4. `payroll.gaji_bersih`: Disimpan secara fisik dari formula `gaji_pokok + bonus_insentif - potongan_kasbon`. Hal ini melindungi keaslian data historis slip gaji staf dari perubahan parameter UMR bulanan atau pelunasan kasbon di masa mendatang.
+
+### 7.7. Strategi Index Komposit (Composite Index Strategy)
+Selain indeks otomatis (Primary Key dan Foreign Key), basis data AbuCom mengimplementasikan 4 composite index (indeks gabungan) tambahan di tingkat tabel fisik untuk menjamin query CLI Mini PC LAN merespons kurang dari 2.0 detik:
+1. `idx_transaksi_tanggal_cabang` pada `transaksi(tanggal_transaksi, cabang_id)`: Mempercepat komputasi periodik laporan keuangan, laba bersih, HPP, dan performa omzet harian per divisi cabang.
+2. `idx_absensi_pengguna_tanggal` pada `absensi(pengguna_id, tanggal)`: Mengoptimalkan pemindaian log kehadiran harian staf oleh supervisor dan mempercepat filter agregasi upah bulanan pada modul Smart Payroll.
+3. `idx_antrian_status_cabang` pada `antrian_kerja(status_antrian, cabang_id)`: Mempercepat filter real-time data antrian job cetak kustom aktif (status 'Antri' atau 'Produksi') per cabang pada dashboard terminal CLI.
+4. `idx_barang_tipe_cabang` pada `barang(tipe_barang, cabang_id)`: Mengoptimalkan pemisahan filter stok persediaan eceran ATK vs bahan baku pergudangan per cabang.
+
+### 7.8. Kebijakan Seed Data Awal (Database Bootstrapping)
+Sistem database AbuCom mewajibkan inisialisasi seed data awal (*minimum database bootstrapping*) secara aman untuk menjamin kelancaran runtime aplikasi pertama kali:
+1. **Pusat Usaha (cabang)**: Inisialisasi baris `id = 1` dengan `'Toko Pusat Bandung'` sebagai root universal multi-branch.
+2. **Akun Pemilik (pengguna)**: Inisialisasi baris `id = 1` dengan `username = 'pemilik'` dan hash bcrypt yang aman untuk menjamin pemilik dapat login pertama kali.
+3. **Akun Layanan (saldo_ppob)**: Top-up saldo awal untuk server `Pulsa_Data` (Rp 1.000.000) dan `Token_Tagihan` (Rp 1.500.000).
+4. **Keagenan Dompet (saldo_ewallet)**: Inisialisasi data flat admin, limit harian, dan saldo awal Rp 1.000.000 - Rp 2.000.000 untuk 6 agen resmi bank/e-wallet terdaftar (`Mandiri Agen`, `Dana`, `Gopay`, `LinkAja`, `ShopeePay`, `OVO`).
+5. **Runtime Parameters (system_configs)**: Inisialisasi 13 key-value parameter bisnis dinamis (limit kasbon, threshold UMR, tier bonus poin, toleransi selisih laci kas, threshold otorisasi pengeluaran) agar sistem runtime berjalan lurus tanpa hardcode.
 
 ---
 
@@ -998,8 +1021,7 @@ Untuk membaca alur visual pada diagram ERD Modular di atas, ikuti formula pembac
 2. **Decimal Precision**: Pastikan variabel uang dan kuantitas di Python dideklarasikan menggunakan modul `decimal.Decimal` (bukan tipe `float` standar komputer) saat dipasangkan ke kolom database tipe `DECIMAL(15,4)` demi menghindari bug pembulatan desimal.
 3. **Pemberlakuan `@require_role`**: Rujuk matriks hak akses CRUD biner Bab 5.2 ACM untuk menyematkan decorator otorisasi peran yang tepat pada menu CLI Python.
 
-### 8.3. Mapping ERD ke Implementasi Query SQL
-
+### 8.3. Mapping ERD to SQL Query Implementations
 Berikut adalah 3 contoh query JOIN nyata yang disusun berdasarkan peta relasi ERD untuk mempermudah tim backend:
 
 #### Contoh 1: Agregasi Detail Belanja Kasir (Modul Transaksi M.1)
@@ -1065,7 +1087,7 @@ Penyusunan spesifikasi formal ERD Database ini didasarkan pada dokumen referensi
 
 | No | Kode Ref | Nama Dokumen Acuan | Path Berkas Relatif | Kontribusi Konten Terhadap ERD |
 |:---:|---|---|---|---|
-| 1 | **REF-01** | Database Schema SQL v1.1 | `docs/sdlc/03_design/01_database_schema.sql` | **Sumber Kebenaran Tunggal fisik**. Memberikan spesifikasi 28 tabel, 282 nama kolom, tipe data presisi, foreign key, CHECK, UQ, index, dan seed data. |
+| 1 | **REF-01** | Database Schema SQL v1.1 | `docs/sdlc/03_design/01_database_schema.sql` | **Sumber Kebenaran Tunggal fisik**. Memberikan spesifikasi 28 tabel, 307 nama kolom, tipe data presisi, foreign key, CHECK, UQ, index, dan seed data. |
 | 2 | **REF-02** | Data Dictionary v1.1 | `docs/sdlc/02_analysis/05_data_dictionary.md` | Menyediakan kamus domain status, statistik ringkasan, relasi konseptual, dan traceability kebutuhan SRS-F-xxx. |
 | 3 | **REF-03** | Access Control Matrix v1.1 | `docs/sdlc/02_analysis/06_access_control_matrix.md` | Memberikan anotasi tingkat sensitivitas data per tabel (Operasional/Sensitif/Sangat Sensitif) dan visualisasi diagram otorisasi. |
 | 4 | **REF-04** | Software Requirements Specification v1.1 | `docs/sdlc/02_analysis/02_software_requirements.md` | Memvalidasi fungsionalitas CLI per entitas master (SRS-F-001 s.d SRS-F-040). |
