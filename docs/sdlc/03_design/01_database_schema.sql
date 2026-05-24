@@ -3,19 +3,21 @@
 -- ============================================================
 -- Nama Dokumen: Database Schema (DDL SQL)
 -- Nama Proyek: AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
--- Versi Dokumen: 1.0
+-- Versi Dokumen: 1.1
 -- Tanggal Pembuatan: 2026-05-24
--- Penyusun: Senior Database Architect & DDL Implementation Specialist
--- Status Dokumen: Draft
+-- Penyusun: Senior Database Architect & DDL Validation Expert
+-- Status Dokumen: Final
 -- Deskripsi: File inisialisasi skema basis data fisik MySQL 8.x LTS AbuCom
 --            yang dirancang multi-cabang (Multi-Branch Ready) dan transaksional.
 -- Prasyarat: MySQL Server 8.0/8.4 LTS harus terinstal dan berjalan.
+-- Pembatasan Akses: Sangat Rahasia (Pemilik Sahaja)
 -- Instruksi Eksekusi: mysql -u root -p < 01_database_schema.sql
 --
 -- RIWAYAT PERUBAHAN DOKUMEN:
 -- Versi | Tanggal    | Perubahan                               | Oleh
 -- ------|------------|-----------------------------------------|---------------------------
 -- 1.0   | 2026-05-24 | Inisialisasi awal 28 tabel, index, seed | Senior Database Architect
+-- 1.1   | 2026-05-24 | Validasi & penyempurnaan menyeluruh     | Senior Database Architect & DDL Validation Expert
 -- ============================================================
 
 -- ============================================================
@@ -26,6 +28,8 @@ SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION';
 SET NAMES utf8mb4;
 
+-- PERINGATAN: Script ini akan menghapus dan membuat ulang database abucom_db dari awal.
+-- Pastikan backup sudah dilakukan sebelum menjalankan script ini di lingkungan produksi.
 DROP DATABASE IF EXISTS abucom_db;
 CREATE DATABASE abucom_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE abucom_db;
@@ -63,7 +67,8 @@ CREATE TABLE pengguna (
     nama_lengkap VARCHAR(100) NOT NULL COMMENT 'Nama lengkap asli dari staf/karyawan',
     username VARCHAR(50) NOT NULL UNIQUE COMMENT 'Nama unik staf untuk proses otentikasi login',
     password_hash VARCHAR(255) NOT NULL COMMENT 'String hash kata sandi terenkripsi bcrypt Cost 12',
-    role VARCHAR(30) NOT NULL COMMENT 'Peran administratif hak akses menu CLI (RBAC)',
+    -- Nilai valid: 'pemilik' | 'kepala_percetakan' | 'pramuniaga' | 'kasir' | 'desainer' | 'produksi_cetak' | 'fotocopy_print' | 'gudang'
+    role VARCHAR(30) NOT NULL COMMENT 'Peran administratif hak akses menu CLI (RBAC) | Nilai valid: \'pemilik\' | \'kepala_percetakan\' | \'pramuniaga\' | \'kasir\' | \'desainer\' | \'produksi_cetak\' | \'fotocopy_print\' | \'gudang\'',
     failed_login_attempts INT NOT NULL DEFAULT 0 COMMENT 'Jumlah kumulatif kegagalan login berturut-turut',
     locked_until TIMESTAMP NULL DEFAULT NULL COMMENT 'Batas waktu suspensi login akibat brute-force',
     cabang_id INT NOT NULL DEFAULT 1 COMMENT 'Keterkaitan penempatan cabang kerja staf',
@@ -81,7 +86,7 @@ CREATE TABLE pelanggan (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT 'Identifikasi unik keanggotaan pelanggan',
     nama_pelanggan VARCHAR(100) NOT NULL COMMENT 'Nama lengkap dari pelanggan terdaftar',
     whatsapp VARCHAR(100) NOT NULL UNIQUE COMMENT 'Nomor WA pelanggan terenkripsi lokal (UU PDP)',
-    tanggal_terdaftar DATE NOT NULL COMMENT 'Tanggal pertama kali terdaftar di program CRM',
+    tanggal_terdaftar DATE NOT NULL DEFAULT (CURRENT_DATE) COMMENT 'Tanggal pertama kali terdaftar di program CRM',
     cabang_id INT NOT NULL DEFAULT 1 COMMENT 'Identifikasi cabang asal pendaftaran pelanggan',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu baris data dibuat',
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu terakhir baris data diperbarui',
@@ -110,13 +115,14 @@ CREATE TABLE supplier (
 CREATE TABLE barang (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT 'Identifikasi unik item barang master',
     nama_barang VARCHAR(100) NOT NULL COMMENT 'Nama komersial barang retail atau bahan baku',
-    tipe_barang VARCHAR(20) NOT NULL COMMENT 'Klasifikasi peran barang dalam alur operasional',
+    -- Nilai valid: 'Retail_ATK' | 'Bahan_Baku'
+    tipe_barang VARCHAR(20) NOT NULL COMMENT 'Klasifikasi peran barang dalam alur operasional | Nilai valid: \'Retail_ATK\' | \'Bahan_Baku\'',
     satuan_uom VARCHAR(20) NOT NULL COMMENT 'Satuan dasar stok (Unit of Measure)',
     stok_saat_ini DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Jumlah kuantitas fisik stok yang tersedia',
     harga_beli DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Harga pengadaan/beli dari vendor supplier',
     harga_retail DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Harga jual per unit untuk pelanggan umum',
     harga_grosir DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Harga jual per unit untuk pembelian grosir',
-    min_grosir DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Jumlah minimal pembelian pemicu harga grosir',
+    min_grosir DECIMAL(15,4) NOT NULL DEFAULT 1.0000 COMMENT 'Jumlah minimal pembelian pemicu harga grosir',
     harga_mitra DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Harga jual per unit khusus akun terdaftar Mitra',
     cabang_id INT NOT NULL DEFAULT 1 COMMENT 'Unit cabang pemilik kepemilikan stok barang',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu baris data dibuat',
@@ -135,7 +141,8 @@ CREATE TABLE barang (
 -- ------------------------------------------------------------
 CREATE TABLE saldo_ppob (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT 'Identifikasi unik pos deposit PPOB',
-    akun_tipe VARCHAR(30) NOT NULL UNIQUE COMMENT 'Klasifikasi server server produk digital PPOB',
+    -- Nilai valid: 'Pulsa_Data' | 'Token_Tagihan'
+    akun_tipe VARCHAR(30) NOT NULL UNIQUE COMMENT 'Klasifikasi server server produk digital PPOB | Nilai valid: \'Pulsa_Data\' | \'Token_Tagihan\'',
     saldo_terakhir DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Saldo sisa deposit digital berjalan sistem',
     tanggal_update TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Waktu terakhir penyesuaian transaksi / topup',
     cabang_id INT NOT NULL DEFAULT 1 COMMENT 'Cabang pengelola akun PPOB bersangkutan',
@@ -150,7 +157,8 @@ CREATE TABLE saldo_ppob (
 -- ------------------------------------------------------------
 CREATE TABLE saldo_ewallet (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT 'Identifikasi unik baris e-wallet',
-    nama_ewallet VARCHAR(50) NOT NULL UNIQUE COMMENT 'Nama 6 akun dompet digital / agen resmi bank',
+    -- Nilai valid: 'Mandiri Agen' | 'Dana' | 'Gopay' | 'LinkAja' | 'ShopeePay' | 'OVO'
+    nama_ewallet VARCHAR(50) NOT NULL UNIQUE COMMENT 'Nama 6 akun dompet digital / agen resmi bank | Nilai valid: \'Mandiri Agen\' | \'Dana\' | \'Gopay\' | \'LinkAja\' | \'ShopeePay\' | \'OVO\'',
     saldo_terakhir DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Jumlah deposit saldo virtual tersisa di e-wallet',
     biaya_admin_flat DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Tarif flat biaya admin e-wallet per transfer',
     biaya_admin_persen DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Persentase biaya admin tambahan dari nominal',
@@ -211,10 +219,14 @@ CREATE TABLE transaksi (
     tanggal_transaksi TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Waktu terjadinya pembayaran transaksi',
     total_bayar DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Total tagihan akhir belanja nota yang dibayar',
     dp_bayar DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Nilai uang muka Down Payment yang diterima kasir',
-    status_pembayaran VARCHAR(20) NOT NULL DEFAULT 'BELUM LUNAS' COMMENT 'Status keuangan tagihan belanja nota',
-    status_pengambilan VARCHAR(20) NOT NULL DEFAULT 'BELUM DIAMBIL' COMMENT 'Status serah terima barang fisik pesanan',
-    metode_pembayaran VARCHAR(20) NOT NULL DEFAULT 'Kas' COMMENT 'Saluran pembayaran (Tunai kasir vs bank/qris)',
-    tipe_pelanggan VARCHAR(20) NOT NULL DEFAULT 'Retail' COMMENT 'Tipe klasifikasi tarif keanggotaan pelanggan',
+    -- Nilai valid: 'LUNAS' | 'BELUM LUNAS' | 'BATAL' | 'RETUR'
+    status_pembayaran VARCHAR(20) NOT NULL DEFAULT 'BELUM LUNAS' COMMENT 'Status keuangan tagihan belanja nota | Nilai valid: \'LUNAS\' | \'BELUM LUNAS\' | \'BATAL\' | \'RETUR\'',
+    -- Nilai valid: 'DIAMBIL' | 'BELUM DIAMBIL'
+    status_pengambilan VARCHAR(20) NOT NULL DEFAULT 'BELUM DIAMBIL' COMMENT 'Status serah terima barang fisik pesanan | Nilai valid: \'DIAMBIL\' | \'BELUM DIAMBIL\'',
+    -- Nilai valid: 'Kas' | 'QRIS' | 'Transfer'
+    metode_pembayaran VARCHAR(20) NOT NULL DEFAULT 'Kas' COMMENT 'Saluran pembayaran (Tunai kasir vs bank/qris) | Nilai valid: \'Kas\' | \'QRIS\' | \'Transfer\'',
+    -- Nilai valid: 'Retail' | 'Grosir' | 'Mitra'
+    tipe_pelanggan VARCHAR(20) NOT NULL DEFAULT 'Retail' COMMENT 'Tipe klasifikasi tarif keanggotaan pelanggan | Nilai valid: \'Retail\' | \'Grosir\' | \'Mitra\'',
     cabang_id INT NOT NULL DEFAULT 1 COMMENT 'Identifikasi cabang tempat kasir mencatat nota',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu baris data dibuat',
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu terakhir baris data diperbarui',
@@ -253,7 +265,8 @@ CREATE TABLE antrian_kerja (
     transaksi_id INT NOT NULL COMMENT 'Referensi transaksi nota penjualan kustom',
     desainer_id INT NULL DEFAULT NULL COMMENT 'Staf desainer pembuat layout gambar desain',
     produksi_id INT NULL DEFAULT NULL COMMENT 'Staf operator cetak pelaksana cetak fisik',
-    status_antrian VARCHAR(30) NOT NULL DEFAULT 'Antri' COMMENT 'Tahap penyelesaian pengerjaan produk kustom',
+    -- Nilai valid: 'Antri' | 'Proses Desain' | 'Produksi' | 'Selesai' | 'Diambil'
+    status_antrian VARCHAR(30) NOT NULL DEFAULT 'Antri' COMMENT 'Tahap penyelesaian pengerjaan produk kustom | Nilai valid: \'Antri\' | \'Proses Desain\' | \'Produksi\' | \'Selesai\' | \'Diambil\'',
     path_desain VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'Direktori penyimpanan berkas PDF desain di server',
     timestamp_antri TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Waktu pertama masuk antrian cetak kasir',
     timestamp_selesai TIMESTAMP NULL DEFAULT NULL COMMENT 'Waktu rampung cetak fisik produk oleh produksi',
@@ -274,7 +287,8 @@ CREATE TABLE absensi (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT 'Identifikasi unik baris data kehadiran harian',
     pengguna_id INT NOT NULL COMMENT 'Referensi pengguna staf yang diabsen',
     tanggal DATE NOT NULL COMMENT 'Tanggal hari kerja pencatatan kehadiran',
-    status_kehadiran VARCHAR(20) NOT NULL DEFAULT 'Hadir' COMMENT 'Kategori status absen staf harian',
+    -- Nilai valid: 'Hadir' | 'Izin' | 'Sakit' | 'Alpha'
+    status_kehadiran VARCHAR(20) NOT NULL DEFAULT 'Hadir' COMMENT 'Kategori status absen staf harian | Nilai valid: \'Hadir\' | \'Izin\' | \'Sakit\' | \'Alpha\'',
     cabang_id INT NOT NULL DEFAULT 1 COMMENT 'Unit cabang lokasi staf melakukan absensi',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu baris data dibuat',
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu terakhir baris data diperbarui',
@@ -290,11 +304,12 @@ CREATE TABLE absensi (
 CREATE TABLE kasbon (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT 'Identifikasi unik pengajuan kasbon staf',
     pengguna_id INT NOT NULL COMMENT 'Referensi staf penerima utang kasbon',
-    nominal_pinjaman DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Nominal penarikan awal pinjaman kasbon staf',
+    nominal_pinjaman DECIMAL(15,4) NOT NULL COMMENT 'Nominal penarikan awal pinjaman kasbon staf',
     sisa_utang DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Saldo utang kasbon aktif yang belum terbayar',
     cicilan_per_bulan DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Nominal auto-debit cicilan gaji staf per bulan',
     tanggal_pinjam DATE NOT NULL COMMENT 'Tanggal dilakukannya pencairan dana kasbon',
-    status_kasbon VARCHAR(20) NOT NULL DEFAULT 'AKTIF' COMMENT 'Keabsahan status saldo utang kasbon aktif',
+    -- Nilai valid: 'AKTIF' | 'LUNAS'
+    status_kasbon VARCHAR(20) NOT NULL DEFAULT 'AKTIF' COMMENT 'Keabsahan status saldo utang kasbon aktif | Nilai valid: \'AKTIF\' | \'LUNAS\'',
     cabang_id INT NOT NULL DEFAULT 1 COMMENT 'Cabang penyedia alokasi kas laci untuk kasbon',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu baris data dibuat',
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu terakhir baris data diperbarui',
@@ -317,7 +332,8 @@ CREATE TABLE payroll (
     bonus_insentif DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Tambahan nominal uang komisi poin terkumpul',
     potongan_kasbon DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Nilai potongan pelunasan sisa utang kasbon',
     gaji_bersih DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Nominal bersih yang diterima: Pokok + Bonus - Potongan',
-    metode_bayar_gaji VARCHAR(20) NOT NULL DEFAULT 'Tunai' COMMENT 'Saluran pembayaran (Tunai laci vs transfer bank)',
+    -- Nilai valid: 'Tunai' | 'Transfer'
+    metode_bayar_gaji VARCHAR(20) NOT NULL DEFAULT 'Tunai' COMMENT 'Saluran pembayaran (Tunai laci vs transfer bank) | Nilai valid: \'Tunai\' | \'Transfer\'',
     tanggal_proses TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Waktu pencetakan dan pemrosesan slip payroll',
     cabang_id INT NOT NULL DEFAULT 1 COMMENT 'Cabang penanggung jawab pengeluaran gaji',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu baris data dibuat',
@@ -336,8 +352,9 @@ CREATE TABLE payroll (
 -- ------------------------------------------------------------
 CREATE TABLE pengeluaran (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT 'Identifikasi unik pengeluaran operasional',
-    tipe_pengeluaran VARCHAR(30) NOT NULL COMMENT 'Pengelompokan jenis pembebanan biaya',
-    nominal DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Besaran nilai nominal uang kas keluar',
+    -- Nilai valid: 'Rutin' | 'Tak_Terduga' | 'Depresiasi' | 'Limbah'
+    tipe_pengeluaran VARCHAR(30) NOT NULL COMMENT 'Pengelompokan jenis pembebanan biaya | Nilai valid: \'Rutin\' | \'Tak_Terduga\' | \'Depresiasi\' | \'Limbah\'',
+    nominal DECIMAL(15,4) NOT NULL COMMENT 'Besaran nilai nominal uang kas keluar',
     deskripsi TEXT NOT NULL COMMENT 'Rincian detail tujuan/kebutuhan biaya operasional',
     tanggal_pengeluaran DATE NOT NULL COMMENT 'Tanggal dilakukannya pencatatan biaya keluar',
     kasir_id INT NOT NULL COMMENT 'Staf kasir penginput atau pemilik penyetuju',
@@ -358,7 +375,7 @@ CREATE TABLE limbah_produksi (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT 'Identifikasi unik log limbah produksi',
     transaksi_id INT NOT NULL COMMENT 'Nota transaksi pemesanan pemicu pengerjaan',
     bahan_baku_id INT NOT NULL COMMENT 'Referensi komponen bahan yang rusak/cacat',
-    kuantitas_limbah DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Jumlah volume bahan baku yang rusak dibuang',
+    kuantitas_limbah DECIMAL(15,4) NOT NULL COMMENT 'Jumlah volume bahan baku yang rusak dibuang',
     alasan_kerusakan TEXT NOT NULL COMMENT 'Keterangan deskripsi penyebab kegagalan cetak',
     kerugian_nominal DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Nilai rupiah kerugian: qty limbah * harga beli',
     tanggal_pencatatan TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Waktu penginputan laporan oleh operator',
@@ -385,7 +402,8 @@ CREATE TABLE jasa_service (
     nama_unit VARCHAR(100) NOT NULL COMMENT 'Merek dan tipe hardware unit (e.g. Epson L3110)',
     detail_kerusakan TEXT NOT NULL COMMENT 'Penjelasan keluhan gejala kerusakan hardware',
     estimasi_biaya DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Taksiran biaya servis dan pergantian sparepart',
-    status_perbaikan VARCHAR(30) NOT NULL DEFAULT 'Diterima' COMMENT 'Posisi tahap pemrosesan perbaikan unit',
+    -- Nilai valid: 'Diterima' | 'Proses' | 'Selesai' | 'Diambil'
+    status_perbaikan VARCHAR(30) NOT NULL DEFAULT 'Diterima' COMMENT 'Posisi tahap pemrosesan perbaikan unit | Nilai valid: \'Diterima\' | \'Proses\' | \'Selesai\' | \'Diambil\'',
     tanggal_diterima TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Tanggal unit diserahkan di konter pramuniaga',
     tanggal_selesai TIMESTAMP NULL DEFAULT NULL COMMENT 'Tanggal unit selesai diperbaiki oleh teknisi',
     teknisi_id INT NOT NULL COMMENT 'Karyawan berhak memproses perbaikan (Teknisi)',
@@ -406,10 +424,11 @@ CREATE TABLE poin_insentif (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT 'Identifikasi unik baris komisi poin staf',
     transaksi_id INT NOT NULL COMMENT 'Nota transaksi penjualan pemicu pemberian poin',
     pengguna_id INT NOT NULL COMMENT 'Karyawan penerima komisi bonus poin',
-    poin_diperoleh INT NOT NULL DEFAULT 0 COMMENT 'Jumlah poin yang dikumpulkan dari 4-tier',
+    poin_diperoleh INT NOT NULL DEFAULT 1 COMMENT 'Jumlah poin yang dikumpulkan dari 4-tier',
     rupiah_diperoleh DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Nominal Rupiah insentif (Poin * rupiah/poin)',
     tanggal_poin TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Waktu pencatatan poin masuk ke sistem',
-    status_poin VARCHAR(20) NOT NULL DEFAULT 'AKTIF' COMMENT 'Validasi poin (dibatalkan jika nota diretur)',
+    -- Nilai valid: 'AKTIF' | 'BATAL'
+    status_poin VARCHAR(20) NOT NULL DEFAULT 'AKTIF' COMMENT 'Validasi poin (dibatalkan jika nota diretur) | Nilai valid: \'AKTIF\' | \'BATAL\'',
     cabang_id INT NOT NULL DEFAULT 1 COMMENT 'Cabang di mana insentif poin ini diterbitkan',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu baris data dibuat',
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu terakhir baris data diperbarui',
@@ -434,7 +453,8 @@ CREATE TABLE shift_handover (
     selisih DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Deviasi kasir: Kas Fisik - Kas Sistem',
     catatan_alasan TEXT NULL DEFAULT NULL COMMENT 'Alasan wajib dari kasir jika selisih > batas toleransi',
     timestamp_handover TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Waktu serah terima shift kasir diselesaikan',
-    status_handover VARCHAR(20) NOT NULL DEFAULT 'NORMAL' COMMENT 'Indikator keabsahan selisih keuangan kasir',
+    -- Nilai valid: 'NORMAL' | 'ANOMALI'
+    status_handover VARCHAR(20) NOT NULL DEFAULT 'NORMAL' COMMENT 'Indikator keabsahan selisih keuangan kasir | Nilai valid: \'NORMAL\' | \'ANOMALI\'',
     supervisor_id INT NOT NULL COMMENT 'Kepala Percetakan/Pemilik pemverifikasi silang',
     cabang_id INT NOT NULL DEFAULT 1 COMMENT 'Cabang di mana serah terima shift diselenggarakan',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu baris data dibuat',
@@ -459,12 +479,13 @@ CREATE TABLE shift_handover (
 CREATE TABLE utang_supplier (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT 'Identifikasi unik utang usaha supplier',
     supplier_id INT NOT NULL COMMENT 'Referensi vendor supplier pemberi tempo',
-    nominal_utang DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Nominal tagihan pembelian bahan/ATK di awal',
+    nominal_utang DECIMAL(15,4) NOT NULL COMMENT 'Nominal tagihan pembelian bahan/ATK di awal',
     sisa_utang DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Sisa tagihan terutang yang wajib dibayarkan',
     tanggal_utang DATE NOT NULL COMMENT 'Tanggal dilakukannya transaksi nota supplier',
     tanggal_jatuh_tempo DATE NOT NULL COMMENT 'Batas tenggat pembayaran pelunasan utang',
     tanggal_pelunasan DATE NULL DEFAULT NULL COMMENT 'Waktu pembayaran pelunasan tagihan supplier (NULL jika belum)',
-    status_utang VARCHAR(20) NOT NULL DEFAULT 'BELUM LUNAS' COMMENT 'Status pelunasan utang usaha tempo supplier',
+    -- Nilai valid: 'BELUM LUNAS' | 'LUNAS'
+    status_utang VARCHAR(20) NOT NULL DEFAULT 'BELUM LUNAS' COMMENT 'Status pelunasan utang usaha tempo supplier | Nilai valid: \'BELUM LUNAS\' | \'LUNAS\'',
     cabang_id INT NOT NULL DEFAULT 1 COMMENT 'Cabang pemilik pertanggungjawaban utang',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu baris data dibuat',
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu terakhir baris data diperbarui',
@@ -480,16 +501,18 @@ CREATE TABLE utang_supplier (
 -- ------------------------------------------------------------
 CREATE TABLE pinjaman_bank (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT 'Identifikasi unik kredit bank terdaftar',
-    tipe_bank VARCHAR(50) NOT NULL COMMENT 'Nama perbankan penyedia plafon kredit usaha',
+    -- Nilai valid: 'Bank_BRI' | 'Bank_Mandiri'
+    tipe_bank VARCHAR(50) NOT NULL COMMENT 'Nama perbankan penyedia plafon kredit usaha | Nilai valid: \'Bank_BRI\' | \'Bank_Mandiri\'',
     plafon_nominal DECIMAL(15,4) NOT NULL DEFAULT 50000000.0000 COMMENT 'Besaran dana nominal cair pinjaman di awal',
     bunga_persen DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Suku bunga tetap pertahun (format desimal persen)',
     tenor_bulan INT NOT NULL COMMENT 'Total masa jangka waktu kredit (tenor) bulan',
     sisa_tenor_bulan INT NOT NULL COMMENT 'Sisa cicilan tenor yang belum dibayarkan',
-    setoran_bulanan DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Kewajiban nominal setor cicilan rutin per bulan',
+    setoran_bulanan DECIMAL(15,4) NOT NULL COMMENT 'Kewajiban nominal setor cicilan rutin per bulan',
     sisa_utang DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Kewajiban nominal utang bank total yang tersisa',
     tanggal_mulai DATE NOT NULL COMMENT 'Tanggal disetujui/cairnya pinjaman modal bank',
     tanggal_jatuh_tempo DATE NOT NULL COMMENT 'Tanggal jatuh tempo cicilan bulanan berikutnya',
-    status_pinjaman VARCHAR(20) NOT NULL DEFAULT 'BELUM LUNAS' COMMENT 'Status pelunasan kredit utang komersial bank',
+    -- Nilai valid: 'BELUM LUNAS' | 'LUNAS'
+    status_pinjaman VARCHAR(20) NOT NULL DEFAULT 'BELUM LUNAS' COMMENT 'Status pelunasan kredit utang komersial bank | Nilai valid: \'BELUM LUNAS\' | \'LUNAS\'',
     cabang_id INT NOT NULL DEFAULT 1 COMMENT 'Cabang penanggung jawab pelunasan kredit bank',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu baris data dibuat',
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu terakhir baris data diperbarui',
@@ -509,11 +532,12 @@ CREATE TABLE pinjaman_bank (
 CREATE TABLE pinjaman_kerabat (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT 'Identifikasi unik pinjaman kekeluargaan',
     nama_kerabat VARCHAR(100) NOT NULL COMMENT 'Nama kerabat/sahabat pemberi modal sosial',
-    nominal_pinjaman DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Besaran nominal awal penarikan modal dipinjam',
+    nominal_pinjaman DECIMAL(15,4) NOT NULL COMMENT 'Besaran nominal awal penarikan modal dipinjam',
     sisa_utang DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Saldo utang kerabat berjalan belum dipulihkan',
     tanggal_pinjam DATE NOT NULL COMMENT 'Tanggal pemilik menerima uang tunai modal',
     tanggal_pengembalian DATE NULL DEFAULT NULL COMMENT 'Target pengembalian modal sosial (bisa Null/fleksibel)',
-    status_pinjaman VARCHAR(20) NOT NULL DEFAULT 'BELUM LUNAS' COMMENT 'Status pengembalian modal titipan kerabat',
+    -- Nilai valid: 'BELUM LUNAS' | 'LUNAS'
+    status_pinjaman VARCHAR(20) NOT NULL DEFAULT 'BELUM LUNAS' COMMENT 'Status pengembalian modal titipan kerabat | Nilai valid: \'BELUM LUNAS\' | \'LUNAS\'',
     cabang_id INT NOT NULL DEFAULT 1 COMMENT 'Cabang penerima aliran modal kas masuk kerabat',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu baris data dibuat',
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu terakhir baris data diperbarui',
@@ -529,7 +553,7 @@ CREATE TABLE pinjaman_kerabat (
 CREATE TABLE aset (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT 'Identifikasi unik inventaris aset tetap',
     nama_aset VARCHAR(100) NOT NULL COMMENT 'Nama komersial fisik aset operasional (e.g. Mesin Flash)',
-    harga_perolehan DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Nominal modal awal untuk membeli aset tetap',
+    harga_perolehan DECIMAL(15,4) NOT NULL COMMENT 'Nominal modal awal untuk membeli aset tetap',
     tanggal_perolehan DATE NOT NULL COMMENT 'Tanggal dibelinya fisik aset tetap bersangkutan',
     masa_manfaat_bulan INT NOT NULL COMMENT 'Estimasi masa pakai optimal aset (dalam bulan)',
     sisa_masa_manfaat_bulan INT NOT NULL COMMENT 'Sisa bulan optimal depresiasi tersisa',
@@ -562,10 +586,12 @@ CREATE TABLE audit_logs (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT 'Identifikasi unik log peristiwa sistem',
     pengguna_id INT NOT NULL COMMENT 'Akun pengguna kasir/staf pelaksana aksi',
     action_timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Waktu presisi detik terjadinya aksi manipulasi',
-    action_type VARCHAR(20) NOT NULL COMMENT 'Klasifikasi tipe modifikasi manipulasi basis data',
+    -- Nilai valid: 'INSERT' | 'UPDATE' | 'DELETE' | 'ACCESS_DENIED'
+    action_type VARCHAR(20) NOT NULL COMMENT 'Klasifikasi tipe modifikasi manipulasi basis data | Nilai valid: \'INSERT\' | \'UPDATE\' | \'DELETE\' | \'ACCESS_DENIED\'',
     target_table VARCHAR(100) NOT NULL COMMENT 'Nama tabel database yang diubah nilainya',
     old_value JSON NULL DEFAULT NULL COMMENT 'Salinan data record sebelum terjadinya perubahan',
     new_value JSON NULL DEFAULT NULL COMMENT 'Salinan data record sesudah terjadinya perubahan',
+    ip_address VARCHAR(45) NULL DEFAULT NULL COMMENT 'Alamat IP client terminal yang memicu peristiwa',
     cabang_id INT NOT NULL DEFAULT 1 COMMENT 'Cabang di mana insiden log audit ini dipicu',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu baris data dibuat',
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu terakhir baris data diperbarui',
@@ -581,8 +607,10 @@ CREATE TABLE backup_logs (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT 'Identifikasi unik log pencadangan',
     tanggal_backup TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Waktu dilaksanakannya proses ekspor ZIP',
     nama_file VARCHAR(100) NOT NULL COMMENT 'Nama fisik file output format ZIP AES-256',
-    status_backup VARCHAR(20) NOT NULL COMMENT 'Hasil eksekusi skrip dump basis data',
+    -- Nilai valid: 'SUCCESS' | 'FAILED'
+    status_backup VARCHAR(20) NOT NULL COMMENT 'Hasil eksekusi skrip dump basis data | Nilai valid: \'SUCCESS\' | \'FAILED\'',
     pengguna_id INT NOT NULL COMMENT 'Pengguna pemilik pemicu ekspor basis data',
+    ukuran_file_kb BIGINT NOT NULL COMMENT 'Ukuran fisik file hasil backup dalam kilobyte (KB)',
     cabang_id INT NOT NULL DEFAULT 1 COMMENT 'Cabang pelaksana backup dump data server',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu baris data dibuat',
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu terakhir baris data diperbarui',
@@ -602,14 +630,15 @@ CREATE TABLE stock_opname (
     selisih DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Deviasi: kuantitas_fisik - stok_sistem',
     tanggal_opname TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Waktu dilakukannya proses penguncian opname',
     catatan_opname TEXT NULL DEFAULT NULL COMMENT 'Catatan alasan selisih stok (e.g. barang rusak)',
-    status_opname VARCHAR(20) NOT NULL DEFAULT 'DRAFT' COMMENT 'Kedudukan data persetujuan supervisor',
-    user_id INT NOT NULL COMMENT 'Karyawan pelaksana perhitungan fisik (Gudang)',
+    -- Nilai valid: 'DRAFT' | 'APPROVED'
+    status_opname VARCHAR(20) NOT NULL DEFAULT 'DRAFT' COMMENT 'Kedudukan data persetujuan supervisor | Nilai valid: \'DRAFT\' | \'APPROVED\'',
+    pengguna_id INT NOT NULL COMMENT 'Karyawan pelaksana perhitungan fisik (Gudang)',
     supervisor_id INT NULL DEFAULT NULL COMMENT 'Kepala Percetakan/Pemilik penyetuju penyesuaian',
     cabang_id INT NOT NULL DEFAULT 1 COMMENT 'Cabang pelaksana opname gudang bersangkutan',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu baris data dibuat',
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu terakhir baris data diperbarui',
     CONSTRAINT fk_stock_opname_barang_id FOREIGN KEY (barang_id) REFERENCES barang(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_stock_opname_user_id FOREIGN KEY (user_id) REFERENCES pengguna(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_stock_opname_pengguna_id FOREIGN KEY (pengguna_id) REFERENCES pengguna(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT fk_stock_opname_supervisor_id FOREIGN KEY (supervisor_id) REFERENCES pengguna(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT fk_stock_opname_cabang_id FOREIGN KEY (cabang_id) REFERENCES cabang(id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci 
@@ -622,7 +651,7 @@ CREATE TABLE riwayat_harga_supplier (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT 'Identifikasi unik baris riwayat harga supplier',
     barang_id INT NOT NULL COMMENT 'Referensi item barang/bahan baku yang dibeli',
     supplier_id INT NOT NULL COMMENT 'Referensi vendor supplier penyedia barang',
-    harga_beli DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Nominal harga beli per unit yang disepakati baru',
+    harga_beli DECIMAL(15,4) NOT NULL COMMENT 'Nominal harga beli per unit yang disepakati baru',
     tanggal_pembelian DATE NOT NULL COMMENT 'Tanggal transaksi pengadaan barang masuk',
     cabang_id INT NOT NULL DEFAULT 1 COMMENT 'Cabang pencatat nota pembelian inventaris masuk',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu baris data dibuat',
