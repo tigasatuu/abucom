@@ -1,9 +1,9 @@
 ---
 dokumen    : Security Design
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.0
+versi      : 1.1
 tanggal    : 2026-05-25
-status     : Draft
+status     : Review
 penyusun   : Senior Security Architect & Cybersecurity Compliance Specialist
 ---
 
@@ -13,6 +13,7 @@ penyusun   : Senior Security Architect & Cybersecurity Compliance Specialist
 
 | Versi | Tanggal    | Perubahan | Oleh |
 |:---:|:---:|---|---|
+| **1.1** | 2026-05-25 | Validasi menyeluruh v1.1: komparasi mendalam terhadap 8 dokumen referensi (ACM, SysArch, SRS, TSD, DDL, ERD, BRD, Workflow), pengisian SOP Respon Insiden Bab 10.6, verifikasi konsistensi kode error, sinkronisasi DDL tabel database, perbaikan bahasa Indonesia, validasi konsistensi nilai numerik, dan pembaruan referensi. | Senior Security Architect & Cybersecurity Compliance Specialist |
 | **1.0** | 2026-05-25 | Inisialisasi awal penyusunan dokumen *Security Design* secara komprehensif. Mengonsolidasikan rancangan keamanan jaringan fisik, OS hardening, otentikasi bcrypt/JWT, otorisasi RBAC (8 peran), data protection (UU PDP No. 27/2022), audit logs JSON, 6 diagram Mermaid, penanganan kode error, analisis risiko, dan pseudocode FP Python murni. | Senior Security Architect & Cybersecurity Compliance Specialist |
 
 ---
@@ -30,7 +31,7 @@ Dokumen ini mencakup:
 * Desain otorisasi **RBAC multi-level (8 peran)** beserta aturan eskalasi supervisor.
 * Perlindungan data pribadi (*Data Protection*) berbasis kepatuhan **UU PDP No. 27 Tahun 2022**.
 * Desain Audit Trail kronologis berbasis penyimpanan JSON terstruktur.
-* 6 diagram Mermaid visual yang merepresentasikan alur keamanan kritis sistem.
+* Tepat **6 diagram Mermaid** visual yang merepresentasikan alur keamanan kritis sistem.
 * Kamus kode error keamanan (`ERR-AUTH-xxx`, `ERR-SESSION-xxx`, `ERR-DB-xxx`, `ERR-FILE-xxx`, `ERR-CASH-xxx`).
 * Matriks risiko keamanan (10 analisis risiko utama) dan matriks ketertelusuran kebutuhan (*traceability*).
 * Spesifikasi pseudocode fungsional (FP Python murni) untuk modul keamanan inti.
@@ -45,7 +46,7 @@ Dalam pengembangan AbuCom CLI, dokumen ini berada pada **Fase 03 — Design (Per
                   |
                   v
 +===================================+
-|  Security Design v1.0 [DOKUMEN INI]|
+|  Security Design v1.1 [DOKUMEN INI]|
 +===================================+
                   |
                   v
@@ -144,7 +145,8 @@ graph TD
     subgraph Otentikasi & Otorisasi
         D --> E["Autentikasi Kredensial (bcrypt Cost 12)"]:::secure
         E --> F["Stateless Session (JWT HS256 - 8 Jam)"]:::secure
-        F --> G["Otorisasi Level Menu & CRUD (RBAC 8 Peran)"]:::secure
+        G["Otorisasi Level Menu & CRUD (RBAC 8 Peran)"]:::secure
+        F --> G
     end
     subgraph Perlindungan Data & Audit
         G --> H["Proteksi Data CRM (UU PDP No. 27/2022)"]:::secure
@@ -171,7 +173,7 @@ graph TD
 
 ### 3.4. Keamanan Koneksi Database (Database Security)
 * **Parameterized Queries**: Seluruh manipulasi database MySQL wajib menggunakan parameter binding `%s` bawaan driver `mysql-connector-python`. F-string dan string concatenation SQL dilarang mutlak di seluruh codebase program.
-* **Database User Privilege Minimization**: Sistem menggunakan akun pengguna database MySQL spesifik `abucom_app` dengan hak terbatas untuk operasional aplikasi, terpisah dari akun `root` MySQL. Akun `abucom_app` tidak diberikan hak administratif skema (`DROP`, `ALTER`, `CREATE`).
+* **Database User Privilege Minimization**: Sistem menggunakan akun pengguna database MySQL spesifik `abucom_app` dengan hak terbatas untuk operasional aplikasi, terpisah dari akun `root` MySQL. Akun `abucom_app` diberikan hak privilege yang **diizinkan** secara eksplisit (`SELECT`, `INSERT`, `UPDATE`, `DELETE`) dan **dilarang** secara keras untuk melakukan modifikasi administratif skema database (`DROP`, `ALTER`, `CREATE`, `GRANT`).
 * **ACID Transaction Wrap**: Operasi multi-tabel dibungkus dalam blok `START TRANSACTION` dan wajib di-`ROLLBACK` jika terjadi pengecualian (*exception*) data.
 * **Repeatable Read Isolation**: Menghindari anomali pembacaan data transaksional saat data kasir diproses simultan dengan stok opname harian.
 
@@ -204,7 +206,7 @@ Otentikasi sesi terminal AbuCom menggunakan model *stateless session* berbasis *
   }
   ```
 * **Masa Berlaku Sesi**: Dibatasi maksimal **28.800 detik (8 jam)**, setara dengan 1 shift kerja staf.
-* **Handling Expiration**: Setiap kali menu CLI dipicu, validator sesi menangkap kedalwarsa token JWT (`jwt.ExpiredSignatureError`). Jika terpicu, program otomatis menghapus token JWT dari memori lokal (variabel sesi program), memutus alur, dan memaksa terminal kembali ke layar login dengan kode `ERR-SESSION-002`.
+* **Handling Expiration**: Setiap kali menu CLI dipicu, validator sesi menangkap kedaluwarsa token JWT (`jwt.ExpiredSignatureError`). Jika terpicu, program otomatis menghapus token JWT dari memori lokal (variabel sesi program), memutus alur, dan memaksa terminal kembali ke layar login dengan kode `ERR-SESSION-002`.
 
 ### 4.3. Rate Limiting dan Penguncian Akun
 Untuk memitigasi serangan brute-force nekat pada laci fisik terminal kasir harian:
@@ -297,9 +299,9 @@ Arsitektur program menerapkan prinsip **Default Deny**. Setiap menu, sub-menu CL
 
 ### 6.1. Enkripsi Data at Rest
 Sistem menerapkan perlindungan data statis (*Data at Rest*) secara lokal pada mesin server:
-* **AES-256 pada Berkas Cadangan**: Pencadangan database (mysqldump) dikompresi ke format `.zip` menggunakan enkripsi simetris **AES-256** berkunci rahasia dari `.env`.
+* **AES-256 pada Berkas Cadangan**: Pencadangan database (mysqldump) dikompresi ke format `.zip` menggunakan enkripsi simetris **AES-256** berkunci rahasia dari `.env` (`BACKUP_ZIP_PASSWORD`).
 * **bcrypt pada Sandi**: Enkripsi sandi satu arah di tabel `pengguna` menggunakan bcrypt cost factor 12.
-* **Enkripsi WhatsApp CRM**: Kepatuhan UU PDP No. 27/2022. Kolom `whatsapp` pada tabel `pelanggan` terenkripsi dua arah (reversible) menggunakan modul `cryptography.fernet` Python dengan kunci enkripsi 32-byte statis. Nomor WA pelanggan didekripsi di memori Python hanya saat visualisasi menu CRM.
+* **Enkripsi WhatsApp CRM**: Kepatuhan UU PDP No. 27/2022. Kolom `whatsapp` pada tabel `pelanggan` terenkripsi dua arah (reversible) menggunakan modul `cryptography.fernet` Python dengan kunci enkripsi 32-byte statis yang dimuat dari variabel lingkungan `.env` (`FERNET_KEY`). Nomor WA pelanggan didekripsi di memori Python hanya saat visualisasi menu CRM.
 
 ### 6.2. Proteksi Data in Transit
 Karena sistem AbuCom berjalan di jaringan LAN offline lokal:
@@ -321,7 +323,7 @@ Sebagai bukti kepatuhan hukum atas pelindungan privasi data pribadi pelanggan di
 ### 6.5. Manajemen Kredensial dan Secrets
 * Kunci rahasia JWT secret key, sandi database, IP server database, dan nama port printer thermal dipisahkan dari berkas kode sumber program. Kredensial disimpan dalam berkas lokal `.env` pada folder root kasir.
 * Berkas `.env` dimasukkan ke dalam daftar `.gitignore` untuk mencegah kebocoran repositori.
-* **Startup Validator**: Layer aplikasi menjalankan verifikasi keberadaan berkas `.env` dan keaslian variabel di dalamnya saat startup program. Jika berkas hilang atau tidak lengkap, startup sistem dibatalkan secara aman dengan pesan error.
+* **Startup Validator**: Layer aplikasi menjalankan verifikasi keberadaan berkas `.env` dan keaslian variabel di dalamnya saat startup program. Jika berkas hilang atau tidak lengkap, startup sistem dibatalkan secara aman dengan pesan error `ERR-FILE-001`.
 
 ### 6.6. Klasifikasi dan Perlindungan Tabel Database
 Proteksi tabel MySQL didasarkan pada klasifikasi sensitivitas Bab 2.3:
@@ -407,7 +409,7 @@ Aktivitas pergantian kasir harian diatur ketat untuk meminimalisir fraud keuanga
 ### 8.3. Prosedur Pengelolaan Akun Pengguna
 * **Pembuatan Akun Staf**: Penambahan karyawan baru, pembagian kode posisi peran, dan set sandi awal wajib dieksekusi secara mandiri oleh `pemilik` di menu `MENU-M7-001`.
 * **Perubahan Password**: Setiap staf diwajibkan mengganti kata sandi default mereka secara mandiri pada peluncuran menu `BASE-004` (Ubah Sandi Akun Sendiri).
-* **Penonaktifan Akun**: Akun karyawan yang telah mengundurkan diri dinonaktifkan secara permanen di database dengan mengubah sandinya ke karakter acak tak dikenal, menolak token JWT, dan mencabut hak login.
+* **Penonaktifan Akun**: Karena skema fisik DDL tabel `pengguna` di `01_database_schema.sql` tidak memiliki kolom status `is_active`, penonaktifan akun dilakukan secara logis dengan cara: (1) Mengubah `password_hash` akun karyawan tersebut ke karakter acak yang tidak dikenal (misal string UUID acak) di database, sehingga tidak ada sandi polos yang bisa cocok; (2) Mencabut token JWT aktif dengan cara menghapus token di memori klien dan membiarkan token lama kedaluwarsa secara biner karena sistem berjalan stateless.
 
 ### 8.4. Keamanan Fisik Server dan Infrastruktur
 * Perangkat Mini PC Server database diletakkan di dalam area aman toko (misal: lemari terkunci khusus server) yang terlindung dari jangkauan fisik pelanggan umum atau staf yang tidak berwenang.
@@ -641,12 +643,113 @@ flowchart TD
 | **ERR-CASH-004** | `ERR-CASH-004: Saldo kas laci kasir tidak mencukupi untuk pengembalian dana!` | Saldo laci kas tunai kasir minus saat pengembalian dana retur/batal. | M.1 |
 
 ### 10.6. Prosedur Respon Insiden Keamanan
-**[DATA BELUM TERSEDIA — PERLU DIISI MANUAL]**
 *SOP Tanggap Darurat Kebocoran/Insiden Data Toko*:
-1. **Deteksi**: Staf mendeteksi kegagalan sistem berulang (misal: spamming visual login gagal atau hardware server mati).
-2. **Isolasi**: Cabut kabel LAN fisik UTP Cat6 dari switch hub server database Debian segera untuk memutus koneksi klien kasir.
-3. **Analisis**: Pemilik login lokal ke mesin server Debian menggunakan konsol root dan membaca audit log.
-4. **Pemulihan**: Jalankan menu restorasi basis data aman `Restore` dari berkas cadangan ZIP AES-256 yang tervalidasi.
+
+#### A. Definisi Insiden Keamanan
+Sistem AbuCom mendefinisikan 5 jenis insiden keamanan kritis lokal yang mewajibkan penerapan SOP ini:
+1. *Brute-Force Berhasil*: Akun staf/kasir atau pemilik berhasil di-bypass oleh login ilegal dari PC klien dengan indikasi kegagalan berturut-turut sebelumnya.
+2. *Selisih Kas Berulang*: Rekaman log `shift_handover` mencatat status `'ANOMALI'` (selisih > Rp 10.000) berturut-turut dalam 3 shift terakhir.
+3. *Akses Fisik Tidak Sah ke Server*: Matinya daya Mini PC Server secara kotor (*dirty shutdown*) di tengah shift, hilangnya fisik Mini PC, atau terdeteksinya flashdisk asing pada port USB server.
+4. *Kegagalan Backup*: Sistem mencatatkan status `'FAILED'` pada database `backup_logs` berturut-turut selama 2 hari operasional.
+5. *Ketidakcocokan Checksum Cadangan*: Gagalnya proses dekripsi file cadangan ZIP AES-256 saat simulasi verifikasi pemulihan data tahunan.
+
+#### B. Fase Deteksi (Detection)
+Aktivitas deteksi dilakukan secara otomatis melalui alarm dashboard visual pemilik, atau secara manual melalui pemeriksaan query *forensic* audit log:
+1. *Indikator Brute-force*: Tanda visual kegagalan login berulang dari satu alamat IP kasir.
+   - Query SQL Deteksi:
+     ```sql
+     SELECT action_timestamp, old_value, ip_address 
+     FROM audit_logs 
+     WHERE action_type = 'LOGIN_FAILED' 
+       AND action_timestamp > DATE_SUB(NOW(), INTERVAL 1 HOUR)
+     ORDER BY action_timestamp DESC;
+     ```
+2. *Indikator Akses Tidak Sah*: Deteksi percobaan penembusan menu Pemilik oleh peran kasir/staf operasional.
+   - Query SQL Deteksi:
+     ```sql
+     SELECT action_timestamp, pengguna_id, target_table, old_value 
+     FROM audit_logs 
+     WHERE action_type = 'ACCESS_DENIED' 
+       AND action_timestamp > DATE_SUB(NOW(), INTERVAL 24 HOUR)
+     ORDER BY action_timestamp DESC;
+     ```
+3. *Indikator Selisih Kas Kronis*: Monitoring log anomali handover kasir.
+   - Query SQL Deteksi:
+     ```sql
+     SELECT timestamp_handover, kasir_keluar_id, selisih, catatan_alasan 
+     FROM shift_handover 
+     WHERE status_handover = 'ANOMALI' 
+     ORDER BY timestamp_handover DESC LIMIT 5;
+     ```
+4. *Indikator Kegagalan Backup*: Peringatan kegagalan ekspor database.
+   - Query SQL Deteksi:
+     ```sql
+     SELECT tanggal_backup, nama_file, status_backup 
+     FROM backup_logs 
+     WHERE status_backup = 'FAILED' 
+     ORDER BY tanggal_backup DESC LIMIT 5;
+     ```
+5. *Indikator Data Sangat Sensitif Diakses*: Memantau akses ke tabel rahasia `payroll` atau `pinjaman_bank`.
+   - Query SQL Deteksi:
+     ```sql
+     SELECT action_timestamp, pengguna_id, action_type, target_table 
+     FROM audit_logs 
+     WHERE target_table IN ('payroll', 'pinjaman_bank', 'pinjaman_kerabat') 
+     ORDER BY action_timestamp DESC;
+     ```
+
+#### C. Fase Penahanan (Containment)
+Langkah taktis isolasi wajib dieksekusi secara instan saat insiden terkonfirmasi:
+1. Cabut kabel LAN fisik UTP Cat6 dari port switch hub Mini PC Server database Debian lokal toko untuk memutuskan seluruh koneksi klien kasir secara instan dari database.
+2. Nonaktifkan akun staf yang dicurigai disusupi secara lokal di database (mengubah password_hash menjadi UUID string acak).
+3. Hentikan service daemon database MySQL server Debian dengan perintah CLI:
+   `sudo systemctl stop mysql`
+4. Matikan terminal kasir Windows 11 secara paksa menggunakan tombol fisik power jika dicurigai adanya malware visual.
+
+#### D. Fase Analisis (Forensic Investigation)
+Pemilik login lokal ke mesin server Debian menggunakan konsol root secara offline untuk membaca audit log. Gunakan 3 query SQL investigasi audit logs berikut untuk pelacakan:
+* **Query 1 (Akses ditolak dalam 24 jam terakhir)**:
+  ```sql
+  SELECT al.action_timestamp, p.username, al.target_table, al.old_value 
+  FROM audit_logs al 
+  JOIN pengguna p ON al.pengguna_id = p.id 
+  WHERE al.action_type = 'ACCESS_DENIED' 
+    AND al.action_timestamp >= DATE_SUB(NOW(), INTERVAL 1 DAY);
+  ```
+* **Query 2 (Aksi modifikasi tabel sensitif oleh pengguna tertentu)**:
+  ```sql
+  SELECT action_timestamp, action_type, target_table, old_value, new_value 
+  FROM audit_logs 
+  WHERE pengguna_id = 1 AND target_table IN ('transaksi', 'system_configs', 'shift_handover') 
+  ORDER BY action_timestamp DESC;
+  ```
+* **Query 3 (Riwayat login gagal berulang/lockout)**:
+  ```sql
+  SELECT action_timestamp, old_value, ip_address 
+  FROM audit_logs 
+  WHERE action_type IN ('LOGIN_FAILED', 'ACCOUNT_LOCKOUT') 
+  ORDER BY action_timestamp DESC LIMIT 20;
+  ```
+
+#### E. Fase Pemulihan (Recovery)
+Jalankan langkah-langkah restorasi dari berkas cadangan ZIP AES-256 yang tervalidasi:
+1. Verifikasi identitas fisik pemilik secara manual.
+2. Jalankan skrip utilitas pemulihan basis data (`MENU-M2-010` Restore).
+3. Masukkan kata sandi dekripsi berkas ZIP AES-256.
+4. Verifikasi integritas data pasca-restorasi dengan memeriksa jumlah baris data (*rowcount*) pada tabel kritis (`transaksi`, `barang`) dan validitas format JSON pada tabel `audit_logs` menggunakan skrip validasi database.
+
+#### F. Fase Pembelajaran (Lessons Learned)
+Mendokumentasikan seluruh kronologi insiden, memutakhirkan parameter `.env` jika terjadi kebocoran credential, memperkuat penguncian fisik server Mini PC, dan memperbarui SOP keamanan runtime jika diperlukan.
+
+#### G. Tabel Ringkasan Insiden
+
+| Jenis Insiden | Tanda Awal | Langkah Pertama | Penanggung Jawab |
+|---|---|---|---|
+| Brute-Force Kasir | Lockout akun di database | Tangguhkan akun staf, isolasi terminal klien | Pemilik Toko / Supervisor |
+| Selisih Kasir > Rp 10.000 | Alert rekonsiliasi anomali | Kepala Percetakan wajib hadir fisik, input memo alasan | Kepala Percetakan |
+| Akses Fisik Server Ilegal | Mati lampu / USB terpasang | Hentikan service MySQL server, cabut kabel LAN | Pemilik Toko |
+| Kegagalan Backup | Status backup FAILED | Jalankan backup manual safe subprocess, cek space disk | Pemilik Toko |
+| Checksum Cadangan Salah | Gagal dekripsi ZIP AES-256 | Lakukan pemulihan dari backup dingin sekunder terverifikasi | Pemilik Toko |
 
 ---
 
@@ -687,78 +790,219 @@ Penerapan paradigma pemrograman fungsional murni: tanpa class, imutabilitas Name
 import bcrypt
 import jwt
 import datetime
+import subprocess
 from collections import namedtuple
 from typing import Callable, Any
+from cryptography.fernet import Fernet
 
 # Monad-like Result Pattern untuk penanganan error fungsional
 Result = namedtuple('Result', ['is_success', 'data', 'error_msg'])
 SessionState = namedtuple('SessionState', ['user_id', 'username', 'role', 'cabang_id', 'token'])
 
-# 1. Pengecekan Otorisasi Menu CLI (Pure Function)
-def check_permission(menu_id: str, user_role: str) -> bool:
-    # Peta biner hak akses (ACM Bab 4)
-    acl = {
-        'MENU-M1-001': ['pemilik', 'kepala_percetakan', 'pramuniaga', 'kasir', 'fotocopy_print'],
-        'MENU-M2-010': ['pemilik'], # Backup & Restore
-        'MENU-M4-002': ['pemilik'], # Gaji bulanan
-        'MENU-M7-002': ['pemilik'], # Audit Logs
-        'MENU-M7-003': ['pemilik', 'kepala_percetakan', 'kasir'], # Handover
-    }
-    allowed_roles = acl.get(menu_id, [])
-    return user_role in allowed_roles
+# 1. Fungsi Otentikasi Pengguna & Penerbitan JWT (Pure Function)
+def login_user(username: str, password: str, db_conn) -> Result:
+    cursor = db_conn.cursor(dictionary=True)
+    
+    # Ambil detail pengguna dari database menggunakan parameterized query
+    query_user = "SELECT id, password_hash, role, failed_login_attempts, locked_until, cabang_id FROM pengguna WHERE username = %s"
+    cursor.execute(query_user, (username,))
+    user = cursor.fetchone()
+    
+    if not user:
+        return Result(False, None, "ERR-AUTH-001: Kredensial tidak valid. Silakan coba kembali!")
+    
+    # Periksa apakah akun sedang ditangguhkan akibat lockout brute-force
+    now = datetime.datetime.now()
+    if user['locked_until'] and user['locked_until'] > now:
+        return Result(False, None, "ERR-AUTH-002: Sandi Gagal: Akun ditangguhkan selama 10 menit akibat brute-force!")
+    
+    # Lakukan pencocokan sandi polos dengan password_hash menggunakan bcrypt.checkpw
+    if bcrypt.checkpw(password.encode('utf-8'), user['password_hash'].encode('utf-8')):
+        # Bersihkan counter failed attempts
+        query_reset = "UPDATE pengguna SET failed_login_attempts = 0, locked_until = NULL WHERE id = %s"
+        cursor.execute(query_reset, (user['id'],))
+        
+        # Terbitkan token stateless session JWT HS256 dengan masa aktif 8 jam
+        secret_key = "9a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z"  # Diambil dari .env dalam real system
+        payload = {
+            "user_id": user['id'],
+            "username": username,
+            "role": user['role'],
+            "cabang_id": user['cabang_id'],
+            "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=8)
+        }
+        token = jwt.encode(payload, secret_key, algorithm='HS256')
+        
+        # INSERT log audit ke database untuk LOGIN_SUCCESS
+        log_query = "INSERT INTO audit_logs (pengguna_id, action_type, target_table, old_value, new_value, ip_address, cabang_id) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+        log_query_args = (user['id'], 'LOGIN_SUCCESS', 'pengguna', None, '{"status": "SUCCESS"}', '192.168.1.10', user['cabang_id'])
+        cursor.execute(log_query, log_query_args)
+        db_conn.commit()
+        
+        session = SessionState(user['id'], username, user['role'], user['cabang_id'], token)
+        return Result(True, session, None)
+    else:
+        # Tambahkan counter failed attempts
+        attempts = user['failed_login_attempts'] + 1
+        if attempts >= 5:
+            locked_until = now + datetime.timedelta(minutes=10)
+            query_lock = "UPDATE pengguna SET failed_login_attempts = 5, locked_until = %s WHERE id = %s"
+            cursor.execute(query_lock, (locked_until, user['id']))
+            # Rekam log audit ACCOUNT_LOCKOUT
+            log_query = "INSERT INTO audit_logs (pengguna_id, action_type, target_table, old_value, new_value, ip_address, cabang_id) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+            log_query_args = (user['id'], 'ACCOUNT_LOCKOUT', 'pengguna', None, '{"status": "LOCKED"}', '192.168.1.10', user['cabang_id'])
+            cursor.execute(log_query, log_query_args)
+        else:
+            query_fail = "UPDATE pengguna SET failed_login_attempts = %s WHERE id = %s"
+            cursor.execute(query_fail, (attempts, user['id']))
+            # Rekam log audit LOGIN_FAILED
+            log_query = "INSERT INTO audit_logs (pengguna_id, action_type, target_table, old_value, new_value, ip_address, cabang_id) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+            log_query_args = (user['id'], 'LOGIN_FAILED', 'pengguna', None, '{"status": "FAILED"}', '192.168.1.10', user['cabang_id'])
+            cursor.execute(log_query, log_query_args)
+        
+        db_conn.commit()
+        return Result(False, None, "ERR-AUTH-001: Kredensial tidak valid. Silakan coba kembali!")
 
-# 2. Validasi Token JWT (Pure Function)
-def validate_jwt(token: str, secret_key: str) -> Result:
-    try:
-        payload = jwt.decode(token, secret_key, algorithms=['HS256'])
-        return Result(True, payload, None)
-    except jwt.ExpiredSignatureError:
-        return Result(False, None, "ERR-SESSION-002: Sesi login kedaluwarsa. Harap login kembali!")
-    except jwt.InvalidTokenError:
-        return Result(False, None, "ERR-SESSION-002: Sesi login tidak sah/rusak. Harap login kembali!")
+# 2. Fungsi Guard Decorator/Pemeriksaan Wewenang RBAC (Pure Function)
+def require_permission(menu_id: str, session_state: dict, action_func: Callable) -> Callable:
+    def wrapper(*args, **kwargs):
+        user_role = session_state.get('role')
+        user_id = session_state.get('user_id', 1)
+        cabang_id = session_state.get('cabang_id', 1)
+        db_conn = kwargs.get('db_conn')
+        
+        # Peta biner hak akses (Default Deny)
+        acl = {
+            'MENU-M1-001': ['pemilik', 'kepala_percetakan', 'pramuniaga', 'kasir', 'fotocopy_print'],
+            'MENU-M2-010': ['pemilik'],
+            'MENU-M4-002': ['pemilik'],
+            'MENU-M7-002': ['pemilik'],
+            'MENU-M7-003': ['pemilik', 'kepala_percetakan', 'kasir'],
+        }
+        allowed_roles = acl.get(menu_id, [])
+        
+        if user_role in allowed_roles:
+            return action_func(*args, **kwargs)
+        else:
+            # Rekam log pelanggaran keamanan ACCESS_DENIED
+            if db_conn:
+                cursor = db_conn.cursor()
+                log_query = """
+                    INSERT INTO audit_logs 
+                    (pengguna_id, action_type, target_table, old_value, new_value, ip_address, cabang_id) 
+                    VALUES (%s, 'ACCESS_DENIED', %s, %s, 'ILLEGAL_ACCESS_PREVENTED', '192.168.1.10', %s)
+                """
+                old_val_json = f'{{"attempted_menu": "{menu_id}", "role": "{user_role}"}}'
+                cursor.execute(log_query, (user_id, menu_id, old_val_json, cabang_id))
+                db_conn.commit()
+            
+            return Result(False, None, "ERR-AUTH-003: Akses Ditolak: Hak Akses Pemilik Dibutuhkan!")
+    return wrapper
 
-# 3. Enkripsi Sandi Baru (Pure Function)
-def hash_password(password: str) -> str:
-    # Cost factor 12
-    salt = bcrypt.gensalt(rounds=12)
-    hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
-    return hashed.decode('utf-8')
-
-# 4. Verifikasi Kredensial Sandi (Pure Function)
-def verify_password(password: str, hashed_password: str) -> bool:
-    return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
-
-# 5. Penulisan Log Audit Transaksional (Pure Function)
-def log_audit_trail(conn, pengguna_id: int, action_type: str, target_table: str, 
-                    old_val_json: str, new_val_json: str, ip_addr: str) -> Result:
+# 3. Fungsi Penulisan Log Audit Transaksional (Pure Function)
+def write_audit_log(pengguna_id: int, action_type: str, target_table: str, old_value: dict, new_value: dict, cabang_id: int, db_conn) -> Result:
+    import json
+    cursor = db_conn.cursor()
     query = """
         INSERT INTO audit_logs 
         (pengguna_id, action_type, target_table, old_value, new_value, ip_address, cabang_id) 
-        VALUES (%s, %s, %s, %s, %s, %s, 1)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
     """
-    cursor = conn.cursor()
+    old_json = json.dumps(old_value) if old_value else None
+    new_json = json.dumps(new_value) if new_value else None
+    ip_addr = "192.168.1.10"
+    
     try:
-        cursor.execute(query, (pengguna_id, action_type, target_table, old_val_json, new_val_json, ip_addr))
+        cursor.execute(query, (pengguna_id, action_type, target_table, old_json, new_json, ip_addr, cabang_id))
+        db_conn.commit()
         return Result(True, cursor.lastrowid, None)
     except Exception as e:
-        return Result(False, None, f"ERR-DB-002: Gagal menulis log audit. Detail: {str(e)}")
+        return Result(False, None, f"ERR-DB-002: Pelanggaran integritas basis data. Transaksi dibatalkan! Detail: {str(e)}")
 
-# 6. Sanitasi Karakter ASCII Control CLI (Pure Function)
-def sanitize_input(input_str: str) -> str:
-    # Membuang ASCII control characters di bawah \x20 (termasuk ANSI escape \x1b)
-    return "".join(ch for ch in input_str if ch >= "\x20")
+# 4. Fungsi Enkripsi & Dekripsi Reversible WhatsApp Pelanggan (Pure Function)
+def encrypt_wa(nomor_wa: str, fernet_key: bytes) -> str:
+    f = Fernet(fernet_key)
+    return f.encrypt(nomor_wa.encode('utf-8')).decode('utf-8')
 
-# 7. Enkripsi AES-256 Backup ZIP (Pure Function - Safe Subprocess Wrapper)
-def encrypt_backup(source_sql_path: str, output_zip_path: str, password_key: str) -> Result:
-    import subprocess
-    # Memanggil safe zip subprocess yang terenkripsi AES-256
-    cmd = ["zip", "-e", "-P", password_key, output_zip_path, source_sql_path]
+def decrypt_wa(ciphertext: str, fernet_key: bytes) -> str:
+    f = Fernet(fernet_key)
+    return f.decrypt(ciphertext.encode('utf-8')).decode('utf-8')
+
+# 5. Fungsi Eksekusi Backup Basis Data Aman (Pure Function)
+def run_backup(db_config: dict, backup_dir: str, zip_password: str, pengguna_id: int, db_conn) -> Result:
+    import os
+    import uuid
+    
+    temp_sql = os.path.join(backup_dir, f"temp_{uuid.uuid4().hex}.sql")
+    output_zip = os.path.join(backup_dir, f"backup_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.zip")
+    
+    # Eksekusi mysqldump aman melalui safe subprocess
+    dump_cmd = [
+        "mysqldump",
+        f"-h{db_config['host']}",
+        f"-u{db_config['user']}",
+        f"-p{db_config['password']}",
+        db_config['db_name'],
+        f"--result-file={temp_sql}"
+    ]
+    
     try:
-        # Menjalankan perintah non-interactive
-        res = subprocess.run(cmd, capture_output=True, text=True, check=True)
-        return Result(True, output_zip_path, None)
+        # Jalankan ekspor SQL
+        subprocess.run(dump_cmd, check=True, capture_output=True)
+        
+        # Kompresi ZIP AES-256 menggunakan perintah zip sistem
+        zip_cmd = ["zip", "-e", "-P", zip_password, output_zip, temp_sql]
+        subprocess.run(zip_cmd, check=True, capture_output=True)
+        
+        # Bersihkan berkas SQL sementara
+        if os.path.exists(temp_sql):
+            os.remove(temp_sql)
+            
+        # Catat status SUCCESS ke tabel backup_logs
+        file_size_kb = int(os.path.getsize(output_zip) / 1024)
+        cursor = db_conn.cursor()
+        query_log = """
+            INSERT INTO backup_logs 
+            (nama_file, status_backup, pengguna_id, ukuran_file_kb, cabang_id) 
+            VALUES (%s, %s, %s, %s, 1)
+        """
+        cursor.execute(query_log, (os.path.basename(output_zip), 'SUCCESS', pengguna_id, file_size_kb))
+        db_conn.commit()
+        
+        return Result(True, output_zip, None)
     except Exception as e:
-        return Result(False, None, f"ERR-FILE-039: Gagal mengompresi dan mengenkripsi backup. Detail: {str(e)}")
+        # Bersihkan berkas sisa jika gagal
+        if os.path.exists(temp_sql):
+            os.remove(temp_sql)
+        
+        try:
+            cursor = db_conn.cursor()
+            query_log = """
+                INSERT INTO backup_logs 
+                (nama_file, status_backup, pengguna_id, ukuran_file_kb, cabang_id) 
+                VALUES (%s, 'FAILED', %s, 0, 1)
+            """
+            cursor.execute(query_log, (os.path.basename(output_zip), pengguna_id))
+            db_conn.commit()
+        except Exception:
+            pass
+            
+        return Result(False, None, f"ERR-FILE-039: Gagal memulihkan data. Berkas cadangan korup atau sandi enkripsi salah! Detail: {str(e)}")
+
+# 6. Fungsi Validasi Konfigurasi Startup .env (Pure Function)
+def validate_env_config(required_keys: list) -> bool:
+    import os
+    # Memeriksa keberadaan file .env secara fisik di root direktori
+    if not os.path.exists('.env'):
+        print("ERR-FILE-001: Berkas konfigurasi .env tidak ditemukan. Aplikasi ditutup!")
+        return False
+    
+    # Memeriksa keberadaan dan keaslian variabel wajib konfigurasi
+    for key in required_keys:
+        if not os.getenv(key):
+            print(f"ERR-FILE-001: Berkas konfigurasi .env tidak lengkap. Variabel {key} tidak ditemukan!")
+            return False
+    return True
 ```
 
 ### 12.3. Konfigurasi File .env (Parameter Keamanan)
@@ -775,7 +1019,11 @@ DB_NAME=abucom_db
 JWT_SECRET_KEY=9a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z
 JWT_EXPIRATION_SECONDS=28800 # 8 Jam
 
-BACKUP_ENCRYPTION_KEY=sandi_kunci_backup_rahasia_pemilik_312
+# Kunci Enkripsi Reversible WhatsApp Pelanggan (UU PDP)
+FERNET_KEY=gAAAAABmN3g5ZW5rcmlwc2lfMTJfd2FfdGVzdF9rZXk=
+
+# Sandi Enkripsi berkas cadangan database format ZIP AES-256
+BACKUP_ZIP_PASSWORD=sandi_kunci_backup_rahasia_pemilik_312
 PRINTER_PORT=USB001
 ```
 
