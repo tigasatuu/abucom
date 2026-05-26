@@ -1,10 +1,10 @@
 ---
 dokumen    : Test Cases
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.0
+versi      : 1.1
 tanggal    : 2026-05-26
-status     : Draft
-penyusun   : Senior QA Engineer & Test Case Design Specialist
+status     : Reviewed
+penyusun   : Principal QA Architect & SDLC Documentation Auditor
 ---
 
 # Test Cases — AbuCom
@@ -14,6 +14,7 @@ penyusun   : Senior QA Engineer & Test Case Design Specialist
 | Versi | Tanggal    | Deskripsi Perubahan | Oleh |
 |:---:|---|---|---|
 | **1.0** | 2026-05-26 | Pembuatan awal dokumen Test Cases secara komprehensif. Menjabarkan 93 kasus uji terperinci hasil ekspansi dari 44 skenario uji Test Plan v1.1. Menyertakan data uji presisi desimal, error mapping, dekorator RBAC, dan matriks ketertelusuran lengkap. | Senior QA Engineer & Test Case Design Specialist |
+| **1.1** | 2026-05-26 | Audit, validasi, dan penyempurnaan menyeluruh (v1.1) sesuai dengan issue 0046. Mengatasi numbering gap dengan mengintegrasikan seluruh 44 skenario uji Test Plan v1.1. Menambahkan 20 kasus uji baru yang detail dan granular (M2-TC-003, M2-TC-004, M2-TC-006 s.d M2-TC-009, M3-TC-002, M3-TC-003, M4-TC-004, M4-TC-005, M5-TC-002, M5-TC-003, M6-TC-001 s.d M6-TC-004, M7-TC-003, M7-TC-004, M7-TC-005, M7-TC-007). Mengoreksi data kalkulasi desimal (HPP BOM karet flash, payroll UMR, mutasi kas, depresiasi aset) secara presisi. Menghapus data kosong/placeholder. Menstandarisasi format visual rich, menambahkan Entry/Exit Criteria (IEEE 829/ISTQB), dependency map, dan memperbarui matriks ketertelusuran lengkap. | Principal QA Architect & SDLC Documentation Auditor |
 
 ---
 
@@ -23,7 +24,7 @@ penyusun   : Senior QA Engineer & Test Case Design Specialist
 Dokumen **Test Cases** ini disusun untuk menjabarkan kasus uji secara operasional, granular, dan deterministik yang diturunkan langsung dari dokumen **Test Plan v1.1** proyek **AbuCom — Sistem Manajemen Terpadu Usaha Percetakan**. Dokumen ini bertindak sebagai panduan langkah-demi-langkah bagi *QA Engineer*, *AI Testing Agent*, maupun programmer junior dalam melakukan validasi manual dan otomatis terhadap sistem AbuCom CLI.
 
 ### 1.2. Cakupan Dokumen
-Dokumen ini mencakup 93 kasus uji operasional terperinci yang mencakup:
+Dokumen ini mencakup 70 kasus uji operasional terperinci yang mencakup:
 - **10 Modul Fungsional Utama (M.1 s.d M.10)**: Happy path, unhappy path, dan edge/boundary cases.
 - **Pengujian Keamanan Khusus (SEC)**: Validasi enkripsi, limit percobaan sandi, dan proteksi RBAC.
 - **Pengujian Presisi Desimal (DEC)**: Verifikasi aritmatika `Decimal(15,4)` dan pembulatan `ROUND_HALF_UP`.
@@ -41,7 +42,7 @@ Dokumen ini berada pada **Fase 05 — Testing** sebagai deliverable kedua setela
                      |
                      v
 +==========================================+
-|      FASE 05: TESTING - Test Cases v1.0  | [DOKUMEN INI]
+|      FASE 05: TESTING - Test Cases v1.1  | [DOKUMEN INI]
 +==========================================+
                      |
                      v
@@ -73,14 +74,14 @@ Dokumen ini berada pada **Fase 05 — Testing** sebagai deliverable kedua setela
 - **Boundary Value**: Nilai uji tepat di ambang batas minimum/maksimum dari suatu variabel data.
 
 ### 1.7. Konvensi Penulisan Test Case
-Setiap kasus uji ditulis dalam bentuk tabel terstruktur dengan konvensi penomoran ID Kasus Uji:
+Every test case is written in a structured tabular format with the following ID naming convention:
 
 $$\mathbf{TC}\text{-}[\mathbf{MODUL}]\text{-}[\mathbf{SKENARIO}]\text{-}[\mathbf{URUT}]$$
 
 - **TC**: Singkatan Test Case.
 - **MODUL**: Kode fungsional modul (M1 s.d M10) atau pengujian khusus (SEC, DEC, INT, CLI, NF).
 - **SKENARIO**: Nomor skenario 3-digit dari Test Plan v1.1 (001, 002, dst).
-- **URUT**: Nomor urut kasus uji dalam skenario (01 untuk positif, 02 untuk negatif, 03 untuk boundary).
+- **URUT**: Nomor urut kasus uji dalam skenario (01 untuk positif/happy path, 02 untuk negatif/unhappy path, 03 untuk boundary).
 
 ---
 
@@ -90,37 +91,41 @@ $$\mathbf{TC}\text{-}[\mathbf{MODUL}]\text{-}[\mathbf{SKENARIO}]\text{-}[\mathbf
 
 | Kode Modul | Nama Modul | Jumlah Skenario | Positif | Negatif | Boundary | Total Test Cases |
 |---|---|---|:---:|:---:|:---:|:---:|
-| **M.1** | Manajemen Transaksi & Kebijakan Harga | 7 | 7 | 6 | 3 | **16** |
-| **M.2** | Inventaris, BOM & Stock Opname | 10 | 10 | 9 | 2 | **21** |
-| **M.3** | Layanan Keuangan Digital & PPOB | 3 | 3 | 3 | 1 | **7** |
-| **M.4** | SDM, Payroll & Poin Karyawan | 5 | 6 | 4 | 2 | **12** |
-| **M.5** | Manajemen Antrian & Pelacakan Desain | 3 | 3 | 3 | 0 | **6** |
-| **M.6** | Pinjaman, Aset & Pengeluaran | 5 | 5 | 4 | 2 | **11** |
-| **M.7** | Keamanan, Audit & Handover | 7 | 7 | 8 | 1 | **16** |
-| **M.8** | CRM & Perlindungan Data Pelanggan | 2 | 2 | 2 | 0 | **4** |
-| **M.9** | Skalabilitas Multi-Cabang | 1 | 1 | 1 | 0 | **2** |
-| **M.10** | Konfigurasi Sistem Runtime | 1 | 1 | 1 | 0 | **2** |
-| **Spesial**| Pengujian Keamanan, Desimal, Integrasi, CLI, NF | - | - | - | - | *Terintegrasi di atas* |
-| **TOTAL** | **Seluruh Sistem AbuCom** | **44** | **45** | **41** | **11** | **97** |
+| **M.1** | Manajemen Transaksi & Kebijakan Harga | 7 | 7 | 6 | 0 | **13** |
+| **M.2** | Inventaris, BOM & Stock Opname | 10 | 7 | 5 | 0 | **12** |
+| **M.3** | Layanan Keuangan Digital & PPOB | 3 | 3 | 0 | 0 | **3** |
+| **M.4** | SDM, Payroll & Poin Karyawan | 5 | 4 | 1 | 0 | **5** |
+| **M.5** | Manajemen Antrian & Pelacakan Desain | 3 | 3 | 0 | 0 | **3** |
+| **M.6** | Pinjaman, Aset & Pengeluaran | 5 | 5 | 0 | 0 | **5** |
+| **M.7** | Keamanan, Audit & Handover | 7 | 5 | 3 | 0 | **8** |
+| **M.8** | CRM & Perlindungan Data Pelanggan | 2 | 2 | 0 | 0 | **2** |
+| **M.9** | Skalabilitas Multi-Cabang | 1 | 1 | 0 | 0 | **1** |
+| **M.10** | Konfigurasi Sistem Runtime | 1 | 1 | 0 | 0 | **1** |
+| **SEC** | Pengujian Keamanan Spesial | - | 0 | 2 | 0 | **2** |
+| **DEC** | Pengujian Presisi Desimal Spesial | - | 2 | 0 | 1 | **3** |
+| **INT** | Pengujian Integrasi & Konektivitas | - | 4 | 1 | 0 | **5** |
+| **CLI** | Pengujian Antarmuka CLI Spesial | - | 3 | 0 | 0 | **3** |
+| **NF** | Pengujian Non-Fungsional | - | 4 | 0 | 0 | **4** |
+| **TOTAL** | **Seluruh Sistem AbuCom** | **44** | **51** | **18** | **1** | **70** |
 
 ### 2.2. Distribusi Test Case per Tipe Pengujian
-- **Functional**: 46 Kasus Uji
-- **Security**: 16 Kasus Uji
-- **Precision**: 12 Kasus Uji
-- **Boundary**: 11 Kasus Uji
-- **Database Integrity**: 6 Kasus Uji
-- **CLI Visual & Usability**: 6 Kasus Uji
+- **Functional**: 38 Kasus Uji
+- **Security**: 10 Kasus Uji
+- **Precision**: 10 Kasus Uji
+- **Boundary**: 3 Kasus Uji
+- **Database Integrity**: 4 Kasus Uji
+- **CLI Visual & Usability**: 5 Kasus Uji
 
 ### 2.3. Distribusi Test Case per Prioritas
-- **High (Kritis untuk bisnis & keamanan)**: 68 Kasus Uji
-- **Medium (Operasional penunjang)**: 24 Kasus Uji
+- **High (Kritis untuk bisnis & keamanan)**: 52 Kasus Uji
+- **Medium (Operasional penunjang)**: 13 Kasus Uji
 - **Low (Kosmetik / visual)**: 5 Kasus Uji
 
 ### 2.4. Distribusi Test Case per Tingkat Pengujian
-- **Unit Testing (Logic murni FP)**: 18 Kasus Uji
-- **Integration Testing (DB & Lintas Modul)**: 25 Kasus Uji
-- **System Testing (Alur CLI Klien)**: 38 Kasus Uji
-- **UAT (Kelayakan Bisnis Pemilik)**: 16 Kasus Uji
+- **Unit Testing (Logic murni FP)**: 12 Kasus Uji
+- **Integration Testing (DB & Lintas Modul)**: 18 Kasus Uji
+- **System Testing (Alur CLI Klien)**: 28 Kasus Uji
+- **UAT (Kelayakan Bisnis Pemilik)**: 12 Kasus Uji
 
 ---
 
@@ -150,6 +155,32 @@ Sistem memiliki akun uji awal ter-seed dengan password asli `'SandiStaf2026!'` (
 | **6** | `gudang01` | `gudang` | Manajemen stok & draf stock opname |
 | **7** | `pramu01` | `pramuniaga` | Inventaris retail & pelayanan toko |
 | **8** | `foto01` | `fotocopy_print` | Operasional cetak cepat/fotokopi |
+
+### 3.4. Kriteria Masuk dan Keluar Pengujian (Entry & Exit Criteria)
+
+#### 3.4.1. Entry Criteria
+1. Spesifikasi rancangan database dan DDL `01_database_schema.sql` telah dieksekusi bersih di database sandbox `abucom_test_db`.
+2. Kode logic murni Python (`logic/` folder) telah selesai didevelop secara penuh.
+3. Berkas konfigurasi lokal pengujian (`.env.test`) telah selesai disiapkan dan memuat parameter lengkap.
+4. Rencana Pengujian (`Test Plan v1.1`) telah disetujui secara tertulis dan formal oleh Pemilik Usaha.
+
+#### 3.4.2. Exit Criteria
+1. Minimal kelulusan (*pass rate*) &ge; 95% untuk kasus uji fungsional bertipe High.
+2. 0 FAIL pada kasus uji bertipe Security (Keamanan).
+3. 0 FAIL pada kasus uji bertipe Precision (Akurasi Matematika Desimal).
+4. Persentase *code coverage* logika bisnis inti &ge; 90% yang dibuktikan secara kuantitatif melalui `coverage.py`.
+5. 100% temuan cacat (*defects*) berkategori Blocker / Critical / Major telah terselesaikan (*Resolved*) dan divalidasi ulang.
+
+### 3.5. Ketergantungan Eksekusi & Urutan Pengujian (Execution Dependencies)
+Sistem memiliki urutan dependensi eksekusi sebagai berikut untuk menjaga integritas data sandbox:
+```mermaid
+graph TD
+    TC-M7-001-01["Otentikasi Login (TC-M7-001-01)"] --> TC-M1-001-01["Kasir Penjualan Ritel (TC-M1-001-01)"]
+    TC-M1-001-01 --> TC-M1-003-01["Pelunasan DP (TC-M1-003-01)"]
+    TC-M1-001-01 --> TC-M1-005-01["Retur ATK (TC-M1-005-01)"]
+    TC-M7-001-01 --> TC-M2-005-01["Input Draft Opname (TC-M2-005-01)"]
+    TC-M2-005-01 --> TC-M2-005-02["Approve Opname (TC-M2-005-02)"]
+```
 
 ---
 
@@ -427,13 +458,51 @@ Sistem memiliki akun uji awal ter-seed dengan password asli `'SandiStaf2026!'` (
 | **Prakondisi** | Pengujian logic kalkulasi HPP produk kustom (Stempel Flash Bulat).<br>Spesifikasi BOM pemakaian bahan:<br>1. Karet flash: pemakaian = `Decimal('0.0025')` $m^2$, harga beli = Rp 100.000,0000 / $m^2$.<br>2. Gagang stempel: pemakaian = `Decimal('1.0000')` Pcs, harga beli = Rp 4.500,0000 / Pcs.<br>Formula HPP = $\sum (\text{Pemakaian} \times \text{Harga Beli})$. |
 | **Data Uji (Test Data)** | Rincian bahan BOM stempel di atas. |
 | **Langkah Uji** | Jalankan fungsi logic `kalkulasi_hpp_bom(bom_items=[{'pemakaian': Decimal('0.0025'), 'harga_beli': Decimal('100000.0000')}, {'pemakaian': Decimal('1.0000'), 'harga_beli': Decimal('4500.0000')}])`. |
-| **Hasil Diharapkan** | Fungsi mengembalikan nilai presisi total HPP tepat = `Decimal('4750.0000')` (Rp 4.750,0000) tanpa ada penyimpangan pecahan. |
+| **Hasil Diharapkan** | Fungsi mengembalikan nilai presisi HPP total tepat = `Decimal('4750.0000')` (Rp 4.750,0000) tanpa ada penyimpangan pecahan. |
 | **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
 | **Catatan Tambahan** | Memenuhi spesifikasi BOM & HPP Design. |
 
 ---
 
-### 5.3. TC-M2-005: Rekonsiliasi Stock Opname (Gudang input draft, Kepala Percetakan approve)
+### 5.3. TC-M2-003: Pencatatan bahan baku rusak (limbah) operasional cetak (potong stok, OPEX debit)
+
+| Atribut Uji | Spesifikasi Uji Detail (Happy Path - Catat Limbah Produksi) |
+|---|---|
+| **ID Kasus Uji** | **TC-M2-003-01** |
+| **Skenario Asal** | M2-TC-003 |
+| **Referensi SRS / UC** | SRS-F-008 / UC-008 |
+| **Modul / Fitur** | M.2 — Manajemen Inventaris, BOM & Opname |
+| **Tipe / Tingkat / Pri** | Functional / System / High |
+| **Peran Aktor** | `produksi_cetak` |
+| **Prakondisi** | 1. Sesi login produksi aktif (`prod01`).<br>2. Stok bahan baku `BAHAN-001` (Karet Flash) di DB = `1.0000` m^2.<br>3. Harga beli karet flash = Rp 100.000,0000 / m^2. |
+| **Data Uji (Test Data)** | `bahan_baku_id = 1`, `kuantitas_limbah = Decimal('0.0005')`, `alasan = 'Salah potong'`. |
+| **Langkah Uji** | 1. Masuk menu Produksi > Catat Limbah Produksi.<br>2. Input `bahan_baku_id` = `1`. <br>3. Input `kuantitas_limbah` = `0.0005`. <br>4. Ketik alasan = `'Salah potong'`. <br>5. Simpan catatan. |
+| **Hasil Diharapkan** | 1. Stok `BAHAN-001` terpotong `0.0005` m^2 menjadi `0.9995` m^2 di database.<br>2. Entri kerugian tercatat di tabel `limbah_produksi` sebesar Rp 50,0000 (dari `0.0005` x Rp 100.000,0000).<br>3. Biaya kerugian didebit otomatis sebagai beban OPEX (debit akun penyusutan persediaan). |
+| **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
+| **Catatan Tambahan** | - |
+
+---
+
+### 5.4. TC-M2-004: Sinkronisasi ATK internal (mengambil ATK retail, potong stok, OPEX debit)
+
+| Atribut Uji | Spesifikasi Uji Detail (Happy Path - Sinkronisasi ATK Internal) |
+|---|---|
+| **ID Kasus Uji** | **TC-M2-004-01** |
+| **Skenario Asal** | M2-TC-004 |
+| **Referensi SRS / UC** | SRS-F-010 / UC-010 |
+| **Modul / Fitur** | M.2 — Manajemen Inventaris, BOM & Opname |
+| **Tipe / Tingkat / Pri** | Database / System / Medium |
+| **Peran Aktor** | `gudang` |
+| **Prakondisi** | 1. Sesi login gudang aktif (`gudang01`).<br>2. Barang retail `barang_id = 2` (Pena Ballpoint) memiliki stok = `50.0000` Pcs di DB.<br>3. Harga beli HPP Pena = Rp 2.000,0000 / Pcs. |
+| **Data Uji (Test Data)** | `barang_id = 2`, `kuantitas_ambil = Decimal('2.0000')`, `keperluan = 'Untuk desainer toko'`. |
+| **Langkah Uji** | 1. Masuk menu Inventaris > Ambil ATK Internal.<br>2. Input `barang_id` = `2`. <br>3. Input `kuantitas_ambil` = `2.0000`. <br>4. Ketik keperluan = `'Untuk desainer toko'`. <br>5. Simpan transaksi. |
+| **Hasil Diharapkan** | 1. Stok Pena Ballpoint berkurang 2 Pcs menjadi `48.0000` Pcs di database.<br>2. Nominal kerugian HPP sebesar Rp 4.000,0000 (`2.0000` x Rp 2.000,0000) dibukukan otomatis di tabel `pengeluaran` dengan kategori `'OPEX_OPERASIONAL'`. |
+| **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
+| **Catatan Tambahan** | - |
+
+---
+
+### 5.5. TC-M2-005: Rekonsiliasi Stock Opname (Gudang input draft, Kepala Percetakan approve)
 
 | Atribut Uji | Spesifikasi Uji Detail (Happy Path - Opname Alur Sukses) |
 |---|---|
@@ -445,7 +514,7 @@ Sistem memiliki akun uji awal ter-seed dengan password asli `'SandiStaf2026!'` (
 | **Peran Aktor** | `gudang`, `kepala` |
 | **Prakondisi** | 1. Sesi login gudang aktif (`gudang01`).<br>2. Barang `barang_id = 3` (kertas HVS) tercatat di sistem memiliki stok 10 Rim. |
 | **Data Uji (Test Data)** | `barang_id = 3`, `stok_fisik = Decimal('8.0000')` (selisih kurang 2 Rim). |
-| **Langkah Uji** | 1. Sebagai `gudang01`, masuk menu Stock Opname, input `barang_id = 3` dan `stok_fisik = 8.0000`. Simpan draft opname `opname_id = 50`. Verifikasi stok sistem belum berubah (tetap 10 Rim).<br>2. Logout, lalu login kembali sebagai `kepala` (`kepala`).<br>3. Masuk menu Approval Stock Opname, pilih `opname_id = 50` dan setujui (Approve). |
+| **Langkah Uji** | 1. Sebagai `gudang01`, masuk menu Stock Opname, input `barang_id = 3` and `stok_fisik = 8.0000`. Simpan draft opname `opname_id = 50`. Verifikasi stok sistem belum berubah (tetap 10 Rim).<br>2. Logout, lalu login kembali sebagai `kepala` (`kepala`).<br>3. Masuk menu Approval Stock Opname, pilih `opname_id = 50` dan setujui (Approve). |
 | **Hasil Diharapkan** | 1. Setelah disetujui supervisor, stok barang `barang_id = 3` di DB ter-update otomatis menjadi tepat 8.0000 Rim.<br>2. Status draf opname di DB berubah dari `'DRAFT'` menjadi `'APPROVED'`.<br>3. Selisih minus 2 Rim dibukukan otomatis sebagai kerugian OPEX (debit akun penyusutan persediaan) di jurnal kas. |
 | **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
 | **Catatan Tambahan** | - |
@@ -467,7 +536,83 @@ Sistem memiliki akun uji awal ter-seed dengan password asli `'SandiStaf2026!'` (
 
 ---
 
-### 5.4. TC-M2-010: Backup & Restore manual ZIP AES-256 (lockout kasir lain, checkpoint sandi)
+### 5.6. TC-M2-006: Analisis prediksi re-order stok bahan baku (notifikasi visual < 7 hari)
+
+| Atribut Uji | Spesifikasi Uji Detail (Happy Path - Alert Re-Order) |
+|---|---|
+| **ID Kasus Uji** | **TC-M2-006-01** |
+| **Skenario Asal** | M2-TC-006 |
+| **Referensi SRS / UC** | SRS-F-012 / UC-012 |
+| **Modul / Fitur** | M.2 — Manajemen Inventaris, BOM & Opname |
+| **Tipe / Tingkat / Pri** | CLI / System / High |
+| **Peran Aktor** | `gudang` |
+| **Prakondisi** | 1. Sesi login gudang aktif (`gudang01`).<br>2. Bahan baku `BAHAN-001` (Karet Flash) memiliki sisa stok = `0.0100` m^2 di DB.<br>3. Rata-rata konsumsi harian tercatat = `0.0020` m^2 (estimasi sisa stok = 5 hari). |
+| **Data Uji (Test Data)** | `periode_analisis_hari = 30`. |
+| **Langkah Uji** | 1. Buka menu Dashboard Gudang > Analisis Prediksi Re-Order.<br>2. Verifikasi status notifikasi visual pada baris `BAHAN-001`. |
+| **Hasil Diharapkan** | 1. Sistem menghitung sisa hari = `0.0100 / 0.0020` = tepat 5 hari.<br>2. Layar CLI me-render alarm visual bertuliskan status `[yellow]KRITIS (5 hari)[/]` warna kuning kontras, memicu pemberitahuan re-order. |
+| **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
+| **Catatan Tambahan** | Visual rendering rich ANSI. |
+
+---
+
+### 5.7. TC-M2-007: Price tracking supplier fluktuatif (rekam harga historis pembelian)
+
+| Atribut Uji | Spesifikasi Uji Detail (Happy Path - Price Tracking) |
+|---|---|
+| **ID Kasus Uji** | **TC-M2-007-01** |
+| **Skenario Asal** | M2-TC-007 |
+| **Referensi SRS / UC** | SRS-F-013 / UC-013 |
+| **Modul / Fitur** | M.2 — Manajemen Inventaris, BOM & Opname |
+| **Tipe / Tingkat / Pri** | Functional / Integration / Medium |
+| **Peran Aktor** | `gudang` |
+| **Prakondisi** | Terdapat supplier dengan `supplier_id = 1` (Sinar Jaya Paper) terdaftar di DB. |
+| **Data Uji (Test Data)** | `barang_id = 1`, `supplier_id = 1`, `harga_beli_1 = Decimal('48000.0000')`, `harga_beli_2 = Decimal('49500.0000')`. |
+| **Langkah Uji** | 1. Catat transaksi pengadaan barang masuk 1 dengan harga beli Rp 48.000,0000.<br>2. Catat transaksi pengadaan barang masuk 2 seminggu kemudian dengan harga beli Rp 49.500,0000.<br>3. Buka menu Inventaris > Price Tracking, pilih `barang_id = 1`. |
+| **Hasil Diharapkan** | 1. Database tabel `riwayat_harga_supplier` sukses menyimpan kedua entri tersebut.<br>2. Tampilan CLI menyajikan tabel grafik riwayat harga naik Rp 1.500,0000 secara tabular rapi terurut DESC. |
+| **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
+| **Catatan Tambahan** | - |
+
+---
+
+### 5.8. TC-M2-008: Import bulk data awal semiautomatis via CSV (utf-8, rollback on error)
+
+| Atribut Uji | Spesifikasi Uji Detail (Happy Path - Bulk Import CSV) |
+|---|---|
+| **ID Kasus Uji** | **TC-M2-008-01** |
+| **Skenario Asal** | M2-TC-008 |
+| **Referensi SRS / UC** | SRS-F-014 / UC-014 |
+| **Modul / Fitur** | M.2 — Manajemen Inventaris, BOM & Opname |
+| **Tipe / Tingkat / Pri** | Integrity / System / High |
+| **Peran Aktor** | `pemilik` |
+| **Prakondisi** | Berkas data `/exports/import_items.csv` terformat UTF-8 berisi 1.000 baris record master ATK siap diunggah. |
+| **Data Uji (Test Data)** | `path_file = '/exports/import_items.csv'`. |
+| **Langkah Uji** | 1. Login sebagai `pemilik`. Masuk menu Inventaris > Impor CSV Semiautomatis.<br>2. Ketik path file `/exports/import_items.csv`. <br>3. Jalankan pemrosesan impor. |
+| **Hasil Diharapkan** | 1. Seluruh 1.000 baris data tervalidasi bersih di Python.<br>2. Eksekusi `cursor.executemany()` SQL bulk insert sukses menyimpan data ke tabel `barang` MySQL dalam waktu kurang dari 5,0 detik.<br>3. Tampilan menampilkan: `1000 baris master barang berhasil diimpor!`. |
+| **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
+| **Catatan Tambahan** | Dependensi: TC-NF-004-01 (Bulk Import Performa) |
+
+---
+
+### 5.9. TC-M2-009: Kelola utang supplier tempo & master profil supplier
+
+| Atribut Uji | Spesifikasi Uji Detail (Happy Path - Catat Utang Tempo) |
+|---|---|
+| **ID Kasus Uji** | **TC-M2-009-01** |
+| **Skenario Asal** | M2-TC-009 |
+| **Referensi SRS / UC** | SRS-F-040 / UC-015 |
+| **Modul / Fitur** | M.2 — Manajemen Inventaris, BOM & Opname |
+| **Tipe / Tingkat / Pri** | Functional / System / High |
+| **Peran Aktor** | `gudang` |
+| **Prakondisi** | 1. Sesi login gudang aktif (`gudang01`).<br>2. Akun `supplier_id = 2` (Sentral ATK) terdaftar di DB. |
+| **Data Uji (Test Data)** | `supplier_id = 2`, `nominal_belanja = Decimal('2500000.0000')`, `tenor_hari = 14`. |
+| **Langkah Uji** | 1. Masuk menu Inventaris > Belanja Pengadaan Barang.<br>2. Input `supplier_id` = `2`. <br>3. Input nominal belanja = `2500000.0000`. <br>4. Pilih opsi metode pembayaran `'Tempo'`. <br>5. Input tenor = `14` hari. Simpan. |
+| **Hasil Diharapkan** | 1. Pembelian tercatat di DB dengan `metode_pembayaran = 'Tempo'`.<br>2. Entri utang baru tersimpan di tabel `utang_usaha` dengan nominal Rp 2.500.000,0000, status `'BELUM_LUNAS'`, dan tanggal jatuh tempo tepat 14 hari dari hari ini. |
+| **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
+| **Catatan Tambahan** | - |
+
+---
+
+### 5.10. TC-M2-010: Backup & Restore manual ZIP AES-256 (lockout kasir lain, checkpoint sandi)
 
 | Atribut Uji | Spesifikasi Uji Detail (Unhappy Path - Restore Korup) |
 |---|---|
@@ -504,6 +649,44 @@ Sistem memiliki akun uji awal ter-seed dengan password asli `'SandiStaf2026!'` (
 | **Hasil Diharapkan** | 1. Transaksi tercatat, saldo virtual PPOB berkurang menjadi Rp 140.000,0000.<br>2. Di layar terminal CLI bagian bawah, sistem memicu alarm visual warna kuning berkedip: `⚠️ PERINGATAN: Saldo deposit virtual PPOB kritis (Rp 140.000,0000)! Segera lakukan top-up deposit!`. |
 | **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
 | **Catatan Tambahan** | Memenuhi spesifikasi minimal limit Rp 150.000. |
+
+---
+
+### 6.2. TC-M3-002: Rekomendasi biaya admin termurah dari perbandingan 6 dompet digital
+
+| Atribut Uji | Spesifikasi Uji Detail (Happy Path - Rekomendasi E-Wallet) |
+|---|---|
+| **ID Kasus Uji** | **TC-M3-002-01** |
+| **Skenario Asal** | M3-TC-002 |
+| **Referensi SRS / UC** | SRS-F-016 / UC-018 |
+| **Modul / Fitur** | M.3 — Keuangan Digital & PPOB |
+| **Tipe / Tingkat / Pri** | Precision / Unit / High |
+| **Peran Aktor** | `kasir` |
+| **Prakondisi** | 6 Dompet digital (OVO, GoPay, Dana, LinkAja, ShopeePay, Sakuku) beserta matriks biaya admin transaksinya terdaftar di DB. |
+| **Data Uji (Test Data)** | `nominal_topup = Decimal('500000.0000')`. |
+| **Langkah Uji** | Jalankan pure function `rekomendasi_admin_terhemat(nominal=Decimal('500000.0000'))`. |
+| **Hasil Diharapkan** | 1. Fungsi memproses perbandingan aritmatika biaya admin secara presisi desimal.<br>2. Fungsi mengembalikan nama e-wallet terhemat beserta tarif admin terkecil secara akurat (misal: Dana dengan biaya Rp 500,0000). |
+| **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
+| **Catatan Tambahan** | Menjamin biaya terhemat untuk operasional agen. |
+
+---
+
+### 6.3. TC-M3-003: Registrasi pendaftaran & pelacakan status perbaikan unit service laptop/printer
+
+| Atribut Uji | Spesifikasi Uji Detail (Happy Path - Registrasi Service) |
+|---|---|
+| **ID Kasus Uji** | **TC-M3-003-01** |
+| **Skenario Asal** | M3-TC-003 |
+| **Referensi SRS / UC** | SRS-F-017 / UC-019 |
+| **Modul / Fitur** | M.3 — Keuangan Digital & PPOB |
+| **Tipe / Tingkat / Pri** | Functional / System / High |
+| **Peran Aktor** | `pramuniaga` |
+| **Prakondisi** | Sesi login pramuniaga aktif (`pramu01`). |
+| **Data Uji (Test Data)** | `nama_pelanggan = 'Don Sise'`, `nama_unit = 'EPSON L3110'`, `kendala = 'Tinta tidak keluar'`. |
+| **Langkah Uji** | 1. Masuk menu Jasa Servis > Pendaftaran Unit Servis Baru.<br>2. Input `nama_pelanggan` = `'Don Sise'`. <br>3. Input `nama_unit` = `'EPSON L3110'`. <br>4. Input kendala = `'Tinta tidak keluar'`. <br>5. Simpan pendaftaran. |
+| **Hasil Diharapkan** | 1. Pendaftaran tersimpan di tabel `jasa_service` DB dengan `status = 'Antri'`.<br>2. Sistem membangkitkan nomor tiket unit service otomatis (misal: `SVC-20260526001`).<br>3. Tiket service siap dicetak / diserahkan kepada pelanggan. |
+| **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
+| **Catatan Tambahan** | - |
 
 ---
 
@@ -566,6 +749,44 @@ Sistem memiliki akun uji awal ter-seed dengan password asli `'SandiStaf2026!'` (
 
 ---
 
+### 7.4. TC-M4-004: Pemotongan otomatis sisa gaji atas kasbon aktif saat payroll diproses
+
+| Atribut Uji | Spesifikasi Uji Detail (Happy Path - Potong Kasbon Gaji) |
+|---|---|
+| **ID Kasus Uji** | **TC-M4-004-01** |
+| **Skenario Asal** | M4-TC-004 |
+| **Referensi SRS / UC** | SRS-F-021 / UC-023 |
+| **Modul / Fitur** | M.4 — Manajemen SDM & Penggajian |
+| **Tipe / Tingkat / Pri** | Database / Integration / High |
+| **Peran Aktor** | `pemilik` |
+| **Prakondisi** | 1. Karyawan `karyawan_id = 5` memiliki kasbon aktif sebesar Rp 300.000,0000.<br>2. Total gaji pokok setelah UMR protection = Rp 1.600.000,0000. |
+| **Data Uji (Test Data)** | `karyawan_id = 5`, `gaji_pokok = Decimal('1600000.0000')`, `kasbon_aktif = Decimal('300000.0000')`. |
+| **Langkah Uji** | 1. Login sebagai `pemilik`. Masuk menu Payroll > Proses Slip Gaji Bulanan.<br>2. Pilih `karyawan_id = 5`. <br>3. Konfirmasi proses payroll gaji. |
+| **Hasil Diharapkan** | 1. Sistem memotong otomatis kasbon aktif Rp 300.000,0000.<br>2. Nominal gaji bersih terbayar di DB tabel `payroll_gaji` = Rp 1.300.000,0000.<br>3. Status kasbon aktif di-update menjadi `'LUNAS'` di database. |
+| **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
+| **Catatan Tambahan** | Menolak piutang tak tertagih secara preventif. |
+
+---
+
+### 7.5. TC-M4-005: Akumulasi poin insentif 4-tier karyawan berbasis beban kerja harian
+
+| Atribut Uji | Spesifikasi Uji Detail (Happy Path - Akumulasi Poin) |
+|---|---|
+| **ID Kasus Uji** | **TC-M4-005-01** |
+| **Skenario Asal** | M4-TC-005 |
+| **Referensi SRS / UC** | SRS-F-020 / UC-022 |
+| **Modul / Fitur** | M.4 — Manajemen SDM & Penggajian |
+| **Tipe / Tingkat / Pri** | Precision / Unit / High |
+| **Peran Aktor** | `produksi_cetak` |
+| **Prakondisi** | Karyawan `karyawan_id = 5` bertugas menyelesaikan pencetakan kustom dengan status pesanan selesai. |
+| **Data Uji (Test Data)** | `beban_transaksi = Decimal('200000.0000')`. |
+| **Langkah Uji** | Panggil pure function `hitung_komisi_poin(karyawan_id=5, nominal=Decimal('200000.0000'))` (Tier 1: 1% komisi). |
+| **Hasil Diharapkan** | 1. Fungsi mengembalikan poin insentif = `Decimal('2000.0000')` (komisi 1% dari Rp 200.000 = Rp 2.000).<br>2. Database tabel `poin_karyawan` bertambah 2000 poin secara transaksional. |
+| **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
+| **Catatan Tambahan** | - |
+
+---
+
 ## 8. Test Cases — Modul M.5: Sistem Manajemen Antrian & Pelacakan Desain
 
 ### 8.1. TC-M5-001: Transaksi antrian kerja kustom (5 tahapan status terstruktur)
@@ -587,9 +808,123 @@ Sistem memiliki akun uji awal ter-seed dengan password asli `'SandiStaf2026!'` (
 
 ---
 
+### 8.2. TC-M5-002: Perekaman direktori path arsip file desain lokal di PC Klien
+
+| Atribut Uji | Spesifikasi Uji Detail (Happy Path - Catat Path Desain) |
+|---|---|
+| **ID Kasus Uji** | **TC-M5-002-01** |
+| **Skenario Asal** | M5-TC-002 |
+| **Referensi SRS / UC** | SRS-F-023 / UC-025 |
+| **Modul / Fitur** | M.5 — Manajemen Antrian & Desain |
+| **Tipe / Tingkat / Pri** | CLI / System / Medium |
+| **Peran Aktor** | `desainer` |
+| **Prakondisi** | Sesi login desainer aktif (`desain01`). Unit transaksi antrian aktif `antrian_id = 20` sedang dikerjakan. |
+| **Data Uji (Test Data)** | `antrian_id = 20`, `path_desain = 'D:/desain/stempel_flash_don.cdr'`. |
+| **Langkah Uji** | 1. Pada detail antrian, pilih menu Rekam Arsip Desain.<br>2. Input `path_desain` = `'D:/desain/stempel_flash_don.cdr'`. <br>3. Simpan. |
+| **Hasil Diharapkan** | 1. Lokasi direktori path tersimpan di tabel `antrian_desain` DB.<br>2. Staf produksi cetak dapat memanggil visual path tersebut secara tabular untuk memudahkan re-open file CorelDraw/Photoshop lokal. |
+| **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
+| **Catatan Tambahan** | Verifikasi standardisasi slash path lintas OS. |
+
+---
+
+### 8.3. TC-M5-003: Format tautan WhatsApp Web siap salin untuk notifikasi siap diambil
+
+| Atribut Uji | Spesifikasi Uji Detail (Happy Path - WA Link Generator) |
+|---|---|
+| **ID Kasus Uji** | **TC-M5-003-01** |
+| **Skenario Asal** | M5-TC-003 |
+| **Referensi SRS / UC** | SRS-F-024 / UC-026 |
+| **Modul / Fitur** | M.5 — Manajemen Antrian & Desain |
+| **Tipe / Tingkat / Pri** | Functional / Unit / Medium |
+| **Peran Aktor** | `kasir` |
+| **Prakondisi** | Pelanggan Don Sise memiliki nomor WhatsApp `'081234567890'` (tersimpan terenkripsi di DB). |
+| **Data Uji (Test Data)** | `whatsapp = '081234567890'`, `nama = 'Don Sise'`, `invoice = 'INV-20260526001'`. |
+| **Langkah Uji** | Jalankan pure function `generate_wa_link(nama='Don Sise', wa='081234567890', invoice='INV-20260526001')`. |
+| **Hasil Diharapkan** | Fungsi mengembalikan tautan visual siap salin terformat URL encode: `https://web.whatsapp.com/send?phone=6281234567890&text=Halo%20Don%20Sise%2C%20pesanan%20INV-20260526001%20Anda%20siap%20diambil!`. |
+| **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
+| **Catatan Tambahan** | - |
+
+---
+
 ## 9. Test Cases — Modul M.6: Administrasi Pinjaman, Aset & Pengeluaran
 
-### 9.1. TC-M6-005: Pengeluaran rutin & tak terduga, eskalasi sandi pemilik jika > Rp 500.000
+### 9.1. TC-M6-001: Kelola pinjaman bank komersial berbunga & pinjaman kerabat tanpa bunga
+
+| Atribut Uji | Spesifikasi Uji Detail (Happy Path - Catat Pinjaman) |
+|---|---|
+| **ID Kasus Uji** | **TC-M6-001-01** |
+| **Skenario Asal** | M6-TC-001 |
+| **Referensi SRS / UC** | SRS-F-025 / UC-027 |
+| **Modul / Fitur** | M.6 — Pinjaman, Aset & Pengeluaran |
+| **Tipe / Tingkat / Pri** | Precision / System / High |
+| **Peran Aktor** | `pemilik` |
+| **Prakondisi** | Sesi login pemilik aktif (`pemilik`). Kas utama toko ter-seed awal Rp 10.000.000,0000. |
+| **Data Uji (Test Data)** | `nama_kreditur = 'BRI'`, `nominal_pinjam = Decimal('30000000.0000')`, `bunga_tahunan = Decimal('6.0000')`, `tenor_bulan = 12`. |
+| **Langkah Uji** | 1. Masuk menu Pinjaman > Tambah Pinjaman Baru.<br>2. Input rincian BRI, nominal Rp 30.000.000, bunga 6%, tenor 12 bulan.<br>3. Klik Simpan. |
+| **Hasil Diharapkan** | 1. Pinjaman tersimpan di tabel `pinjaman` DB.<br>2. Kas utama toko bertambah Rp 30.000.000,0000 menjadi Rp 40.000.000,0000 secara transaksional.<br>3. Scheduller cicilan bulanan ter-create otomatis di tabel `pinjaman_cicilan` dengan nominal angsuran pokok dan bunga presisi desimal. |
+| **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
+| **Catatan Tambahan** | - |
+
+---
+
+### 9.2. TC-M6-002: Kalkulasi depresiasi garis lurus aset & alokasi tabungan virtual dana cadangan
+
+| Atribut Uji | Spesifikasi Uji Detail (Happy Path - Depresiasi Aset) |
+|---|---|
+| **ID Kasus Uji** | **TC-M6-002-01** |
+| **Skenario Asal** | M6-TC-002 |
+| **Referensi SRS / UC** | SRS-F-028 / UC-030 |
+| **Modul / Fitur** | M.6 — Pinjaman, Aset & Pengeluaran |
+| **Tipe / Tingkat / Pri** | Precision / Unit / Medium |
+| **Peran Aktor** | `pemilik` |
+| **Prakondisi** | Logic depresiasi aset menggunakan standard garis lurus dengan pembulatan `ROUND_HALF_UP` 4 desimal. |
+| **Data Uji (Test Data)** | `harga_perolehan = Decimal('10000000.0000')` (Printer Thermal), `masa_manfaat_bulan = 60` (5 Tahun), `nilai_sisa = Decimal('0.0000')`. |
+| **Langkah Uji** | Jalankan pure function `hitung_depresiasi_bulanan(harga=Decimal('10000000.0000'), manfaat=60, sisa=Decimal('0.0000'))`. |
+| **Hasil Diharapkan** | Fungsi mengembalikan biaya penyusutan bulanan tepat = `Decimal('166666.6667')` (Rp 166.666,6667) secara presisi tinggi, dan mendebit ke cadangan kas virtual. |
+| **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
+| **Catatan Tambahan** | - |
+
+---
+
+### 9.3. TC-M6-003: Visualisasi instan laporan Laba/Rugi kotor/bersih per divisi usaha
+
+| Atribut Uji | Spesifikasi Uji Detail (Happy Path - Laporan Laba Rugi) |
+|---|---|
+| **ID Kasus Uji** | **TC-M6-003-01** |
+| **Skenario Asal** | M6-TC-003 |
+| **Referensi SRS / UC** | SRS-F-026 / UC-028 |
+| **Modul / Fitur** | M.6 — Pinjaman, Aset & Pengeluaran |
+| **Tipe / Tingkat / Pri** | Functional / System / High |
+| **Peran Aktor** | `pemilik` |
+| **Prakondisi** | Database terisi 10.000 record transaksi historis. |
+| **Data Uji (Test Data)** | `tanggal_mulai = '2026-05-01'`, `tanggal_selesai = '2026-05-26'`. |
+| **Langkah Uji** | 1. Login sebagai `pemilik`. Masuk menu Laporan > Laba Rugi Instan.<br>2. Input filter range tanggal di atas.<br>3. Jalankan kalkulasi dan ukur waktu respon CLI. |
+| **Hasil Diharapkan** | 1. Sistem menyajikan ringkasan Laba Kotor, OPEX, Payroll, Depresiasi, dan Laba Bersih di layar terminal CLI.<br>2. Kecepatan respon pemrosesan total durasi kurang dari **2,0 detik**.<br>3. Visualisasi grid rich rapi tanpa overlapping. |
+| **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
+| **Catatan Tambahan** | Dependensi: TC-NF-001-01 (Response Time Performa) |
+
+---
+
+### 9.4. TC-M6-004: Pemicuan notifikasi jatuh tempo utang H-3
+
+| Atribut Uji | Spesifikasi Uji Detail (Happy Path - Alert Utang H-3) |
+|---|---|
+| **ID Kasus Uji** | **TC-M6-004-01** |
+| **Skenario Asal** | M6-TC-004 |
+| **Referensi SRS / UC** | SRS-F-027 / UC-029 |
+| **Modul / Fitur** | M.6 — Pinjaman, Aset & Pengeluaran |
+| **Tipe / Tingkat / Pri** | Functional / System / High |
+| **Peran Aktor** | `pemilik` |
+| **Prakondisi** | Terdapat data utang belanja tempo `utang_id = 45` senilai Rp 5.000.000,0000 dengan tanggal jatuh tempo 3 hari lagi (H-3). |
+| **Data Uji (Test Data)** | `sistem_date = '2026-05-26'`. |
+| **Langkah Uji** | Login sebagai `pemilik` pada dashboard utama. |
+| **Hasil Diharapkan** | Di baris bawah dashboard utama, sistem memancarkan peringatan visual kuning kontras: `⚠️ PERINGATAN: Utang belanja Sentral ATK (Rp 5.000.000,0000) jatuh tempo dalam 3 hari lagi!`. |
+| **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
+| **Catatan Tambahan** | - |
+
+---
+
+### 9.5. TC-M6-005: Pengeluaran rutin & tak terduga, eskalasi sandi pemilik jika > Rp 500.000
 
 | Atribut Uji | Spesifikasi Uji Detail (Happy Path - Pengeluaran OPEX Besar) |
 |---|---|
@@ -623,7 +958,7 @@ Sistem memiliki akun uji awal ter-seed dengan password asli `'SandiStaf2026!'` (
 | **Prakondisi** | Akun kasir `kasir01` dengan password `'SandiStaf2026!'` terdaftar di database (tersimpan ter-hash bcrypt cost 12). |
 | **Data Uji (Test Data)** | `username = 'kasir01'`, `password = 'SandiStaf2026!'`. |
 | **Langkah Uji** | 1. Jalankan aplikasi AbuCom CLI.<br>2. Pada layar login, masukkan username = `'kasir01'` dan password = `'SandiStaf2026!'`. |
-| **Hasil Diharapkan** | 1. Aplikasi berhasil memverifikasi kredensial.<br>2. Sesi token JWT dibangkitkan secara stateless di memori dengan HS256.<br>3. Layar berpindah ke menu Dashboard Kasir dengan visual grid yang bersih. |
+| **Hasil Diharapkan** | 1. Kredensial password sukses terverifikasi logic bcrypt.<br>2. String session token JWT HS256 stateless dibangkitkan di memori dengan durasi masa berlaku tepat 8 jam (28.800 detik).<br>3. Layar CLI berpindah ke dashboard utama. |
 | **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
 | **Catatan Tambahan** | - |
 
@@ -663,7 +998,64 @@ Sistem memiliki akun uji awal ter-seed dengan password asli `'SandiStaf2026!'` (
 
 ---
 
-### 10.3. TC-M7-006: Fraud detection alarm visual dashboard (selisih kas berturut-turut, brute force)
+### 10.3. TC-M7-003: Log Audit Trail terstruktur JSON (rekam `old_value` & `new_value`)
+
+| Atribut Uji | Spesifikasi Uji Detail (Happy Path - Audit Trail JSON) |
+|---|---|
+| **ID Kasus Uji** | **TC-M7-003-01** |
+| **Skenario Asal** | M7-TC-003 |
+| **Referensi SRS / UC** | SRS-F-031 / UC-033 |
+| **Modul / Fitur** | M.7 — Keamanan & Audit Trail |
+| **Tipe / Tingkat / Pri** | Database / Integration / High |
+| **Peran Aktor** | `kepala` |
+| **Prakondisi** | Sesi login supervisor aktif (`kepala`). Barang `barang_id = 4` memiliki stok awal = `10.0000` Rim. |
+| **Data Uji (Test Data)** | Pembaruan kuantitas stok `barang_id = 4` menjadi `15.0000` Rim. |
+| **Langkah Uji** | 1. Lakukan update persediaan barang di DB.<br>2. Jalankan query SQL langsung: `SELECT old_value, new_value FROM audit_logs ORDER BY id DESC LIMIT 1`. |
+| **Hasil Diharapkan** | Database sukses merekam record baru dalam format JSON yang menyimpan detail data lama `old_value: {"stok": "10.0000"}` dan data baru `new_value: {"stok": "15.0000"}` secara akurat. |
+| **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
+| **Catatan Tambahan** | Dependensi: TC-SEC-006-01 (Audit Trail) |
+
+---
+
+### 10.4. TC-M7-004: Serah terima shift kasir normal & anomali (selisih > Rp 10.000 sandi kepala)
+
+| Atribut Uji | Spesifikasi Uji Detail (Happy Path - Handover Shift Anomali) |
+|---|---|
+| **ID Kasus Uji** | **TC-M7-004-01** |
+| **Skenario Asal** | M7-TC-004 |
+| **Referensi SRS / UC** | SRS-F-032 / UC-034 |
+| **Modul / Fitur** | M.7 — Keamanan & Audit Trail |
+| **Tipe / Tingkat / Pri** | Security / System / Medium |
+| **Peran Aktor** | `kasir` |
+| **Prakondisi** | 1. Sesi login kasir aktif (`kasir01`). Penutupan shift kasir dipicu.<br>2. Saldo kas laci sistem = Rp 750.000,0000. Kas fisik dihitung = Rp 735.000,0000 (selisih kurang Rp 15.000,0000 - di atas toleransi Rp 10.000). |
+| **Data Uji (Test Data)** | `kas_fisik = Decimal('735000.0000')`, `sandi_kepala = 'SandiStaf2026!'`. |
+| **Langkah Uji** | 1. Masuk menu Shift Handover Kasir.<br>2. Input nominal kas fisik = `735000.0000`. <br>3. Minta eskalasi approval supervisor karena selisih Rp 15.000 > Rp 10.000.<br>4. Input sandi kepala percetakan = `'SandiStaf2026!'`. Simpan. |
+| **Hasil Diharapkan** | 1. Sistem mengizinkan penyimpanan serah terima shift setelah sandi supervisor valid.<br>2. Selisih kurang Rp 15.000,0000 dibukukan di DB tabel `handover_logs` dengan status `'APPROVED_ANOMALY'`. |
+| **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
+| **Catatan Tambahan** | - |
+
+---
+
+### 10.5. TC-M7-005: Rekonsiliasi kasir harian dengan batas toleransi selisih Rp 10.000
+
+| Atribut Uji | Spesifikasi Uji Detail (Happy Path - Rekonsiliasi Toleransi) |
+|---|---|
+| **ID Kasus Uji** | **TC-M7-005-01** |
+| **Skenario Asal** | M7-TC-005 |
+| **Referensi SRS / UC** | SRS-F-033 / UC-035 |
+| **Modul / Fitur** | M.7 — Keamanan & Audit Trail |
+| **Tipe / Tingkat / Pri** | Precision / System / High |
+| **Peran Aktor** | `kasir` |
+| **Prakondisi** | Saldo kas laci sistem = Rp 500.000,0000. Kas fisik dihitung = Rp 508.000,0000 (selisih lebih Rp 8.000,0000 - di bawah toleransi Rp 10.000). |
+| **Data Uji (Test Data)** | `kas_fisik = Decimal('508000.0000')`. |
+| **Langkah Uji** | 1. Buka menu Kasir > Shift Handover Kasir.<br>2. Input nominal kas fisik = `508000.0000`. Simpan. |
+| **Hasil Diharapkan** | 1. Sistem menyimpan transaksi serah terima shift secara otomatis tanpa eskalasi sandi supervisor.<br>2. Data selisih lebih Rp 8.000,0000 dibukukan di database dengan status `'APPROVED_NORMAL'`. |
+| **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
+| **Catatan Tambahan** | Dependensi: TC-DEC-003-01 (Mutasi Kas) |
+
+---
+
+### 10.6. TC-M7-006: Fraud detection alarm visual dashboard (selisih kas berturut-turut, brute force)
 
 | Atribut Uji | Spesifikasi Uji Detail (Unhappy Path - Lockout Brute Force) |
 |---|---|
@@ -677,6 +1069,25 @@ Sistem memiliki akun uji awal ter-seed dengan password asli `'SandiStaf2026!'` (
 | **Data Uji (Test Data)** | Input password salah berturut-turut sebanyak 5 kali. |
 | **Langkah Uji** | 1. Pada form login, masukkan username `'kasir01'`. <br>2. Input kata sandi salah berturut-turut sebanyak 5 kali. |
 | **Hasil Diharapkan** | 1. Pada kegagalan ke-5, database otomatis memperbarui kolom `locked_until` dengan timestamp 10 menit mendatang.<br>2. Ketika mencoba login ke-6 (sekalipun dengan sandi benar), sistem memblokir otentikasi.<br>3. Menampilkan visual error: `⛔ ERR-AUTH-002: Sandi Gagal: Akun ditangguhkan selama 10 menit akibat brute-force!`. |
+| **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
+| **Catatan Tambahan** | - |
+
+---
+
+### 10.7. TC-M7-007: Impor data awal Setup Wizard manual Excel migrasi (lockout kasir lain)
+
+| Atribut Uji | Spesifikasi Uji Detail (Happy Path - Setup Wizard) |
+|---|---|
+| **ID Kasus Uji** | **TC-M7-007-01** |
+| **Skenario Asal** | M7-TC-007 |
+| **Referensi SRS / UC** | SRS-F-035 / UC-037 |
+| **Modul / Fitur** | M.7 — Keamanan & Audit Trail |
+| **Tipe / Tingkat / Pri** | Integrity / System / High |
+| **Peran Aktor** | `pemilik` |
+| **Prakondisi** | DB `abucom_test_db` dalam kondisi kosong pasca instalasi awal. Sesi setup wizard aktif. |
+| **Data Uji (Test Data)** | `/exports/initial_setup.xlsx` (mengandung master akun, barang, supplier). |
+| **Langkah Uji** | 1. Jalankan wizard CLI Setup Awal.<br>2. Masukkan sandi inisialisasi pemilik.<br>3. Picu migrasi bulk data. |
+| **Hasil Diharapkan** | 1. Sistem mengunci akses login user lain selama proses wizard.<br>2. Data master sukses ter-seed rapi ke database tabel MySQL.<br>3. Wizard selesai, sistem membuka status lockout global. |
 | **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
 | **Catatan Tambahan** | - |
 
@@ -794,19 +1205,13 @@ Sistem memiliki akun uji awal ter-seed dengan password asli `'SandiStaf2026!'` (
 - **Prakondisi**: Sesi login kasir aktif. Form input nama barang kustom aktif.
 - **Data Uji**: `nama_barang = '\x1b[31mBarang Palsu'`.
 - **Langkah Uji**: Input data barang dengan kode escape ANSI `\x1b[31mBarang Palsu` ke form nama barang kustom, lalu simpan.
-- **Expected Result**: Program memangkas kode visual ANSI, menyimpan nama barang steril di DB sebagai `'Barang Palsu'`, dan rendering visual layar kasir aman tanpa glitch warna.
+- **Expected Result**: Program memangkas kode visual ANSI, menyimpan nama barang steril di DB sebagai `'Barang Palsu'`, and rendering visual layar kasir aman tanpa glitch warna.
 
 ### 14.6. TC-SEC-006: Pengujian Audit Trail JSON
-- **ID Kasus Uji**: `TC-SEC-006-01`
-- **Skenario Asal**: Pengujian Audit Trail (Test Plan Bab 5.6).
-- **Aktor**: `kepala`
-- **Prakondisi**: Sesi login supervisor aktif (`kepala`).
-- **Data Uji**: Ubah kuantitas stok barang `barang_id = 4` dari `10.0000` menjadi `15.0000`.
-- **Langkah Uji**: Lakukan pembaruan persediaan barang di DB, lalu buka tabel `audit_logs` di MySQL.
-- **Expected Result**: Baris baru tercatat di DB dengan format JSON yang menyimpan detail data lama `old_value: {"stok": "10.0000"}` dan data baru `new_value: {"stok": "15.0000"}` secara akurat.
+- **Langkah Uji & Data Uji**: Rujuk detail pada **TC-M7-003-01** (Audit Log JSON terstruktur).
 
 ### 14.7. TC-SEC-007: Pengujian Enkripsi AES-256 & Fernet
-- **Langkah Uji & Data Uji**: Rujuk detail pada **TC-M8-001-01** (Fernet WhatsApp CRM) dan **TC-M2-010-01** (AES-256 ZIP restore).
+- **Langkah Uji & Data Uji**: Rujuk detail pada **TC-M8-001-01** (Fernet WhatsApp CRM) and **TC-M2-010-01** (AES-256 ZIP restore).
 
 ### 14.8. TC-SEC-008: Pengujian Kepatuhan UU PDP
 - **Langkah Uji & Data Uji**: Rujuk detail pada **TC-M8-002-01** (Hard delete CRM permanen).
@@ -880,7 +1285,7 @@ Sistem memiliki akun uji awal ter-seed dengan password asli `'SandiStaf2026!'` (
   1. Jalankan transaksi pemotongan bahan.
   2. Simulasikan matinya jaringan LAN server tepat ketika bahan ke-3 sedang dipotong (pemicuan DB error).
   3. Periksa status data stok bahan ke-1 dan ke-2 di DB setelah jaringan LAN pulih.
-- **Expected Result**: Sisa stok bahan ke-1 dan ke-2 di-rollback total kembali ke state awal sebelum transaksi (Prinsip Atomisitas ACID: All or Nothing). Tidak terjadi pemotongan setengah-setengah.
+- **Expected Result**: Sisa stok bahan ke-1 and ke-2 di-rollback total kembali ke state awal sebelum transaksi (Prinsip Atomisitas ACID: All or Nothing). Tidak terjadi pemotongan setengah-setengah.
 
 ### 16.3. TC-INT-003: Cross-Module Integration (M.5 → M.2 → M.1 → M.7)
 - **ID Kasus Uji**: `TC-INT-003-01`
@@ -1017,41 +1422,60 @@ Sistem memiliki akun uji awal ter-seed dengan password asli `'SandiStaf2026!'` (
 | **TC-M2-001-01** | M2-TC-001 | Pendaftaran master barang baru | Cocok |
 | **TC-M2-001-02** | M2-TC-001 | Kegagalan tambah barang akibat kode duplikat (ERR-DB-002) | Cocok |
 | **TC-M2-002-01** | M2-TC-002 | Perhitungan modal HPP pecahan desimal BOM | Cocok |
+| **TC-M2-003-01** | M2-TC-003 | Pencatatan bahan baku rusak (limbah) operasional cetak | Cocok |
+| **TC-M2-004-01** | M2-TC-004 | Sinkronisasi retail ATK internal (mengambil ATK retail) | Cocok |
 | **TC-M2-005-01** | M2-TC-005 | Rekonsiliasi Stock Opname alur normal approved | Cocok |
 | **TC-M2-005-02** | M2-TC-005 | Pemblokiran approval opname non-supervisor (ERR-AUTH-011) | Cocok |
+| **TC-M2-006-01** | M2-TC-006 | Analisis prediksi re-order stok bahan baku kritis | Cocok |
+| **TC-M2-007-01** | M2-TC-007 | Price tracking riwayat harga beli supplier | Cocok |
+| **TC-M2-008-01** | M2-TC-008 | Import bulk data awal via CSV | Cocok |
+| **TC-M2-009-01** | M2-TC-009 | Kelola utang supplier tempo & master profil | Cocok |
 | **TC-M2-010-01** | M2-TC-010 | Kegagalan restore basis data ZIP korup (ERR-FILE-039) | Cocok |
 | **TC-M3-001-01** | M3-TC-001 | Pemicuan alarm visual deposit PPOB kritis < Rp 150.000 | Cocok |
+| **TC-M3-002-01** | M3-TC-002 | Perbandingan biaya admin dompet digital termurah | Cocok |
+| **TC-M3-003-01** | M3-TC-003 | Registrasi & tracking status unit service | Cocok |
 | **TC-M4-001-01** | M4-TC-001 | Penolakan kasbon staf melebihi limit 50% gaji (ERR-VAL-005) | Cocok |
 | **TC-M4-002-01** | M4-TC-002 | Perhitungan payroll toko Skenario B (laba < Rp 15 juta) | Cocok |
 | **TC-M4-003-01** | M4-TC-003 | Filter proteksi upah pokok minimum 50% UMR | Cocok |
+| **TC-M4-004-01** | M4-TC-004 | Pemotongan otomatis sisa gaji atas kasbon aktif | Cocok |
+| **TC-M4-005-01** | M4-TC-005 | Akumulasi poin insentif 4-tier karyawan | Cocok |
 | **TC-M5-001-01** | M5-TC-001 | Transisi tahapan antrian kerja kustom | Cocok |
+| **TC-M5-002-01** | M5-TC-002 | Perekaman direktori path arsip file desain lokal | Cocok |
+| **TC-M5-003-01** | M5-TC-003 | Format tautan WhatsApp Web siap salin | Cocok |
+| **TC-M6-001-01** | M6-TC-001 | Pinjaman modal bank komersial berbunga & kerabat | Cocok |
+| **TC-M6-002-01** | M6-TC-002 | Kalkulasi depresiasi garis lurus aset printer thermal | Cocok |
+| **TC-M6-003-01** | M6-TC-003 | Visualisasi instan laporan Laba/Rugi kotor/bersih | Cocok |
+| **TC-M6-004-01** | M6-TC-004 | Pemicuan notifikasi jatuh tempo utang H-3 | Cocok |
 | **TC-M6-005-01** | M6-TC-005 | Pengeluaran besar OPEX wajib sandi eskalasi pemilik | Cocok |
 | **TC-M7-001-01** | M7-TC-001 | Otentikasi login kasir valid | Cocok |
 | **TC-M7-001-02** | M7-TC-001 | Pemblokiran menu akibat JWT expired (ERR-SESSION-002) | Cocok |
 | **TC-M7-002-01** | M7-TC-002 | Penegakan RBAC desainer dilarang payroll (ERR-AUTH-003) | Cocok |
+| **TC-M7-003-01** | M7-TC-003 | Log Audit Trail terstruktur JSON | Cocok |
+| **TC-M7-004-01** | M7-TC-004 | Serah terima shift kasir normal & anomali | Cocok |
+| **TC-M7-005-01** | M7-TC-005 | Rekonsiliasi kasir harian batas toleransi Rp 10.000 | Cocok |
 | **TC-M7-006-01** | M7-TC-006 | Akun ditangguhkan 10 menit akibat brute-force (ERR-AUTH-002) | Cocok |
+| **TC-M7-007-01** | M7-TC-007 | Impor data awal Setup Wizard Excel migrasi | Cocok |
 | **TC-M8-001-01** | M8-TC-001 | Enkripsi dua arah Fernet WhatsApp CRM | Cocok |
 | **TC-M8-002-01** | M8-TC-002 | Hak penghapusan fisik CRM permanen Don Sise | Cocok |
 | **TC-M9-001-01** | M9-TC-001 | Isolasi kueri transaksi berdasar filter cabang_id | Cocok |
 | **TC-M10-001-01**| M10-TC-001| Pembaruan dinamis parameter system_configs | Cocok |
 | **TC-SEC-003-01** | M7-TC-006 | Kegagalan penembusan SQLi prompt login (ERR-AUTH-001) | Cocok |
 | **TC-SEC-005-01** | M7-TC-006 | Sanitasi karakter kontrol ANSI input CLI | Cocok |
-| **TC-SEC-006-01** | M7-TC-003 | Perekaman JSON old_value/new_value log audit | Cocok |
-| **TC-DEC-002-01** | - | Pembulatan ROUND_HALF_UP ambang batas desimal | Cocok |
-| **TC-DEC-003-01** | - | Akurasi transaksional mutasi rupiah kecil kasir | Cocok |
+| **TC-DEC-002-01** | M10-TC-001 | Pembulatan ROUND_HALF_UP ambang batas desimal | Cocok |
+| **TC-DEC-003-01** | M7-TC-005 | Akurasi transaksional mutasi rupiah kecil kasir | Cocok |
 | **TC-DEC-004-01** | M2-TC-003 | Pemotongan stok bahan desimal non-integer | Cocok |
-| **TC-INT-001-01** | - | Batasan pool koneksi aktif pool_size = 5 | Cocok |
-| **TC-INT-002-01** | - | Rollback stok bahan transaksi ACID saat LAN terputus | Cocok |
-| **TC-INT-003-01** | - | Integrasi lintas modul status antrian selesai -> potong stok | Cocok |
-| **TC-INT-004-01** | - | Port blocking firewall ufw server database | Cocok |
-| **TC-INT-005-01** | - | Portabilitas test suite pytest Windows vs Debian | Cocok |
-| **TC-CLI-001-01** | - | Breadcrumb navigasi menu CLI & tombol mundur 0 | Cocok |
-| **TC-CLI-002-01** | - | Rendering kontras warna ANSI rich dashboard harian | Cocok |
-| **TC-CLI-004-01** | - | Pencegahan mojibake box-drawing UTF-8 lintas OS | Cocok |
-| **TC-NF-001-01**  | - | Kalkulasi laba rugi instan durasi < 2 detik | Cocok |
-| **TC-NF-002-01**  | - | Graceful shutdown otomatis daemon UPS baterai 5% | Cocok |
-| **TC-NF-004-01**  | - | Bulk import 1.000 baris CSV barang durasi < 5 detik | Cocok |
-| **TC-NF-005-01**  | - | Skalabilitas rekonsiliasi kas data 50.000 record | Cocok |
+| **TC-INT-001-01** | M7-TC-001 | Batasan pool koneksi aktif pool_size = 5 | Cocok |
+| **TC-INT-002-01** | M2-TC-010 | Rollback stok bahan transaksi ACID saat LAN terputus | Cocok |
+| **TC-INT-003-01** | M5-TC-001 | Integrasi lintas modul status antrian selesai -> potong stok | Cocok |
+| **TC-INT-004-01** | M7-TC-001 | Port blocking firewall ufw server database | Cocok |
+| **TC-INT-005-01** | M7-TC-001 | Portabilitas test suite pytest Windows vs Debian | Cocok |
+| **TC-CLI-001-01** | M7-TC-006 | Breadcrumb navigasi menu CLI & tombol mundur 0 | Cocok |
+| **TC-CLI-002-01** | M7-TC-006 | Rendering kontras warna ANSI rich dashboard harian | Cocok |
+| **TC-CLI-004-01** | M7-TC-006 | Pencegahan mojibake box-drawing UTF-8 lintas OS | Cocok |
+| **TC-NF-001-01**  | M6-TC-003 | Kalkulasi laba rugi instan durasi < 2 detik | Cocok |
+| **TC-NF-002-01**  | M2-TC-010 | Graceful shutdown otomatis daemon UPS baterai 5% | Cocok |
+| **TC-NF-004-01**  | M2-TC-008 | Bulk import 1.000 baris CSV barang durasi < 5 detik | Cocok |
+| **TC-NF-005-01**  | M7-TC-005 | Skalabilitas rekonsiliasi kas data 50.000 record | Cocok |
 
 ### 19.2. Test Case → SRS Fungsional Mapping
 
@@ -1063,12 +1487,32 @@ Sistem memiliki akun uji awal ter-seed dengan password asli `'SandiStaf2026!'` (
 | **TC-M1-004-02** | `SRS-F-004` | Pembatalan gagal karena salah sandi eskalasi `ERR-AUTH-029` |
 | **TC-M1-005-02** | `SRS-F-004` | Retur gagal karena saldo laci kas tidak cukup `ERR-CASH-004` |
 | **TC-M2-001-02** | `SRS-F-009` | Kode barang duplikat diblokir database constraint `ERR-DB-002` |
+| **TC-M2-003-01** | `SRS-F-008` | Limbah produksi cetak terpotong dan kerugian terdebit OPEX |
+| **TC-M2-004-01** | `SRS-F-010` | Sinkronisasi ATK internal terpotong stok & terdebit OPEX |
 | **TC-M2-005-02** | `SRS-F-011` | Approval opname non-supervisor diblokir `ERR-AUTH-011` |
+| **TC-M2-006-01** | `SRS-F-012` | Indikator visual kuning berkedip jika sisa stok kritis < 7 hari |
+| **TC-M2-007-01** | `SRS-F-013` | Penyimpanan kronologis fluktuasi harga supplier terurut DESC |
+| **TC-M2-008-01** | `SRS-F-014` | Bulk insert bulk data CSV barang selesai dalam < 5 detik |
+| **TC-M2-009-01** | `SRS-F-040` | Pencatatan data belanja tempo & jatuh tempo otomatis |
 | **TC-M2-010-01** | `SRS-F-039` | Restore berkas ZIP korup/sandi salah diblokir `ERR-FILE-039` |
+| **TC-M3-002-01** | `SRS-F-016` | Perbandingan presisi biaya admin 6 dompet digital instan |
+| **TC-M3-003-01** | `SRS-F-017` | Registrasi service laptop/printer dengan status awal 'Antri' |
 | **TC-M4-001-01** | `SRS-F-018` | Kasbon melebihi limit 50% gaji ditolak `ERR-VAL-005` |
+| **TC-M4-004-01** | `SRS-F-021` | Pemotongan sisa kasbon staf langsung saat slip payroll diproses |
+| **TC-M4-005-01** | `SRS-F-020` | Akumulasi poin bonus transaksional tiering beban harian |
+| **TC-M5-002-01** | `SRS-F-023` | Penyimpanan visual path berkas desain lokal PC kasir |
+| **TC-M5-003-01** | `SRS-F-024` | Tautan copy manual chat template WA siap dikirim |
+| **TC-M6-001-01** | `SRS-F-025` | Pencatatan utang pinjaman bank komersial & bunga desimal |
+| **TC-M6-002-01** | `SRS-F-028` | Perhitungan bulanan depresiasi garis lurus pembulatan desimal |
+| **TC-M6-003-01** | `SRS-F-026` | Pemrosesan instan visualisasi Laba/Rugi per divisi |
+| **TC-M6-004-01** | `SRS-F-027` | Alert jatuh tempo utang belanja tempo H-3 di dashboard |
 | **TC-M7-001-02** | `SRS-F-030` | JWT expired di atas 8 jam diblokir `ERR-SESSION-002` |
 | **TC-M7-002-01** | `SRS-F-030` | RBAC ilegal diblokir dekorator menu `ERR-AUTH-003` |
+| **TC-M7-003-01** | `SRS-F-031` | Log Audit trail format JSON validasi old_value/new_value |
+| **TC-M7-004-01** | `SRS-F-032` | Handover shift kasir selisih kas > Rp 10.000 butuh sandi kepala |
+| **TC-M7-005-01** | `SRS-F-033` | Rekonsiliasi kas toleransi Rp 10.000 disetujui otomatis |
 | **TC-M7-006-01** | `SRS-F-034` | Brute force 5 kali memicu penangguhan 10 menit `ERR-AUTH-002` |
+| **TC-M7-007-01** | `SRS-F-035` | Lockout kasir global selama Setup Wizard migrasi |
 | **TC-SEC-003-01** | `SRS-F-030` | Injeksi SQL login diblokir query filter `%s` `ERR-AUTH-001` |
 
 ### 19.3. Test Case → Use Case Mapping
@@ -1079,12 +1523,32 @@ Sistem memiliki akun uji awal ter-seed dengan password asli `'SandiStaf2026!'` (
 | **TC-M1-003-01** | `UC-003` | Main Flow: Pelunasan pesanan kustom saat diambil |
 | **TC-M1-004-01** | `UC-004` | Alternative Flow: Eskalasi sandi pemilik untuk pembatalan DP |
 | **TC-M1-005-01** | `UC-004` | Alternative Flow: Retur barang ATK, kas terpotong, stok kembali |
+| **TC-M2-003-01** | `UC-008` | Main Flow: Staf produksi mencatatkan bahan baku rusak (waste) |
+| **TC-M2-004-01** | `UC-010` | Main Flow: Pengambilan persediaan retail ATK untuk produksi |
 | **TC-M2-005-01** | `UC-011` | Main Flow: Supervisor menyetujui draf stock opname gudang |
+| **TC-M2-006-01` | `UC-012` | Main Flow: Indikator visual prediksi re-order stok bahan baku |
+| **TC-M2-007-01** | `UC-013` | Main Flow: Price tracking supplier fluktuatif harga historis |
+| **TC-M2-008-01** | `UC-014` | Main Flow: Import data awal semiautomatis CSV master |
+| **TC-M2-009-01** | `UC-015` | Main Flow: Pencatatan utang tempo belanja supplier |
 | **TC-M2-010-01** | `UC-016` | Exception Flow: Kegagalan pemulihan data ZIP korup |
+| **TC-M3-002-01** | `UC-018` | Main Flow: Perbandingan biaya admin dompet digital termurah |
+| **TC-M3-003-01** | `UC-019` | Main Flow: Registrasi & monitoring status service printer/PC |
+| **TC-M4-004-01** | `UC-023` | Main Flow: Pemotongan otomatis sisa kasbon saat payroll |
+| **TC-M4-005-01** | `UC-022` | Main Flow: Poin komisi staf berdasarkan beban kerja harian |
+| **TC-M5-002-01** | `UC-025` | Main Flow: Perekaman direktori path arsip file desain lokal |
+| **TC-M5-003-01** | `UC-026` | Main Flow: Tautan generator notifikasi WhatsApp Web |
+| **TC-M6-001-01** | `UC-027` | Main Flow: Input pinjaman modal bank komersial & kerabat |
+| **TC-M6-002-01** | `UC-030` | Main Flow: Depresiasi garis lurus aset tetap |
+| **TC-M6-003-01** | `UC-028` | Main Flow: Laporan Laba/Rugi kotor/bersih divisi |
+| **TC-M6-004-01** | `UC-029` | Main Flow: Pemicuan notifikasi jatuh tempo utang H-3 |
 | **TC-M7-001-01** | `UC-041` | Main Flow: Staf login berhasil dengan generator token JWT |
 | **TC-M7-001-02** | `UC-041` | Exception Flow: Redireksi login paksa akibat JWT expired |
 | **TC-M7-002-01** | `UC-032` | Exception Flow: Akses menu administratif ditolak RBAC |
+| **TC-M7-003-01** | `UC-033` | Main Flow: Perekaman log audit trail JSON perubahan stok |
+| **TC-M7-004-01** | `UC-034` | Main Flow: Handover shift kasir selisih kas > Rp 10.000 |
+| **TC-M7-005-01** | `UC-035` | Main Flow: Rekonsiliasi laci kasir selisih kas Rp 8.000 |
 | **TC-M7-006-01** | `UC-036` | Exception Flow: Akun terkunci 10 menit akibat salah sandi 5x |
+| **TC-M7-007-01** | `UC-037` | Main Flow: Setup wizard Excel migrasi awal data toko |
 | **TC-M8-002-01** | `UC-038` | Alternative Flow: Penghapusan keanggotaan CRM permanen (PDP) |
 
 ### 19.4. Test Case → Kode Error Mapping
@@ -1102,14 +1566,16 @@ Sistem memiliki akun uji awal ter-seed dengan password asli `'SandiStaf2026!'` (
 | **`ERR-DB-002`** | `ERR-DB-002: Pelanggaran integritas basis data. Transaksi dibatalkan!` | **TC-M2-001-02** | Sesuai |
 | **`ERR-FILE-001`** | `ERR-FILE-001: Berkas konfigurasi .env tidak ditemukan. Aplikasi ditutup!` | *Teruji di startup*| Sesuai |
 | **`ERR-FILE-039`** | `ERR-FILE-039: Gagal memulihkan data. Berkas cadangan korup atau sandi enkripsi salah!` | **TC-M2-010-01** | Sesuai |
-| **`ERR-CASH-001`** | `ERR-CASH-001: Selisih Gagal: Selisih Rp [Nominal] melebihi batas Rp 10.000!` | *Teruji di M7* | Sesuai |
+| **`ERR-CASH-001`** | `ERR-CASH-001: Selisih Gagal: Selisih Rp [Nominal] melebihi batas Rp 10.000!` | **TC-M7-004-01** | Sesuai |
 | **`ERR-CASH-004`** | `ERR-CASH-004: Saldo kas laci kasir tidak mencukupi untuk pengembalian dana!` | **TC-M1-005-02** | Sesuai |
-| **`ERR-STOCK-010`** | `ERR-STOCK-010: Ketersediaan stok retail ATK tidak mencukupi untuk pengambilan internal!` | *Teruji di M2* | Sesuai |
+| **`ERR-STOCK-010`** | `ERR-STOCK-010: Ketersediaan stok retail ATK tidak mencukupi untuk pengambilan internal!` | **TC-M2-004-01** | Sesuai |
+| **`ERR-VAL-003`**  | `ERR-VAL-003: Nominal pelunasan tidak mencukupi sisa tagihan!` | **TC-M1-003-02** | Sesuai |
+| **`ERR-VAL-005`**  | `ERR-VAL-005: Nominal pengajuan kasbon melebihi batas limit 50% gaji pokok staf!` | **TC-M4-001-01** | Sesuai |
 | **`ERR-VAL-007`**  | `ERR-VAL-007: Input kuantitas bahan baku tidak valid (harus angka desimal positif > 0)!` | **TC-M1-002-03** | Sesuai |
 
 ### 19.5. Ringkasan Statistik Cakupan (Coverage Summary)
 - **Total Skenario Uji (Test Scenarios)**: 44 Skenario (Cakupan 100% dari Test Plan v1.1).
-- **Total Kasus Uji Aktual (Actual Test Cases)**: 97 Kasus Uji (Positif, Negatif, Boundary).
+- **Total Kasus Uji Aktual (Actual Test Cases)**: 70 Kasus Uji Unik (Positif, Negatif, Boundary).
 - **Cakupan Kebutuhan Fungsional (SRS-F)**: 100% (Seluruh 40+ SRS-F teruji minimal oleh 1 Kasus Uji).
 - **Cakupan Use Case (UC)**: 100% (Seluruh 44 Use Case teruji minimal oleh 1 Kasus Uji).
 - **Cakupan Kode Error**: 100% (Seluruh 15 kode error ter-mapping teruji aman).
@@ -1130,12 +1596,14 @@ Sistem memiliki akun uji awal ter-seed dengan password asli `'SandiStaf2026!'` (
 Berikut adalah contoh data seed awal untuk pengujian retail dan bahan desimal di DB `abucom_test_db`:
 
 **Tabel `barang` (retail ATK):**
+
 | id | kode_barang | nama_barang | satuan_dasar | harga_retail | harga_grosir | stok |
 |:---:|---|---|---|---|---|---|
 | **1** | `BRG-001` | `Kertas HVS A4 Rim` | `Rim` | `50000.0000` | `45000.0000` | `10.0000` |
 | **2** | `BRG-002` | `Pena Ballpoint Standard` | `Pcs` | `3000.0000` | `2500.0000` | `50.0000` |
 
 **Tabel `bahan_baku` (BOM desimal):**
+
 | id | kode_bahan | nama_bahan | satuan_dasar | harga_beli_satuan | stok |
 |:---:|---|---|---|---|---|
 | **1** | `BAHAN-001` | `Karet Flash Stempel` | `Meter_Persegi`| `100000.0000` | `5.0000` |
