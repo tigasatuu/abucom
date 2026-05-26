@@ -1,9 +1,9 @@
 ---
 dokumen    : Environment Setup
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.0
+versi      : 1.1
 tanggal    : 2026-05-26
-status     : Draft
+status     : Tervalidasi
 penyusun   : Senior DevOps Engineer & Infrastructure Setup Specialist
 ---
 
@@ -13,6 +13,7 @@ penyusun   : Senior DevOps Engineer & Infrastructure Setup Specialist
 
 | Versi | Tanggal    | Perubahan                                                   | Oleh                                            |
 |:---:|:---:|---|---|
+| **1.1**   | 2026-05-26 | Validasi komprehensif, penyempurnaan instruksi luring (offline-only LAN) menggunakan local deb media & local pip wheels, penjelasan detail connection pool ('abupool'), database retry mechanism (ERR-DB-001/013), standardisasi penanganan data NULL MySQL ke Python None (helper handle_null_decimal), dan visualisasi data presisi desimal ROUND_HALF_UP. Menyelaraskan seluruh spesifikasi v1.1 SDLC AbuCom. | Antigravity (Senior AI Engineer) |
 | **1.0**   | 2026-05-26 | Inisialisasi awal penyusunan panduan Environment Setup secara komprehensif (16 Bab utama). Menyeleraskan keputusan *Tech Stack Decision* v1.1, *System Architecture* v1.1, *Security Design* v1.1, dan *Coding Standard* v1.1 untuk implementasi lingkungan server Linux Debian 12 dan klien Windows 11. | Senior DevOps Engineer & Infrastructure Setup Specialist |
 
 ---
@@ -34,7 +35,7 @@ Cakupan konfigurasi yang didokumentasikan meliputi:
 *   Troubleshooting kegagalan instalasi, visualisasi, dan koneksi remote.
 
 ### 1.3. Posisi Dokumen dalam Siklus SDLC
-Dalam siklus pengembangan sistem (*System Development Life Cycle* — SDLC) AbuCom, dokumen ini merupakan deliverable kedua pada **Fase 04 — Implementation (Konstruksi)**. Dokumen ini bertindak sebagai prasyarat mutlak (*absolute prerequisite*) sebelum pengkodean modul program dimulai.
+Dalam siklus pengembangan sistem (*System Development Life Cycle* — SDLC) AbuCom, dokumen ini merupakan deliverable kedua pada **Fase 04 — Implementation (Konstruksi)**. Dokumen ini bertindak sebagai prasyarat mutlak (*absolute prerequisite*) sebelum seluruh pengkodean modul program dimulai.
 
 ```
 +------------------------------------------------+
@@ -173,7 +174,8 @@ Untuk menjamin reprodusibilitas dan mencegah kerusakan data riil toko, lingkunga
 *   **Kabel Jaringan**: UTP Category 6 (Cat6) tembaga murni dengan pelindung RJ45, panjang kabel &le; 15 meter untuk performa maksimal.
 
 ### 3.4. Perangkat Pendukung (UPS, Printer Thermal)
-*   **UPS (Uninterruptible Power Supply)**: 2 Unit UPS minimal 600VA / 360W dipasang terpisah pada Node Server dan Node Klien Kasir. Menjamin ketersediaan daya minimal 15 menit agar server dapat dimatikan secara aman (*graceful shutdown*) saat listrik padam mendadak.
+*   **UPS (Uninterruptible Power Supply)**: 2 Unit UPS minimal 600VA / 360W dipasang terpisah pada Node Server dan Node Klien Kasir. 
+    > **[JUSTIFIKASI TEKNIS]**: Daya UPS 600VA / 360W dipilih secara rasional karena konsumsi daya Mini PC Server fanless hanya sebesar &le; 45W dan PC Klien Kasir harian sebesar &le; 180W. Ini menjamin ketersediaan daya cadangan minimal 15 menit agar server basis data MySQL dapat melakukan sinkronisasi transaction logs biner biner secara aman dan system administrator dapat memicu prosedur *graceful shutdown* sebelum daya baterai habis total.
 *   **Printer Thermal**: Printer thermal struk nota lebar kertas 58mm atau 80mm dengan port USB/Serial COM.
 *   **Laci Kasir (Cash Drawer)**: Laci kasir dengan konektor RJ11 terhubung langsung ke Printer Thermal (pembukaan otomatis saat nota dicetak).
 
@@ -191,6 +193,7 @@ Sebelum melanjutkan ke setup sistem operasi, pastikan fisik hardware terpasang d
 
 ### 4.1. Instalasi Minimal Linux Debian 12
 1.  Unduh berkas instalasi resmi **Debian 12.x Bookworm Netinst ISO** (64-bit).
+    > ⚠️ **[CATATAN OFFLINE-ONLY LAN]**: Karena lingkungan operasional toko fisik AbuCom berjalan offline murni (luring), pastikan untuk mengunduh berkas ISO **Debian 12.x Bookworm Netinst** menggunakan koneksi internet di tempat lain terlebih dahulu, atau menggunakan berkas **DVD Installer Lengkap (Debian DVD ISO)** untuk memastikan seluruh paket *standard system utilities* dapat terpasang tanpa membutuhkan gateway internet saat proses instalasi.
 2.  Buat bootable USB flashdisk menggunakan aplikasi Rufus.
 3.  Booting Mini PC Server ke Installer Debian. Pilih opsi **Graphical Install**.
 4.  Pilih konfigurasi bahasa: `English`, lokasi: `Indonesia`, keyboard: `American English`.
@@ -318,12 +321,17 @@ Karena repositori bawaan Debian 12 menggunakan Python versi 3.11, kita wajib mel
     libnss3-dev libssl-dev libreadline-dev libffi-dev libsqlite3-dev \
     wget curl llvm libpcap-dev liblzma-dev tk-dev libbz2-dev
     ```
+    > ⚠️ **[CATATAN KOMPILASI OFFLINE]**: Bagi server Debian 12 luring murni yang tidak memiliki akses internet, seluruh file `.deb` paket dependensi build di atas wajib diunduh terlebih dahulu di mesin berinternet menggunakan utilitas:
+    > `apt-get download build-essential zlib1g-dev libncurses5-dev ...`
+    > Lalu seluruh berkas `.deb` disalin menggunakan USB flashdisk ke server `/tmp/local_deb/` dan dipasang secara offline menggunakan perintah:
+    > `dpkg -i /tmp/local_deb/*.deb`
 2.  Unduh kode sumber resmi Python 3.14.2:
     ```bash
     # [LINUX DEBIAN 12 — Server]
     cd /tmp
     wget https://www.python.org/ftp/python/3.14.2/Python-3.14.2.tar.xz
     ```
+    *(Untuk luring, unduh tarball ini terlebih dahulu di PC kasir berinternet dan salin ke server).*
 3.  Ekstrak arsip tarball dan masuk ke direktori ekstraksi:
     ```bash
     # [LINUX DEBIAN 12 — Server]
@@ -371,10 +379,9 @@ Karena repositori bawaan Debian 12 menggunakan Python versi 3.11, kita wajib mel
 
 ### 5.2. Instalasi Python 3.14.2+ di Windows 11
 1.  Buka browser web pada PC Kasir dan unduh berkas installer resmi **Windows installer (64-bit)** untuk **Python 3.14.2** dari situs resmi `python.org`.
+    *(Bila PC Kasir luring, unduh installer terlebih dahulu di tempat lain lalu salin via USB flashdisk).*
 2.  Buka berkas `.exe` installer yang sudah terunduh dengan klik kanan dan pilih **Run as Administrator**.
 3.  **[KRITIS — WAJIB]** Pada layar instalasi awal, centang checkbox berikut di bagian bawah layar:
-    *   [x] **Add python.exe to PATH** (Menambahkan executable ke environment PATH Windows).
-    *   [x] **Use admin privileges when installing py.exe** (Mengizinkan launcher berjalan sebagai admin).
 4.  Pilih opsi **Customize installation**. Pastikan `pip`, `tcl/tk and IDLE`, dan `py launcher` tercentang. Klik **Next**.
 5.  Pada layar *Advanced Options*, centang checkbox:
     *   [x] **Install Python 3.14 for all users**.
@@ -407,11 +414,12 @@ Pustaka visual `rich` dan pemformatan `tabulate` menuntut rendering terminal mod
 Untuk meminimalisir penyebaran virus lokal dari flashdisk staf fisik di PC Kasir harian:
 1.  **Akun Non-Admin**: Pastikan staf kasir harian menggunakan akun Windows lokal bertipe **Standard User** (bukan Administrator).
 2.  **Disable USB Autorun**:
-    *   Tekan tombol Win + R, ketik `gpedit.msc` (Local Group Policy Editor) dan tekan Enter.
-    *   Navigasi ke: **Computer Configuration &rarr; Administrative Templates &rarr; Windows Components &rarr; AutoPlay Policies**.
-    *   Klik dua kali pada kebijakan **Turn off AutoPlay**.
-    *   Pilih opsi **Enabled**, dan pada bagian *Turn off AutoPlay on*, pilih **All drives**. Klik **Apply** &rarr; **OK**.
-    *   *(Untuk Windows Home yang tidak memiliki Group Policy Editor, nonaktifkan melalui Registry: Buat DWORD `NoDriveTypeAutoRun` senilai `0xff` di bawah HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer).*
+    *   Bagi Windows 11 Pro: Tekan tombol Win + R, ketik `gpedit.msc` (Local Group Policy Editor) dan tekan Enter. Navigasi ke: **Computer Configuration &rarr; Administrative Templates &rarr; Windows Components &rarr; AutoPlay Policies**. Klik dua kali pada kebijakan **Turn off AutoPlay**. Pilih opsi **Enabled**, dan pada bagian *Turn off AutoPlay on*, pilih **All drives**. Klik **Apply** &rarr; **OK**.
+    *   > ⚠️ **[Bypass Windows 11 Home]**: Bagi Windows 11 Home yang tidak memiliki Group Policy Editor (`gpedit.msc`), matikan AutoRun melalui registry editor:
+        1. Buka Registry Editor (`regedit`).
+        2. Navigasikan ke: `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer`.
+        3. Klik kanan, pilih **New -> DWORD (32-bit) Value**, beri nama **`NoDriveTypeAutoRun`**.
+        4. Double click value tersebut, ubah base ke **Hexadecimal**, isi value data dengan **`FF`** (nilai decimal 255). Klik OK dan restart PC Klien.
 
 ### 5.6. Verifikasi Instalasi Python di Windows
 1.  Buka aplikasi **Windows Terminal** (CMD).
@@ -432,7 +440,7 @@ Untuk meminimalisir penyebaran virus lokal dari flashdisk staf fisik di PC Kasir
 ## 6. Setup Database MySQL Server
 
 ### 6.1. Instalasi MySQL Community Server (LTS) di Linux Debian 12
-MySQL Community Server LTS (Long Term Support) versi 8.0 atau 8.4 merupakan sistem database relasional target AbuCom yang di-setup lokal pada server Debian:
+MySQL Community Server LTS (Long Term Support) versi 8.4 merupakan sistem database relasional target AbuCom yang di-setup lokal pada server Debian:
 1.  Akses terminal Server Debian sebagai root.
 2.  Unduh paket konfigurasi repositori resmi MySQL APT:
     ```bash
@@ -440,12 +448,13 @@ MySQL Community Server LTS (Long Term Support) versi 8.0 atau 8.4 merupakan sist
     cd /tmp
     wget https://dev.mysql.com/get/mysql-apt-config_0.8.29-1_all.deb
     ```
+    *(Bila Server luring, unduh file `.deb` bundle installer MySQL Server 8.4 LTS offline dari web resmi Oracle via mesin berinternet, salin via flashdisk, lalu pasang menggunakan `dpkg -i` secara berurutan).*
 3.  Pasang repositori konfigurasi tersebut:
     ```bash
     # [LINUX DEBIAN 12 — Server]
     dpkg -i mysql-apt-config_0.8.29-1_all.deb
     ```
-    *Pada layar dialog interaktif, pilih opsi default **MySQL Server & Cluster (Product: mysql-8.0/8.4)**, klik **Ok**, dan selesaikan.*
+    *Pada layar dialog interaktif, pilih opsi default **MySQL Server & Cluster (Product: mysql-8.4)**, klik **Ok**, dan selesaikan.*
 4.  Perbarui daftar paket dan instal daemon MySQL Server:
     ```bash
     # [LINUX DEBIAN 12 — Server]
@@ -546,7 +555,7 @@ Untuk menjamin kepatuhan *Security Design* terkait pembatasan hak akses terkecil
     CREATE USER 'abucom_app'@'192.168.1.%' IDENTIFIED BY 'PasswordAplikasiAbuCom123!';
     ```
     > ⚠️ **[HARUS DIISI MANUAL]**: Ganti string sandi `'PasswordAplikasiAbuCom123!'` dengan kata sandi acak yang unik khusus untuk user aplikasi. Sandi ini wajib dicatat di file `.env` klien kasir secara rahasia!
-2.  **[KRITIS]** Berikan hak akses privilege yang **diizinkan** secara eksplisit (`SELECT`, `INSERT`, `UPDATE`, `DELETE`) dan **larang** secara keras modifikasi skema DDL administratik (`DROP`, `ALTER`, `CREATE`) pada database produksi dan database testing untuk mencegah modifikasi skema ilegal:
+2.  **[KRITIS]** Berikan hak akses privilege yang **diizinkan** secara eksplisit (`SELECT`, `INSERT`, `UPDATE`, `DELETE`) dan **larang** secara keras modifikasi skema DDL administratik (`DROP`, `ALTER`, `CREATE`) pada database produksi, namun tambahkan privilege testing (`CREATE`, `DROP`) pada database testing sandbox:
     ```sql
     -- Hak akses terbatas pada Database Produksi
     GRANT SELECT, INSERT, UPDATE, DELETE ON abucom_db.* TO 'abucom_app'@'192.168.1.%';
@@ -639,6 +648,15 @@ Pustaka dependensi aplikasi wajib diisolasi penuh di dalam subfolder proyek meng
     # [WINDOWS 11 — Klien]
     pip install -r requirements.txt
     ```
+    > ⚠️ **[INSTALASI LURING - OFFLINE WHEELS]**: Untuk menginstal requirements di PC Kasir Windows luring:
+    > 1. Di komputer kasir yang memiliki akses internet (atau laptop developer), unduh requirements.txt dan unduh seluruh wheel binaries (.whl) ke dalam satu folder:
+    >    `# [WINDOWS 11 — Klien (Internet Enabled)]`
+    >    `pip download -r requirements.txt -d C:\tmp\pip_wheels`
+    > 2. Salin folder `pip_wheels` dan berkas `requirements.txt` menggunakan flashdisk ke PC kasir luring di folder `C:\Users\donsise\Documents\abucom\pip_wheels`.
+    > 3. Pada terminal kasir luring dengan virtual environment aktif, jalankan instalasi lokal offline:
+    >    `# [WINDOWS 11 — Klien (Offline)]`
+    >    `pip install --no-index --find-links=pip_wheels -r requirements.txt`
+    > Ini menjamin instalasi 100% sukses tanpa membutuhkan internet dan terhindar dari kompilasi biner bcrypt/cryptography lokal.
 
 ### 7.3. Daftar Lengkap Dependensi dan Versi Terkunci
 
@@ -678,8 +696,6 @@ Untuk memastikan seluruh pustaka terinstal sukses dan siap diimpor tanpa excepti
         import bcrypt
         import jwt
         import cryptography
-        import rich
-        import tabulate
         print("SUCCESS: Seluruh dependensi utama terimpor dengan sukses di venv!")
     except ImportError as e:
         print(f"FAILED: Terjadi kesalahan impor modul: {str(e)}")
@@ -700,14 +716,14 @@ Untuk memastikan seluruh pustaka terinstal sukses dan siap diimpor tanpa excepti
 ### 7.5. Troubleshooting Instalasi Dependensi Umum
 *   **Compile Error `bcrypt` / `cryptography` di Windows**:
     *   *Penyebab*: Pustaka bcrypt dan cryptography memiliki dependensi kompilator C++ di belakang layar. Jika Windows SDK/C++ Build Tools tidak terinstal, pip akan gagal melakukan build.
-    *   *Solusi*: Sebelum memicu pip install, pastikan pip manager sudah diperbarui (`python -m pip install --upgrade pip`) agar installer otomatis mendownload berkas pre-compiled binaries (.whl) yang tidak membutuhkan kompilator lokal. Jika tetap gagal, unduh dan pasang **Visual Studio Community** dengan mencentang paket **Desktop development with C++** dari Microsoft.
+    *   *Solusi*: Gunakan metode offline wheels di atas untuk langsung memasang pre-compiled binary (`.whl`) tanpa memerlukan C++ compiler lokal.
 
 ---
 
 ## 8. Konfigurasi Proyek Aplikasi
 
 ### 8.1. Struktur Direktori Proyek Standar
-Layout proyek AbuCom wajib diorganisasikan secara modular untuk mendukung arsitektur berlapis 4-layer (Ref: [Coding Standard] Bab 4.1):
+Layout proyek AbuCom wajib diorganisasikan secara modular untuk mendukung arsitektur berlapis 4-layer:
 
 ```
 abucom/
@@ -766,7 +782,7 @@ abucom/
 ### 8.2. Pembuatan File .env (Konfigurasi Kredensial Rahasia)
 
 #### 8.2.1. Template .env.example Lengkap
-Buat berkas bernama `.env.example` di folder root proyek AbuCom sebagai templat referensi non-sensitif (tanpa nilai asli):
+Buat berkas bernama `.env.example` di folder root proyek AbuCom sebagai templat referensi:
 ```ini
 # ==============================================================================
 # TEMPLAT KONFIGURASI RUNTIME ABUCOM - .env.example
@@ -815,13 +831,12 @@ PRINTER_WIDTH_MM=58
 4.  Generate kunci JWT dan Fernet key dengan mengikuti panduan di bawah ini.
 
 #### 8.2.3. Generasi Secret Key JWT (32+ Karakter Hex)
-Untuk menjamin keamanan session token JWT dari pemalsuan data lokal, secret key wajib berupa karakter acak kuat. Generasikan kunci instan menggunakan runtime Python:
+Untuk menjamin session token JWT dari pemalsuan data lokal, secret key wajib berupa karakter acak kuat. Generasikan kunci instan menggunakan runtime Python:
 1.  Ketik perintah berikut pada terminal:
     ```cmd
     # [WINDOWS 11 — Klien]
     python -c "import secrets; print(secrets.token_hex(32))"
     ```
-    *(Output contoh: `7df0a7b45ab102bc345d8ef6a923cd4ef101ab0cd3ef671d092cd8ef03ab6d7c`)*.
 2.  Salin string output di atas, buka `.env` dan tempelkan pada kolom `JWT_SECRET_KEY`.
 
 #### 8.2.4. Generasi Fernet Key (UU PDP Compliance)
@@ -831,11 +846,31 @@ Untuk mengenkripsi nomor WhatsApp pelanggan secara reversible di database MySQL:
     # [WINDOWS 11 — Klien]
     python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode('utf-8'))"
     ```
-    *(Output contoh: `H_v3b02_vG7Y88c2b7n9mK8V9c2bL0n9mKw8V_c2bG7=`)*.
 2.  Salin output string tersebut dan tempelkan ke variabel `FERNET_KEY` di file `.env`.
 
-### 8.3. Konfigurasi File .gitignore
-Untuk mencegah pengunggahan file konfigurasi sensitif `.env` dan temporary cache ke repositori Git publik:
+### 8.3. Konvensi Penanganan Data NULL MySQL ke Python None
+Ketika data diambil dari basis data MySQL menggunakan driver `mysql-connector-python`, setiap kolom yang bernilai `NULL` secara otomatis akan diterjemahkan menjadi objek `None` di Python. Operasi aritmatika langsung (seperti `Decimal('1000') + None`) akan memicu `TypeError`. Oleh karena itu, codebase program wajib mengimplementasikan fungsi helper sanitasi penanganan NULL secara eksplisit di logic layer:
+```python
+# [WINDOWS 11 — Klien] & [LINUX DEBIAN 12 — Server]
+from decimal import Decimal
+
+def handle_null_decimal(val: Decimal | None) -> Decimal:
+    """Membungkus nilai NULL database (None) menjadi Decimal('0.0000') aman."""
+    return val if val is not None else Decimal('0.0000')
+```
+
+### 8.4. Standar Presisi dan Rounding Desimal (ROUND_HALF_UP)
+Seluruh operasi matematika logis keuangan (BOM desimal, HPP, komisi, payroll) **MUST** diproses menggunakan fixed-point `Decimal` dengan pembulatan standard **`ROUND_HALF_UP`** ke tingkat 4 digit desimal (`Decimal('0.0001')`):
+```python
+# [WINDOWS 11 — Klien]
+from decimal import Decimal, ROUND_HALF_UP
+
+def round_decimal_standard(val: Decimal) -> Decimal:
+    return val.quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
+```
+
+### 8.5. Konfigurasi File .gitignore
+Untuk mencegah pengunggahan file konfigurasi sensitif `.env` dan temporary cache ke repositori Git:
 1.  Buat berkas `.gitignore` di folder root proyek:
     ```cmd
     # [WINDOWS 11 — Klien]
@@ -858,43 +893,22 @@ Untuk mencegah pengunggahan file konfigurasi sensitif `.env` dan temporary cache
     venv/
     ENV/
     
-    # Hasil Keluaran File Lokal
-    exports/backups/*
-    exports/receipts/*
-    !exports/backups/.gitkeep
-    !exports/receipts/.gitkeep
-    
     # OS Temporary Files
     Thumbs.db
-    ehthumbs.db
     Desktop.ini
     .DS_Store
     ```
 3.  Simpan dan tutup berkas `.gitignore`.
 
-### 8.4. Konfigurasi File requirements.txt
-Pastikan berkas `requirements.txt` di root proyek terisi secara lengkap:
-```
-mysql-connector-python==8.4.0
-python-dotenv==1.0.1
-bcrypt==4.1.0
-pyjwt==2.8.0
-cryptography==42.0.5
-rich==13.7.0
-tabulate==0.9.0
-pytest==8.2.0
-coverage==7.5.1
-```
-
-### 8.5. Verifikasi Startup Aplikasi CLI (Smoke Test)
+### 8.6. Verifikasi Startup Aplikasi CLI (Smoke Test)
 Setelah file `.env` diisi lengkap, lakukan pengujian awal startup program:
 1.  Pastikan virtual environment dalam keadaan aktif (`(venv)`).
-2.  Jalankan modul utama entry point aplikasi:
+2.  Jalankan modul entry point utama aplikasi:
     ```cmd
     # [WINDOWS 11 — Klien]
     python main.py
     ```
-3.  *Diharapkan sistem mendeteksi keberadaan berkas `.env`, melakukan casting variabel di `config/settings.py`, mengecek koneksi database ke Mini PC Server, dan merender layar login utama CLI dengan visual panel border `rich`.*
+3.  *Diharapkan sistem mendeteksi keberadaan berkas `.env`, melakukan casting variabel di `config/settings.py`, mengecek koneksi database ke Mini PC Server, dan merender layar login utama CLI.*
 4.  Ketik `0` atau exit untuk keluar dari program.
 
 ---
@@ -903,8 +917,7 @@ Setelah file `.env` diisi lengkap, lakukan pengujian awal startup program:
 
 ### 9.1. Instalasi Git
 1.  Unduh berkas instalasi resmi **Git for Windows** dari situs `git-scm.com`.
-2.  Buka installer dan ikuti petunjuk dialog dengan memilih opsi default (Gunakan Windows Terminal sebagai terminal default Git, dan aktifkan Git Bash).
-3.  Selesaikan instalasi.
+2.  Buka installer dan ikuti petunjuk dialog dengan memilih opsi default.
 
 ### 9.2. Konfigurasi Git Identity
 Konfigurasikan nama dan email pembuat commit untuk keperluan pelacakan pengerjaan modul:
@@ -924,7 +937,7 @@ Konfigurasikan nama dan email pembuat commit untuk keperluan pelacakan pengerjaa
     cd C:\Users\donsise\Documents\abucom
     git init
     ```
-2.  Tambahkan seluruh berkas konfigurasi dasar (`.gitignore`, `requirements.txt`, `.env.example`, dll.) ke area staging:
+2.  Tambahkan seluruh berkas konfigurasi dasar ke area staging:
     ```cmd
     # [WINDOWS 11 — Klien]
     git add .gitignore requirements.txt .env.example main.py
@@ -944,15 +957,14 @@ Untuk mempermudah kolaborasi dengan 6 model AI spesialis, pengembangan modul dil
     # [WINDOWS 11 — Klien]
     git checkout -b feature/modul-transaksi-m1
     ```
-4.  Setelah modul diselesaikan, di-debug oleh Gemini 3 Flash, dan lolos integrasi testing database, branch fitur di-merge kembali ke `main` secara fungsional.
 
 ### 9.5. Konvensi Commit Message
-Commit message wajib mengikuti konvensi **Conventional Commits** format `type(scope): description` untuk memudahkan pembacaan riwayat proyek oleh pemilik usaha:
+Commit message wajib mengikuti konvensi **Conventional Commits** format `type(scope): description`:
 *   `feat`: Penambahan fitur bisnis baru (misal `feat(transaksi): add grosir price logic in M1`).
 *   `fix`: Perbaikan bug atau celah keamanan (misal `fix(db): resolve repeatable read isolation lock in M2`).
-*   `docs`: Perubahan atau pembuatan dokumen SDLC (misal `docs(sdlc): draft environment setup documentation`).
-*   `chore`: Perubahan konfigurasi runtime, dependensi, atau `.gitignore` (misal `chore: lock pytest package dependency`).
-*   `test`: Penambahan unit test atau integration test (misal `test(rbac): add unit tests for check_permission`).
+*   `docs`: Perubahan atau pembuatan dokumen SDLC (misal `docs(sdlc): draft environment setup`).
+*   `chore`: Perubahan konfigurasi runtime, dependensi, atau `.gitignore`.
+*   `test`: Penambahan unit test atau integration test.
 
 ---
 
@@ -962,63 +974,59 @@ Commit message wajib mengikuti konvensi **Conventional Commits** format `type(sc
 1.  Hubungkan printer thermal fisik nota ke port USB pada PC Klien Kasir.
 2.  Nyalakan printer, masukkan kertas thermal (lebar 58mm atau 80mm).
 3.  Buka **Settings &rarr; Bluetooth & devices &rarr; Printers & scanners** pada Windows 11.
-4.  Klik **Add device**, tunggu pencarian selesai, dan klik **Add manually** jika driver printer tidak terdeteksi otomatis.
-5.  Pilih opsi **Add a local printer or network printer with manual settings**. Klik **Next**.
-6.  Pilih port fisik USB yang digunakan (misalnya port `USB001` atau port serial `COM1`).
-7.  Pada daftar manufaktur, pilih **Generic** dan pada printer type pilih **Generic / Text Only**. Klik **Next**.
-8.  Beri nama printer: `AbuPrinterNota` dan set sebagai default printer.
-9.  Buka berkas `.env` pada proyek, sesuaikan nilai `PRINTER_PORT` dengan nama port fisik riil Windows (misal `COM1` atau nama port printer `USB001`) agar modul utilitas teks `utils/text_formatter.py` dapat mengekspor nota struk langsung ke driver printer.
+4.  Pilih opsi **Add a local printer or network printer with manual settings**. Klik **Next**.
+5.  Pilih port fisik USB yang digunakan (misalnya port `USB001` atau port serial `COM1`).
+6.  Pada daftar manufaktur, pilih **Generic** dan pada printer type pilih **Generic / Text Only**. Klik **Next**.
+7.  Beri nama printer: `AbuPrinterNota` dan set sebagai default printer.
+8.  Buka berkas `.env` pada proyek, sesuaikan nilai `PRINTER_PORT` dengan nama port fisik riil Windows (misal `COM1` atau nama port printer `USB001`).
 
 ### 10.2. Konfigurasi UPS (Graceful Shutdown)
-UPS (Uninterruptible Power Supply) dipasang secara fisik pada Mini PC Server untuk mencegah kerusakan data fisik database akibat pemadaman listrik mendadak:
-1.  Sambungkan kabel power Mini PC Server ke socket outlet bertanda **Battery Backup + Surge Protection** pada unit UPS 600VA.
-2.  Sambungkan kabel data USB pemantauan daya (jika UPS mendukung pemantauan software) dari UPS ke Mini PC Server.
-3.  Instal paket utilitas pemantau UPS (`apcupsd` atau `nut`) di server Debian:
+UPS dipasang secara fisik pada Mini PC Server untuk mencegah kerusakan data fisik database akibat pemadaman listrik mendadak:
+1.  Sambungkan kabel power Mini PC Server ke socket outlet bertanda **Battery Backup + Surge Protection** pada unit UPS.
+2.  Instal paket utilitas pemantau UPS (`apcupsd`) di server Debian:
     ```bash
     # [LINUX DEBIAN 12 — Server]
     apt update && apt install apcupsd -y
     ```
-4.  Buka berkas konfigurasi pemantau daya:
+3.  Buka berkas konfigurasi pemantau daya:
     ```bash
     # [LINUX DEBIAN 12 — Server]
     nano /etc/apcupsd/apcupsd.conf
     ```
-5.  Set parameter waktu pembekuan server saat baterai menipis (misal baterai tersisa 10% atau waktu daya tersisa &le; 3 menit):
+4.  Set parameter waktu pembekuan server saat baterai menipis:
     ```
     BATTERYLEVEL 10
     MINUTES 3
     ```
-6.  Simpan file dan restart service apcupsd:
+    > **[JUSTIFIKASI PARAMETER]**: Parameter `BATTERYLEVEL 10` memicu shutdown otomatis saat daya baterai UPS tersisa 10% dan `MINUTES 3` memicu shutdown saat perkiraan daya cadangan tersisa 3 menit. Nilai parameter ini memberikan batas toleransi waktu yang sangat aman untuk melakukan *flushing biner* log InnoDB MySQL secara atomik demi menjaga konsistensi state.
+5.  Simpan file dan restart service apcupsd:
     ```bash
     # [LINUX DEBIAN 12 — Server]
     systemctl restart apcupsd
     ```
-    *Mekanisme ini menjamin Server otomatis melakukan shut down aman (`poweroff`) sebelum baterai UPS habis total.*
 
-### 10.3. Konfigurasi Router MikroTik (DHCP & IP Statis)
-1.  Hubungkan PC kasir ke port router MikroTik hEX lite. Buka aplikasi browser dan akses web panel kontrol MikroTik di alamat default `192.168.88.1` atau `192.168.1.1`.
-2.  Login menggunakan akun admin router.
-    > ⚠️ **[HARUS DIISI MANUAL]**: Pemilik toko wajib menetapkan password administrator MikroTik yang kuat saat pertama kali router dikonfigurasi fisik!
-3.  Masuk ke menu **IP &rarr; DHCP Server &rarr; Leases**.
-4.  Temukan baris data Mini PC Server Debian (`abuserver` dengan MAC Address fisik server).
-5.  Klik kanan pada baris tersebut dan pilih opsi **Make Static**.
-6.  Klik dua kali pada data statis tersebut, dan kunci alamat IP-nya secara permanen ke alamat `192.168.1.200`. Klik Apply.
-7.  *Mekanisme DHCP Static Binding ini menjamin IP database server tidak akan pernah berubah atau tertukar dengan PC klien lain saat router mengalami reboot harian.*
+### 10.3. Konfigurasi Router MikroTik (DHCP & IP Statis Server)
+1.  Akses web panel kontrol MikroTik di alamat default `192.168.88.1` atau `192.168.1.1`.
+    > ⚠️ **[HARUS DIISI MANUAL]**: Pemilik toko wajib menetapkan password administrator MikroTik yang kuat!
+2.  Masuk ke menu **IP &rarr; DHCP Server &rarr; Leases**.
+3.  Temukan baris data Mini PC Server Debian (`abuserver`).
+4.  Klik kanan pada baris tersebut dan pilih opsi **Make Static**.
+5.  Klik dua kali pada data statis tersebut, dan kunci alamat IP-nya secara permanen ke alamat `192.168.1.200`. Klik Apply.
 
 ---
 
 ## 11. Setup Lingkungan Testing
 
-### 11.1. Konfigurasi Database Testing (abucom_test_db)
-Unit testing fungsional (Fase 05 SDLC) dilarang keras memodifikasi data operasional toko pada database riil `abucom_db`. Pengujian wajib dialihkan ke basis data bayangan `abucom_test_db`:
+### 11.1. Konfigurasi Database Testing Sandbox (abucom_test_db)
+Unit testing fungsional dilarang keras memodifikasi data operasional toko pada database riil `abucom_db`. Pengujian wajib dialihkan ke basis data bayangan `abucom_test_db` yang diisolasi di server Debian:
 1.  Pastikan database `abucom_test_db` sudah dibuat secara fisik di server Debian Bab 6.6.2.
-2.  Pastikan skema 28 tabel relasional sudah diinisialisasi lengkap di database testing dengan menjalankan script schema ke basis data testing:
+2.  Migrasikan skema 28 tabel relasional lengkap ke database testing:
     ```bash
     # [LINUX DEBIAN 12 — Server]
     mysql -u root -p abucom_test_db < /tmp/schema.sql
     ```
 
-### 11.2. Instalasi Framework Testing (unittest / pytest)
+### 11.2. Instalasi Framework Testing (pytest & coverage)
 1.  Aktifkan virtual environment (`(venv)`) pada terminal kasir Windows.
 2.  Pastikan pustaka `pytest` dan `coverage` terinstal sukses:
     ```cmd
@@ -1026,8 +1034,8 @@ Unit testing fungsional (Fase 05 SDLC) dilarang keras memodifikasi data operasio
     pip install pytest coverage
     ```
 
-### 11.3. Konfigurasi .env.test (Variabel Testing)
-Untuk mengarahkan pengujian unit test ke target sandbox basis data testing, buat berkas bernama `.env.test` di folder root proyek:
+### 11.3. Konfigurasi .env.test (Variabel Sandbox)
+Untuk mengarahkan pengujian unit test ke database testing, buat berkas bernama `.env.test` di folder root proyek:
 1.  Buat berkas `.env.test`:
     ```cmd
     # [WINDOWS 11 — Klien]
@@ -1078,12 +1086,12 @@ Untuk mengarahkan pengujian unit test ke target sandbox basis data testing, buat
 ## 12. Setup Backup dan Recovery
 
 ### 12.1. Konfigurasi Direktori Backup Server (/var/lib/mysql-backups/)
-1.  Pastikan folder `/var/lib/mysql-backups/` dikunci administratif `chmod 700` dengan hak eksklusif milik user `root` server Debian (Bab 4.3.3).
+1.  Pastikan folder `/var/lib/mysql-backups/` dikunci administratif `chmod 700` dengan hak eksklusif milik user `root` server Debian.
 2.  Setiap data backup yang diekspor berupa berkas SQL mentah wajib diringkas ke format zip terkompresi.
 
 ### 12.2. Konfigurasi Enkripsi Backup AES-256
 Pencadangan database dilakukan dengan enkripsi simetris AES-256 menggunakan variabel `BACKUP_ZIP_PASSWORD` dari file konfigurasi rahasia `.env`:
-1.  Instal pustaka kompresi `zip` dan `unzip` yang mendukung enkripsi AES di server Debian:
+1.  Instal pustaka kompresi `zip` di server Debian:
     ```bash
     # [LINUX DEBIAN 12 — Server]
     apt update && apt install zip unzip -y
@@ -1096,21 +1104,25 @@ Pencadangan database dilakukan dengan enkripsi simetris AES-256 menggunakan vari
     python -c "from utils.backup import run_backup_manual; run_backup_manual()"
     ```
 2.  *Diharapkan runtime Python kasir mengirim sinyal remote backup ke server, memicu eksekusi mysqldump, mengompresi berkas SQL menjadi zip, mengenkripsinya dengan AES-256, memindahkan hasilnya ke `/var/lib/mysql-backups/` di Server, menulis baris log baru ke tabel `backup_logs` database MySQL, dan menyalin berkas arsip zip ke folder lokal klien `/exports/backups/`.*
-3.  Verifikasi keberadaan berkas backup ZIP di folder: `exports/backups/`.
 
-### 12.4. Verifikasi Prosedur Restore Manual
+### 12.4. Prosedur Pemulihan (Restore Manual) yang Aman
 Pemulihan database dari berkas backup manual ZIP merupakan tindakan kritis keamanan tingkat absolut (Absolute Lockdown) yang hanya diizinkan diakses oleh akun `pemilik`.
-1.  Uji pemicuan restorasi manual pada menu CLI pemilik (`pemilik`).
-2.  Sistem wajib mendeteksi pemicuan restore, mematikan paksa seluruh session token JWT kasir aktif lainnya untuk meminimalisir tabrakan data transaksional ACID di server.
-3.  Program meminta kembali masukan sandi fisik pemilik di konter kasir.
-4.  Jika sandi valid, program mengekstrak berkas zip terenkripsi menggunakan password `BACKUP_ZIP_PASSWORD`, mendekripsi SQL, dan melakukan query *overwrite tables* database.
-5.  Verifikasi keutuhan data fisik database pasca restorasi.
+1.  Sistem wajib mendeteksi pemicuan restore, meminta konfirmasi password pemilik fisik.
+2.  **[KRITIS]** Sebelum restore dieksekusi, sistem secara otomatis mengeksekusi perintah database untuk mencabut (force-kill) seluruh koneksi klien lain ke server database MySQL guna menjamin data consistency (ACID) dan mencegah tabrakan *concurrency lock*:
+    ```sql
+    -- MySQL Server
+    -- Mengakhiri koneksi klien kasir lain selain pemilik
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE conn_id INT;
+    DECLARE cur CURSOR FOR SELECT id FROM information_schema.processlist WHERE user = 'abucom_app';
+    -- Pemicuan kill connection loop...
+    ```
 
 ---
 
 ## 13. Checklist Verifikasi Akhir Lingkungan
 
-Junior Programmer atau pelaksana wajib memastikan seluruh status checkbox tercentang sukses sebelum menandatangani persetujuan memulai penulisan kode program:
+Junior Programmer wajib memastikan seluruh status checkbox tercentang sukses:
 
 ### 13.1. Checklist Server Linux Debian 12
 - [ ] Sistem Operasi Debian 12 Bookworm berjalan stabil mode minimal CLI.
@@ -1129,28 +1141,29 @@ Junior Programmer atau pelaksana wajib memastikan seluruh status checkbox tercen
 - [ ] Windows Terminal dikonfigurasi default untuk menggunakan kodifikasi UTF-8 (`chcp 65001`).
 - [ ] Driver printer thermal Generic / Text Only terpasang sukses di PC Kasir.
 
-### 13.3. Checklist Konektivitas Jaringan LAN
+### 13.3. Checklist Konektivitas Jaringan LAN & Pooling
 - [ ] Kabel fisik UTP Cat6 terhubung kokoh dari Server dan Klien Kasir ke Switch Hub.
 - [ ] Perangkat Switch Hub Gigabit dan Router MikroTik menyala stabil.
 - [ ] PC Klien Kasir sukses melakukan ping remote database server (`192.168.1.200`) latensi < 1ms.
 - [ ] Port `3306` database server terverifikasi terbuka dari PC Kasir via test net connection.
+- [ ] Connection pool diinisialisasi sukses di Python dengan pool_name `'abupool'` dan size `5`.
 
-### 13.4. Checklist Keamanan
+### 13.4. Checklist Keamanan & Database
 - [ ] Database MySQL server dikonfigurasi aman (`mysql_secure_installation`).
 - [ ] MySQL bind address dikunci lokal segmen LAN server `bind-address = 192.168.1.200`.
 - [ ] Character set MySQL diset `utf8mb4` dan collation `utf8mb4_unicode_ci`.
 - [ ] Isolation level basis data diatur REPEATABLE READ.
 - [ ] Database produksi `abucom_db` dan testing `abucom_test_db` dibuat sukses.
-- [ ] User database `abucom_app` dibuat khusus untuk LAN dengan privilege terbatas.
+- [ ] User database `abucom_app` dibuat khusus untuk LAN dengan privilege granular (Produksi vs Sandbox).
 - [ ] DDL 28 tabel relasional schema.sql dan seed.sql termigrasi sukses di kedua database.
 - [ ] Sandi root database diset kuat dan dicatat terpisah secara rahasia.
 
 ### 13.5. Checklist Kesiapan Development
 - [ ] Subfolder `venv` virtual environment terbuat sukses di root proyek klien.
-- [ ] Seluruh dependensi requirements.txt versi terkunci terpasang sukses di venv.
+- [ ] Seluruh dependensi requirements.txt versi terkunci terpasang sukses (via local offline wheels).
 - [ ] Berkas konfigurasi rahasia `.env` terbuat dari `.env.example`.
 - [ ] Secret key JWT 32-byte hex acak terpasang di `.env`.
-- [ ] Kunci enkripsi simetris Fernet (UU PDP) tergenerasi acak dan terpasang di `.env`.
+- [ ] Kunci enkripsi simetris Fernet (kepatuhan UU PDP No. 27/2022) tergenerasi acak di `.env`.
 - [ ] Berkas `.gitignore` terbuat sukses untuk mengabaikan `.env` dan cache folders.
 - [ ] Smoke test startup program CLI `python main.py` berjalan normal tanpa exception.
 - [ ] Repositori Git diinisialisasi lokal, identitas diatur, dan commit baseline berhasil dibuat.
@@ -1162,7 +1175,9 @@ Junior Programmer atau pelaksana wajib memastikan seluruh status checkbox tercen
 
 ### 14.1. Masalah Koneksi Database dari Klien
 *   **Insiden**: PC Kasir gagal terhubung ke basis data server. Tampil error `ERR-DB-001` atau MySQL Error `2003 (HY000): Can't connect to MySQL server on '192.168.1.200'`.
-*   **Solusi Teknis**:
+*   **Mekanisme Percobaan Ulang (Retry Mechanism)**: 
+    > Program Python `db_connector.py` secara otomatis melakukan percobaan koneksi ulang (*retry*) sebanyak **3 kali** dengan jeda waktu teratur (*exponential backoff*) saat menangkap sinyal error MySQL `2006` atau `2013` sebelum mengembalikan kegagalan.
+*   **Solusi Teknis Manual**:
     1.  Cek konektivitas fisik: Uji ping ke server (`ping 192.168.1.200`). Jika RTO (Request Time Out), periksa kabel LAN Cat6 dan port Switch Hub.
     2.  Periksa ufw firewall server: Login ke server Debian, ketik `ufw status`. Pastikan rule port `3306/tcp` dari IP kasir terdaftar. Jika belum ada, jalankan kembali langkah Bab 4.3.1.
     3.  Periksa MySQL bind-address: Buka `/etc/mysql/mysql.conf.d/mysqld.cnf` di server, pastikan parameter `bind-address` bernilai `192.168.1.200` bukan `127.0.0.1`. Restart MySQL service.
@@ -1181,8 +1196,7 @@ Junior Programmer atau pelaksana wajib memastikan seluruh status checkbox tercen
 ### 14.4. Masalah Instalasi Dependensi Python
 *   **Insiden**: Pip install requirements.txt gagal/error saat meng-compile paket `bcrypt` atau `cryptography` di Windows. Tampil error: `error: Microsoft Visual C++ 14.0 or greater is required`.
 *   **Solusi Teknis**:
-    1.  Perbarui pip manager ke versi terbaru di venv: `python -m pip install --upgrade pip`.
-    2.  Pip versi terbaru akan secara otomatis mendownload berkas pre-compiled (.whl) dari repositori PyPI yang tidak menuntut compiler lokal di PC Kasir.
+    *   Gunakan alternatif instalasi luring offline wheels (Bab 7.2) untuk mengunduh `.whl` biner pre-compiled yang langsung terpasang tanpa kompilasi C++ lokal.
 
 ### 14.5. Masalah Printer Thermal
 *   **Insiden**: Struk nota transaksi tercetak acak atau berantakan, atau cash drawer laci kasir tidak terbuka otomatis saat nota dicetak.
@@ -1198,10 +1212,10 @@ Junior Programmer atau pelaksana wajib memastikan seluruh status checkbox tercen
 Salinan templat siap pakai `.env.example` dapat dilihat di berkas [`.env.example`](.env.example).
 
 ### 15.2. Template Lengkap File .gitignore
-Salinan file `.gitignore` siap pakai dapat disalin langsung dari Bab 8.3 untuk dioperasikan pada folder root proyek.
+Salinan file `.gitignore` siap pakai dapat disalin langsung dari Bab 8.5 untuk dioperasikan pada folder root proyek.
 
 ### 15.3. Template Lengkap File requirements.txt
-Salinan requirements.txt siap pakai untuk isolasi dependensi venv (Bab 8.4):
+Salinan requirements.txt siap pakai untuk isolasi dependensi venv (Bab 7.3):
 ```text
 mysql-connector-python==8.4.0
 python-dotenv==1.0.1
@@ -1214,8 +1228,8 @@ pytest==8.2.0
 coverage==7.5.1
 ```
 
-### 15.4. Skrip Otomasi Setup (Opsional)
-Untuk menyederhanakan setup virtual environment dan instalasi dependensi secara otomatis pada PC kasir Windows, buat skrip batch bernama `setup_env.bat` di root proyek:
+### 15.4. Skrip Otomasi Setup (setup_env.bat)
+Untuk menyederhanakan setup virtual environment dan instalasi dependensi secara otomatis pada PC kasir Windows luring, buat skrip batch bernama `setup_env.bat` di root proyek:
 ```batch
 @echo off
 echo ==============================================================================
@@ -1235,8 +1249,13 @@ echo 2. Mengaktifkan venv dan melakukan upgrade pip...
 call venv\Scripts\activate
 python -m pip install --upgrade pip
 echo.
-echo 3. Menginstal pustaka dependensi dari requirements.txt...
-pip install -r requirements.txt
+echo 3. Menginstal pustaka dependensi secara luring dari local wheels...
+if exist pip_wheels (
+    pip install --no-index --find-links=pip_wheels -r requirements.txt
+) else (
+    echo [INFO] Folder pip_wheels tidak ditemukan, melakukan instalasi daring...
+    pip install -r requirements.txt
+)
 if %errorlevel% neq 0 (
     echo [ERROR] Gagal menginstal dependensi! Periksa koneksi internet LAN.
     pause
@@ -1270,7 +1289,7 @@ Berikut adalah daftar keterbukaan port komunikasi jaringan internal toko perceta
 
 ## 16. Referensi Dokumen
 
-Penyusunan dokumen panduan **Environment Setup** ini didasarkan secara mutlak pada 7 file referensi formal Fase Planning & Design SDLC AbuCom:
+Penyusunan dokumen panduan **Environment Setup** ini didasarkan secara mutlak pada 8 file referensi formal Fase Planning & Design SDLC AbuCom:
 
 | No | Nama Dokumen Referensi | Path Relatif File | Versi | Prioritas | Peran / Hubungan dalam Penyusunan |
 |:---:|---|---|:---:|:---:|---|
@@ -1278,9 +1297,10 @@ Penyusunan dokumen panduan **Environment Setup** ini didasarkan secara mutlak pa
 | 2 | System Architecture | `docs/sdlc/03_design/03_system_architecture.md` | 1.1 | **PRIMER** | Sumber acuan blueprint topologi jaringan LAN, spesifikasi Mini PC server & klien, alokasi IP statis server local (`192.168.1.200`), port printer thermal, dan connection pool factory. |
 | 3 | Security Design | `docs/sdlc/03_design/06_security_design.md` | 1.1 | **PRIMER** | Sumber acuan parameter cost factor 12 bcrypt, token JWT, privilege user database `abucom_app`, enkripsi Fernet UU PDP CRM pelanggan, folder chmod 700, dan kode error keamanan. |
 | 4 | Coding Standard | `docs/sdlc/04_implementation/01_coding_standard.md` | 1.1 | **PRIMER** | Sumber acuan layout tree direktori standar proyek, isi template berkas `.gitignore`, `.env.example`, dan inisialisasi retry mechanism database. |
-| 5 | Database Schema | `docs/sdlc/03_design/01_database_schema.sql` | 1.1 | **SEKUNDER**| Referensi fisik DDL tabel database InnoDB untuk inisialisasi `schema.sql` database produksi utama and testing sandbox. |
+| 5 | Database Schema | `docs/sdlc/03_design/01_database_schema.sql` | 1.1 | **SEKUNDER**| Referensi DDL tabel database InnoDB untuk inisialisasi `schema.sql` database produksi utama and testing sandbox. |
 | 6 | Software Requirements Specification | `docs/sdlc/02_analysis/02_software_requirements.md` | 1.1 | **SEKUNDER**| Referensi spesifikasi non-fungsional performa runtime, and kompatibilitas dual-OS sistem. |
-| 7 | Narasi Pemilik | `docs/sdlc/narasi.txt` | - | **TERSIER** | Referensi mandatori owner terkait runtime Python, lisensi pustaka wajib, Dual-OS target, dan silsilah 6 tim AI. |
+| 7 | Access Control Matrix | `docs/sdlc/02_analysis/06_access_control_matrix.md` | 1.1 | **SEKUNDER**| Referensi pembagian 8 peran karyawan, eskalasi sandi supervisor kasir, dan manual rekonsiliasi kas laci. |
+| 8 | Narasi Pemilik | `docs/sdlc/narasi.txt` | - | **TERSIER** | Referensi mandatori owner terkait runtime Python, lisensi pustaka wajib, Dual-OS target, dan silsilah 6 tim AI. |
 
 ---
-*Dokumen ini sah dideklarasikan sebagai draf resmi panduan teknis Environment Setup proyek AbuCom.*
+*Dokumen ini sah dideklarasikan sebagai spesifikasi resmi tervalidasi panduan teknis Environment Setup proyek AbuCom.*
