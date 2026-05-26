@@ -1,10 +1,10 @@
 ---
 dokumen    : UAT Script
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.0
+versi      : 1.1
 tanggal    : 2026-05-26
-status     : Draft
-penyusun   : Senior UAT Analyst & Business Acceptance Specialist
+status     : Reviewed
+penyusun   : Senior UAT Engineer & SQA Lead
 ---
 
 # UAT Script — AbuCom
@@ -13,6 +13,7 @@ penyusun   : Senior UAT Analyst & Business Acceptance Specialist
 
 | Versi | Tanggal | Perubahan | Oleh |
 |:---:|---|---|---|
+| **1.1** | 2026-05-26 | Validasi komprehensif 10-dimensi, perbaikan sintaks tabel markdown (missing pipe), perbaikan heading UAT-036, standardisasi placeholder Tim Pelaksana dan Jadwal, verifikasi presisi desimal HPP BOM, Smart Payroll, depresiasi aset, dan handover shift. Status diperbarui menjadi Reviewed. | Senior UAT Engineer & SQA Lead |
 | **1.0** | 2026-05-26 | Inisialisasi awal pembuatan dan penyusunan dokumen UAT Script secara komprehensif. Menyerap seluruh data referensi dari Test Plan v1.1 dan Test Cases v1.1. Menyusun 44 skrip UAT individual, 1 skrip integrasi end-to-end hari operasional penuh, kriteria sign-off terukur, defect handling, glosarium, dan matriks ketertelusuran lengkap. | Senior UAT Analyst & Business Acceptance Specialist |
 
 ---
@@ -51,7 +52,7 @@ Dalam siklus pengembangan perangkat lunak (SDLC) AbuCom, dokumen UAT Script bera
                      |
                      v
 +==========================================+
-|     FASE 05: TESTING - UAT Script v1.0   | [DOKUMEN INI]
+|     FASE 05: TESTING - UAT Script v1.1   | [DOKUMEN INI]
 +==========================================+
                      |
                      v
@@ -141,26 +142,26 @@ Pelaksanaan pengujian ini melibatkan peran terstruktur berikut:
 
 | Peran | Nama / Jabatan | Tanggung Jawab Utama |
 |---|---|---|
-| **Senior UAT Analyst** | `[Ditentukan oleh User]` | Mengoordinasi jalannya UAT, memandu penguji, mencatat defect aktual, dan merancang skrip pengujian. |
+| **Senior UAT Analyst** | `[Diisi Nama UAT Analyst / Senior QA]` | Mengoordinasi jalannya UAT, memandu penguji, mencatat defect aktual, dan merancang skrip pengujian. |
 | **Pemilik Usaha** | Bpk. Abu / Owner | Menguji modul finansial (payroll, pinjaman, laba/rugi, margin, parameter runtime), mengevaluasi keamanan, dan menandatangani sign-off final. |
-| **Kepala Percetakan** | `[Ditentukan oleh User]` | Menguji modul operasional (produksi, antrian, persetujuan opname, serah terima shift, limbah, ATK internal), memvalidasi kelayakan alur kerja. |
-| **QA Lead / Junior Dev** | `[Ditentukan oleh User]` | Menyiapkan lingkungan pengujian, melakukan seeding data awal sandbox database, dan memperbaiki temuan bug (*defect fixes*). |
+| **Kepala Percetakan** | Bpk. Cetak / [Diisi Nama Kepala Percetakan] | Menguji modul operasional (produksi, antrian, persetujuan opname, serah terima shift, limbah, ATK internal), memvalidasi kelayakan alur kerja. |
+| **QA Lead / Junior Dev** | Junior Dev / [Diisi Nama Programmer/QA] | Menyiapkan lingkungan pengujian, melakukan seeding data awal sandbox database, dan memperbaiki temuan bug (*defect fixes*). |
 
 ### 3.2. Jadwal Pelaksanaan UAT
 Eksekusi UAT direncanakan dibagi menjadi 10 sesi terstruktur sebagai berikut:
 
 | Sesi | Tanggal | Durasi | Penanggung Jawab | Cakupan Skenario UAT |
 |---|---|---|---|---|
-| **Sesi 1** | `[DITENTUKAN MANUAL]` | 60 Menit | Pemilik Usaha | Keamanan, Login, Hak Akses (UAT-001 s.d UAT-003) |
-| **Sesi 2** | `[DITENTUKAN MANUAL]` | 90 Menit | Kepala Percetakan | Alur Transaksi Kasir Harian (UAT-004 s.d UAT-009) |
-| **Sesi 3** | `[DITENTUKAN MANUAL]` | 120 Menit | Kepala Percetakan | Inventaris, HPP BOM, & Opname (UAT-010 s.d UAT-018) |
-| **Sesi 4** | `[DITENTUKAN MANUAL]` | 60 Menit | Kepala Percetakan | Layanan PPOB, Keuangan, & Jasa (UAT-019 s.d UAT-021) |
-| **Sesi 5** | `[DITENTUKAN MANUAL]` | 90 Menit | Pemilik Usaha | SDM, Smart Payroll, & Poin (UAT-022 s.d UAT-026) |
-| **Sesi 6** | `[DITENTUKAN MANUAL]` | 60 Menit | Kepala Percetakan | Antrian, Desain, & WhatsApp Link (UAT-027 s.d UAT-029) |
-| **Sesi 7** | `[DITENTUKAN MANUAL]` | 90 Menit | Pemilik Usaha | Pinjaman, Aset, & Laba/Rugi (UAT-030 s.d UAT-035) |
-| **Sesi 8** | `[DITENTUKAN MANUAL]` | 60 Menit | Pemilik Usaha | CRM, Enkripsi, & Multi-Cabang (UAT-036 s.d UAT-038) |
-| **Sesi 9** | `[DITENTUKAN MANUAL]` | 90 Menit | Pemilik & Kepala | Config, Backup/Restore, & Handover (UAT-039 s.d UAT-044) |
-| **Sesi 10**| `[DITENTUKAN MANUAL]` | 180 Menit | Pemilik & Kepala | Simulasi End-to-End Hari Operasional (UAT-E2E-001) |
+| **Sesi 1** | `[Diisi manual saat pelaksanaan UAT]` | 60 Menit | Pemilik Usaha | Keamanan, Login, Hak Akses (UAT-001 s.d UAT-003) |
+| **Sesi 2** | `[Diisi manual saat pelaksanaan UAT]` | 90 Menit | Kepala Percetakan | Alur Transaksi Kasir Harian (UAT-004 s.d UAT-009) |
+| **Sesi 3** | `[Diisi manual saat pelaksanaan UAT]` | 120 Menit | Kepala Percetakan | Inventaris, HPP BOM, & Opname (UAT-010 s.d UAT-018) |
+| **Sesi 4** | `[Diisi manual saat pelaksanaan UAT]` | 60 Menit | Kepala Percetakan | Layanan PPOB, Keuangan, & Jasa (UAT-019 s.d UAT-021) |
+| **Sesi 5** | `[Diisi manual saat pelaksanaan UAT]` | 90 Menit | Pemilik Usaha | SDM, Smart Payroll, & Poin (UAT-022 s.d UAT-026) |
+| **Sesi 6** | `[Diisi manual saat pelaksanaan UAT]` | 60 Menit | Kepala Percetakan | Antrian, Desain, & WhatsApp Link (UAT-027 s.d UAT-029) |
+| **Sesi 7** | `[Diisi manual saat pelaksanaan UAT]` | 90 Menit | Pemilik Usaha | Pinjaman, Aset, & Laba/Rugi (UAT-030 s.d UAT-035) |
+| **Sesi 8** | `[Diisi manual saat pelaksanaan UAT]` | 60 Menit | Pemilik Usaha | CRM, Enkripsi, & Multi-Cabang (UAT-036 s.d UAT-038) |
+| **Sesi 9** | `[Diisi manual saat pelaksanaan UAT]` | 90 Menit | Pemilik & Kepala | Config, Backup/Restore, & Handover (UAT-039 s.d UAT-044) |
+| **Sesi 10**| `[Diisi manual saat pelaksanaan UAT]` | 180 Menit | Pemilik & Kepala | Simulasi End-to-End Hari Operasional (UAT-E2E-001) |
 
 ---
 
@@ -673,8 +674,8 @@ Lingkungan: **PC Kasir Windows 11, Terminal CLI, DB `abucom_test_db`**
 | **Modul / Fitur** | M.4 — Manajemen SDM, Penggajian & Poin |
 | **Aktor Penguji** | Pemilik Usaha |
 | **Lingkungan** | PC Kasir Windows 11, Terminal CLI AbuCom, DB `abucom_test_db` |
-| **Prasyarat** | 5 Staf aktif terdaftar di DB.  
-| **Data Uji** | Uji 1 (Skenario A): Laba toko = Rp 20.000.000,0000 ($\ge$ Rp 15 juta).  
+| **Prasyarat** | 5 Staf aktif terdaftar di DB. |
+| **Data Uji** | Uji 1 (Skenario A): Laba toko = Rp 20.000.000,0000 ($\ge$ Rp 15 juta). |
 | **Langkah Pengujian** | 1. Buka menu SDM > Hitung Payroll Bulanan.<br>2. [Simulasi Skenario A] Atur laba berjalan toko = Rp 20.000.000,0000. Jalankan komputasi payroll bulanan.<br>3. Verifikasi rincian nominal gaji pokok staf hasil hitungan di layar CLI. |
 | **Hasil Diharapkan** | 1. Gaji Pokok Skenario A terhitung otomatis: $\frac{\text{Laba } \times 35\%}{5} = \frac{20.000.000 \times 35\%}{5} = \text{Rp } 1.400.000,0000$ per staf.<br>2. Karena nominal Rp 1.400.000,0000 di bawah batas proteksi upah minimum 50% UMR (Rp 1.600.000,0000), sistem secara otomatis menerapkan proteksi upah minimum dan menetapkan upah akhir = Rp 1.600.000,0000 secara presisi desimal. |
 | **Hasil Aktual** | *[Diisi saat eksekusi UAT]* |
@@ -830,7 +831,7 @@ Lingkungan: **PC Kasir Windows 11, Terminal CLI, DB `abucom_test_db`**
 | **Prasyarat** | Sesi login pemilik aktif. |
 | **Data Uji** | `nominal_pinjaman = Decimal('10000000.0000')`, `bunga_persen = Decimal('10.0000')`, `tenor_bulan = 12`. |
 | **Langkah Pengujian** | 1. Masuk menu Finansial > Registrasi Pinjaman Baru.<br>2. Pilih tipe pinjaman `'Bank'`. <br>3. Input nominal = `10000000.0000`. <br>4. Input bunga tahunan = `10.0000`%. Input tenor = `12` bulan.<br>5. Simpan transaksi.<br>6. Periksa tabel `pinjaman` di database. |
-| **Hasil Diharapkan** | 1. Pinjaman bank berbunga tersimpan di DB.<br>2. Sistem menghitung nominal utang bunga bulanan secara presisi desimal: $\frac{10.000.000 \times 10\%}{12} = \text{Rp } 83.333,3333$ bunga/bulan.  
+| **Hasil Diharapkan** | 1. Pinjaman bank berbunga tersimpan di DB.<br>2. Sistem menghitung nominal utang bunga bulanan secara presisi desimal: $\frac{10.000.000 \times 10\%}{12} = \text{Rp } 83.333,3333$ bunga/bulan. |
 | **Hasil Aktual** | *[Diisi saat eksekusi UAT]* |
 | **Status** | *[Diisi saat eksekusi: PASS / FAIL]* |
 | **Catatan Temuan** | *[Diisi jika ada temuan/bug]* |
@@ -1102,7 +1103,7 @@ Lingkungan: **PC Kasir Windows 11, Terminal CLI, DB `abucom_test_db`**
 | **Aktor Penguji** | Kepala Percetakan |
 | **Lingkungan** | PC Kasir Windows 11, Terminal CLI AbuCom, DB `abucom_test_db` |
 | **Prasyarat** | Sesi login kasir aktif. Saldo kas awal shift Rp 500.000,0000. Total penjualan sistem Rp 300.000,0000 (Total target Rp 800.000,0000). |
-| **Data Uji** | Uang kas fisik laci kas = Rp 780.000,0000 (selisih kurang Rp 20.000,0000, > Rp 10.000,0000).  
+| **Data Uji** | Uang kas fisik laci kas = Rp 780.000,0000 (selisih kurang Rp 20.000,0000, > Rp 10.000,0000). |
 | **Langkah Pengujian** | 1. Masuk menu Tutup Shift & Handover Kas.<br>2. Input nominal kas fisik laci kas = `780000.0000`. <br>3. Konfirmasi handover shift.<br>4. Ketika sistem meminta eskalasi sandi Kepala Percetakan, ketik kata sandi Kepala = `'SandiStaf2026!'`. Simpan. |
 | **Hasil Diharapkan** | 1. Sistem mendeteksi selisih kas minus Rp 20.000,0000 melebihi batas toleransi Rp 10.000,0000, menolak penyimpanan, dan menuntut eskalasi sandi Kepala.<br>2. Setelah sandi supervisor dimasukkan, handover shift berhasil disimpan dengan status `'DISCREPANCY'`. Selisih minus Rp 20.000,0000 dibukukan sebagai kerugian OPEX kas dan dicatat otomatis ke audit log. |
 | **Hasil Aktual** | *[Diisi saat eksekusi UAT]* |
