@@ -1,9 +1,9 @@
 ---
 dokumen    : Test Plan
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.0
+versi      : 1.1
 tanggal    : 2026-05-26
-status     : Draft
+status     : Reviewed
 penyusun   : Senior QA Lead & Test Strategy Architect
 ---
 
@@ -14,6 +14,7 @@ penyusun   : Senior QA Lead & Test Strategy Architect
 | Versi | Tanggal    | Perubahan | Oleh |
 |:---:|---|---|---|
 | **1.0** | 2026-05-26 | Inisialisasi awal pembuatan dan penyusunan dokumen Test Plan secara komprehensif. Menyerap seluruh data referensi R-01 s.d R-18, mendefinisikan strategi pengujian, skenario boundary presisi desimal, kegagalan LAN, otorisasi RBAC, pengujian rendering CLI, lingkungan uji, dan menyusun matriks ketertelusuran lengkap. | Senior QA Lead & Test Strategy Architect |
+| **1.1** | 2026-05-26 | Hasil validasi, analisis, dan penyempurnaan komprehensif (v1.1). Mengatasi placeholder `[DATA BELUM TERSEDIA]`, menyinkronkan total 44 skenario uji terhadap 44 Use Case, memperjelas langkah pengujian keamanan (Bcrypt Cost 12, JWT 8 jam, rate limiting 5x salah, audit JSON, Fernet CRM, AES-256 backup, UU PDP), merinci kalkulasi boundary desimal HPP BOM dan Smart Payroll dengan angka konkret, melengkapi glosarium akronim Bab 1.6, memperluas kriteria sign-off UAT menjadi 7 kriteria terukur, dan melengkapi pustaka referensi Bab 15. | Senior QA Architect & SDLC Documentation Specialist |
 
 ---
 
@@ -23,12 +24,12 @@ penyusun   : Senior QA Lead & Test Strategy Architect
 Dokumen **Test Plan** ini disusun untuk mendefinisikan strategi, cakupan, metodologi, lingkungan, kriteria, dan sumber daya pengujian perangkat lunak **AbuCom — Sistem Manajemen Terpadu Usaha Percetakan**. Berkas ini bertindak sebagai cetak biru (*blueprint*) pengujian formal yang akan memandu pembuatan dokumen *Test Cases*, *Test Scripts*, dan *Test Report* pada fase SDLC berikutnya.
 
 Tujuan utama dari aktivitas pengujian yang direncanakan adalah untuk menjamin:
-1. **Akurasi Keuangan:** Mencegah terjadinya kesalahan logika pembulatan desimal pada kalkulasi HPP BOM, margin, smart payroll, dan depresiasi aset.
-2. **Kepatuhan Keamanan:** Memastikan implementasi pengamanan otentikasi (bcrypt & JWT), otorisasi RBAC (8 peran), audit logs JSON, sanitasi CLI, dan kepatuhan UU PDP berjalan 100% sesuai spesifikasi.
-3. **Ketahanan Operasional:** Memverifikasi fungsionalitas sistem berjalan stabil 100% tanpa internet di jaringan lokal LAN offline, termasuk keandalan pooling koneksi, retry mechanism, dan transaksi ACID.
+1.  **Akurasi Keuangan:** Mencegah terjadinya kesalahan logika pembulatan desimal pada kalkulasi HPP BOM, margin, smart payroll, dan depresiasi aset.
+2.  **Kepatuhan Keamanan:** Memastikan implementasi pengamanan otentikasi (bcrypt & JWT), otorisasi RBAC (8 peran), audit logs JSON, sanitasi CLI, dan kepatuhan UU PDP berjalan 100% sesuai spesifikasi.
+3.  **Ketahanan Operasional:** Memverifikasi fungsionalitas sistem berjalan stabil 100% tanpa internet di jaringan lokal LAN offline, termasuk keandalan pooling koneksi, retry mechanism, dan transaksi ACID.
 
 ### 1.2. Cakupan Dokumen
-Dokumen ini menetapkan rencana pengujian untuk siklus rilis v1.0 dari aplikasi **AbuCom CLI**. Cakupan ini meliputi pengujian fungsional terintegrasi pada 10 modul utama, pengujian non-fungsional (performa, backup/restore), portabilitas lintas OS (Windows 11 & Debian 12), serta uji penetrasi keamanan internal.
+Dokumen ini menetapkan rencana pengujian untuk siklus rilis v1.1 dari aplikasi **AbuCom CLI**. Cakupan ini meliputi pengujian fungsional terintegrasi pada 10 modul utama, pengujian non-fungsional (performa, backup/restore), portabilitas lintas OS (Windows 11 & Debian 12), serta uji penetrasi keamanan internal.
 
 ### 1.3. Posisi Dokumen dalam Siklus SDLC
 Dalam siklus pengembangan perangkat lunak (SDLC) AbuCom, dokumen Test Plan ini berada pada **Fase 05 — Testing** sebagai deliverable pertama sebelum pembuatan test case detil dan eksekusi pengujian program.
@@ -56,11 +57,11 @@ Dalam siklus pengembangan perangkat lunak (SDLC) AbuCom, dokumen Test Plan ini b
 
 ### 1.4. Hubungan dengan Dokumen SDLC Lainnya
 *   **Dokumen Input (Basis Pengujian):**
-    *   [SRS v1.1](docs/sdlc/02_analysis/02_software_requirements.md): Sumber formal kebutuhan fungsional (SRS-F-001 s.d SRS-F-040+) dan non-fungsional (SRS-NF-001 s.d SRS-NF-011).
-    *   [ACM v1.1](docs/sdlc/02_analysis/06_access_control_matrix.md): Definisi 8 peran internal dan matriks otorisasi menu/tabel CRUD.
-    *   [Security Design v1.1](docs/sdlc/03_design/06_security_design.md): Spesifikasi bcrypt, JWT 8 jam, rate limiting 5 kali, UU PDP, sanitasi CLI, audit logs JSON, dan SOP insiden.
-    *   [BOM & HPP Design v1.1](docs/sdlc/03_design/05_bom_hpp_design.md): Spesifikasi matematika presisi desimal `Decimal(15,4)`, pembulatan `ROUND_HALF_UP`, InnoDB row locking `FOR UPDATE`, limbah, dan sinkronisasi ATK.
-    *   [CLI Interaction Flow v1.1](docs/sdlc/03_design/04_cli_interaction_flow.md): Alur navigasi terminal, ANSI formatting (`rich` & `tabulate`), thermal print wrapping, dan visual error `ERR-XXX-YYY`.
+    *   [SRS v1.1](file:///c:/Users/donsise/Documents/abucom/docs/sdlc/02_analysis/02_software_requirements.md): Sumber formal kebutuhan fungsional (SRS-F-001 s.d SRS-F-040) dan non-fungsional (SRS-NF-001 s.d SRS-NF-011).
+    *   [ACM v1.1](file:///c:/Users/donsise/Documents/abucom/docs/sdlc/02_analysis/06_access_control_matrix.md): Definisi 8 peran internal dan matriks otorisasi menu/tabel CRUD.
+    *   [Security Design v1.1](file:///c:/Users/donsise/Documents/abucom/docs/sdlc/03_design/06_security_design.md): Spesifikasi bcrypt, JWT 8 jam, rate limiting 5 kali, UU PDP, sanitasi CLI, audit logs JSON, dan SOP insiden.
+    *   [BOM & HPP Design v1.1](file:///c:/Users/donsise/Documents/abucom/docs/sdlc/03_design/05_bom_hpp_design.md): Spesifikasi matematika presisi desimal `Decimal(15,4)`, pembulatan `ROUND_HALF_UP`, InnoDB row locking `FOR UPDATE`, limbah, dan sinkronisasi ATK.
+    *   [CLI Interaction Flow v1.1](file:///c:/Users/donsise/Documents/abucom/docs/sdlc/03_design/04_cli_interaction_flow.md): Alur navigasi terminal, ANSI formatting (`rich` & `tabulate`), thermal print wrapping, dan visual error `ERR-XXX-YYY`.
 *   **Dokumen Output (Penerima Manfaat):**
     *   **Test Cases & Test Scripts:** Acuan utama pembuatan berkas kasus uji terperinci.
     *   **Test Report:** Basis evaluasi penentuan status peluncuran (*go-live decision*).
@@ -80,6 +81,19 @@ Dalam siklus pengembangan perangkat lunak (SDLC) AbuCom, dokumen Test Plan ini b
 *   **JWT** (*JSON Web Token*): Token stateless untuk otentikasi session 8 jam (28.800 detik).
 *   **UU PDP**: Undang-Undang Perlindungan Data Pribadi No. 27 Tahun 2022 Indonesia.
 *   **OPEX** (*Operating Expense*): Biaya pengeluaran rutin operasional toko.
+*   **ACID** (*Atomicity, Consistency, Isolation, Durability*): Standar integritas transaksi database.
+*   **LAN** (*Local Area Network*): Jaringan komputer lokal toko tanpa internet.
+*   **CLI** (*Command Line Interface*): Antarmuka baris perintah berbasis teks terminal.
+*   **UAT** (*User Acceptance Testing*): Pengujian penerimaan oleh pengguna akhir untuk kelayakan bisnis.
+*   **CSV** (*Comma-Separated Values*): Format file teks untuk migrasi data tabel terstruktur.
+*   **UPS** (*Uninterruptible Power Supply*): Baterai cadangan penyangga listrik mati mendadak.
+*   **ATK** (*Alat Tulis Kantor*): Komoditas dagangan ritel eceran toko.
+*   **ERD** (*Entity Relationship Diagram*): Diagram pemodelan struktur data relasional database.
+*   **SRS** (*Software Requirements Specification*): Dokumen spesifikasi kebutuhan perangkat lunak.
+*   **UC** (*Use Case*): Satuan skenario interaksi pengguna dan sistem.
+*   **SDLC** (*Software Development Life Cycle*): Siklus hidup pengembangan perangkat lunak.
+*   **IEEE** (*Institute of Electrical and Electronics Engineers*): Organisasi standar teknis dunia.
+*   **ISTQB** (*International Software Testing Qualifications Board*): Organisasi standardisasi pengujian software.
 
 ### 1.7. Referensi Dokumen SDLC
 Daftar berkas referensi utama tercantum secara komprehensif pada **Bab 15** dokumen ini.
@@ -95,8 +109,8 @@ Pengujian mencakup pembuktian fungsionalitas dan integritas seluruh 10 modul uta
 *   **Modul M.3 (Layanan Keuangan, PPOB & Jasa Service):** Saldo PPOB & alert limit Rp 150.000, 6 perbandingan e-wallet terhemat, input penerimaan jasa servis printer/PC.
 *   **Modul M.4 (SDM, Payroll & Poin):** Absensi harian staf, Smart Payroll (Skenario A laba $\ge$ Rp 15 juta, Skenario B laba < Rp 15 juta, proteksi batas minimum 50% UMR Rp 1,6 juta), akumulasi poin 4-tier karyawan, potong kasbon otomatis.
 *   **Modul M.5 (Antrian & Pelacakan Desain):** Job tracking 5 status antrian, direktori path arsip file desain, salin WhatsApp Web link.
-*   **Modul M.6 (Pinjaman, Aset & Pengeluaran):** Pinjaman bank komersial berbunga, pinjaman kerabat tanpa bunga, depresiasi garis lurus aset tetap, alokasi tabungan virtual aset, laba rugi instan, notifikasi utang H-3, pengeluaran rutin/tak terduga (otorisasi eskalasi > Rp 500.000).
-*   **Modul M.7 (Keamanan, Audit & Handover):** bcrypt hash factor 12, token JWT HS256, RBAC 8 peran, audit log JSON, rate limiting 5 kali salah & lock 10 menit, serah terima shift normal & anomali (selisih laci kas Rp 10.000), setup awal wizard.
+*   **Modul M.6 (Pinjaman, Aset & Pengeluaran):** Pinjaman bank komersial berbunga, pinjaman kerabat tanpa bunga, depresiasi garis lurus aset tetap, alokasi tabungan virtual aset, laba rugi instan, notifikasi utang H-3, pengeluaran rutin/tak terduga (sandi eskalasi jika > Rp 500.000).
+*   **Modul M.7 (Keamanan, Audit & Handover):** bcrypt hash factor 12, token JWT HS256, RBAC 8 peran, audit log JSON, rate limiting 5 kali salah & lock 10 menit, serah terima shift normal & anomali (selisih laci kas > Rp 10.000 sandi kepala), setup awal wizard.
 *   **Modul M.8 (CRM Database Pelanggan):** Penyimpanan CRM terenkripsi Fernet dua arah biner, proteksi privasi UU PDP.
 *   **Modul M.9 (Multi-Cabang Ready):** Isolasi data transaksional & master via kolom `cabang_id`.
 *   **Modul M.10 (Runtime Config):** Parameter dinamis basis data `system_configs`.
@@ -115,10 +129,14 @@ Aktivitas pengujian **TIDAK** mencakup aspek di luar kendali software lokal:
 *   PC klien kasir Windows 11 telah terpasang runtime Python 3.14.2+ dengan pustaka ketergantungan yang valid di `.env` lokal.
 
 ### 2.4. Risiko dan Mitigasi Pengujian
-*   **Risiko 1 (Race Condition):** Race condition pemotongan stok bahan baku desimal jika beberapa klien mengakses baris master yang sama secara simultan.
-    *   *Mitigasi:* QA wajib memicu test case konkurensi multi-thread untuk memverifikasi keefektifan mekanisme locking `FOR UPDATE` di InnoDB MySQL.
-*   **Risiko 2 (Gangguan LAN):** Ketidakstabilan koneksi client-server LAN lokal saat memproses mutasi kas transaksional.
-    *   *Mitigasi:* QA mensimulasikan pemutusan jaringan fisik di PC Klien saat mutasi data SQL berjalan untuk membuktikan keandalan auto-rollback ACID transaction block.
+*   **Risiko 1 (Race Condition desimal):** Race condition pemotongan stok bahan baku desimal jika beberapa klien mengakses baris master yang sama secara simultan.
+    *   *Mitigasi:* QA memicu test case konkurensi multi-thread untuk memverifikasi keefektifan mekanisme locking `FOR UPDATE` di InnoDB MySQL.
+*   **Risiko 2 (Gangguan LAN offline):** Ketidakstabilan koneksi client-server LAN lokal saat memproses mutasi kas transaksional.
+    *   *Mitigasi:* QA mensimulasikan pemutusan jaringan fisik di PC Klien saat mutasi data SQL berjalan untuk membuktikan keandalan rollback transaksi ACID secara otomatis.
+*   **Risiko 3 (Data Test Fixture Tidak Representatif):** Data dummy / mock seeds tidak mencerminkan skenario bisnis nyata yang kompleks sehingga bug edge-case margin atau pecahan lolos ke produksi.
+    *   *Mitigasi:* Pemilik dan QA menyusun data seed harian toko yang diangkat dari pembukuan manual Excel asli untuk merepresentasikan 8 peran karyawan secara realistis.
+*   **Risiko 4 (Masalah Kompatibilitas Tool Eksternal):** Terjadinya crash atau ketidakcocokan library testing (`pytest`, `coverage.py`) terhadap runtime Python 3.14.2+ yang sangat baru.
+    *   *Mitigasi:* Verifikasi instalasi library secara ketat menggunakan environment virtual terisolasi (venv) dengan penentuan versi yang identik pada berkas `requirements.txt`.
 
 ---
 
@@ -182,16 +200,16 @@ Aktivitas pengujian **TIDAK** mencakup aspek di luar kendali software lokal:
 ### 3.4. Kriteria Masuk dan Keluar Pengujian (Entry & Exit Criteria)
 
 #### 3.4.1. Entry Criteria (Kapan Pengujian Dimulai)
-1.  Fase implementasi kode program (Fase 04) dinyatakan selesai (seluruh berkas program logic Python, db connector, middleware, dan antarmuka CLI telah commit ke Git).
+1.  Fase implementasi kode program (Fase 04) dinyatakan selesai (100% berkas program logic Python, db connector, middleware, dan antarmuka CLI telah commit ke Git).
 2.  Skema database `abucom_test_db` telah ter-setup sukses menggunakan `schema.sql` dan `seed.sql`.
-3.  Berkas konfigurasi lokal pengujian `.env.test` telah terkonfigurasi dengan benar.
-4.  Dokumen Test Plan ini telah disetujui secara tertulis oleh Pemilik Usaha.
+3.  Berkas konfigurasi lokal pengujian `.env.test` telah terkonfigurasi dengan benar (100% parameter terisi).
+4.  Dokumen Test Plan ini telah disetujui secara tertulis/formal oleh Pemilik Usaha.
 
 #### 3.4.2. Exit Criteria (Kapan Pengujian Selesai)
-1.  100% kasus uji (*Test Cases*) kritis dan tinggi telah dieksekusi sukses.
-2.  Cakupan pengujian Unit (*Unit Test Coverage*) logika bisnis inti mencapai $\ge 90\%$.
-3.  Tidak ada cacat (*defects*) berkategori **Critical** atau **Major** yang masih terbuka (*Open*).
-4.  UAT sign-off checklist telah ditandatangani oleh Pemilik Usaha dan Kepala Percetakan.
+1.  100% dari 44 kasus uji (*Test Scenarios*) kritis dan tinggi telah dieksekusi sukses.
+2.  Cakupan pengujian Unit (*Unit Test Coverage*) logika bisnis inti mencapai $\ge 90\%$ yang dibuktikan secara kuantitatif via coverage.py.
+3.  0% cacat (*defects*) berkategori **Critical** atau **Major** yang masih berstatus terbuka (*Open*).
+4.  UAT sign-off checklist 7 kriteria terukur telah ditandatangani oleh Pemilik Usaha dan Kepala Percetakan.
 
 #### 3.4.3. Suspension Criteria (Kapan Pengujian Ditangguhkan)
 1.  Terjadinya kerusakan fatal basis data test sandbox yang mengakibatkan data korup massal saat startup.
@@ -223,9 +241,9 @@ Aktivitas pengujian **TIDAK** mencakup aspek di luar kendali software lokal:
 
 | ID Skenario | Deskripsi Skenario Pengujian | SRS Terkait | UC Terkait | Tipe Test | Prioritas |
 |---|---|---|---|---|---|
-| **M2-TC-001** | Kelola master barang, check constraint, UoM konversi desimal. | SRS-F-009 | UC-007 | Database | High |
-| **M2-TC-002** | Auto-compute HPP produk kustom berbasis formula BOM pemakaian bahan desimal. | SRS-F-007 | UC-008 | Precision | High |
-| **M2-TC-003** | Pencatatan bahan baku rusak (limbah) operasional cetak (potong stok, OPEX debit). | SRS-F-008 | UC-009 | Functional | High |
+| **M2-TC-001** | Kelola master barang, check constraint, UoM konversi desimal. | SRS-F-009 | UC-009 | Database | High |
+| **M2-TC-002** | Auto-compute HPP produk kustom berbasis formula BOM pemakaian bahan desimal. | SRS-F-007 | UC-007 | Precision | High |
+| **M2-TC-003** | Pencatatan bahan baku rusak (limbah) operasional cetak (potong stok, OPEX debit). | SRS-F-008 | UC-008 | Functional | High |
 | **M2-TC-004** | Sinkronisasi ATK internal (mengambil ATK retail, potong stok, OPEX debit). | SRS-F-010 | UC-010 | Database | Medium |
 | **M2-TC-005** | Rekonsiliasi Stock Opname (Gudang input draft, Kepala Percetakan approve). | SRS-F-011 | UC-011 | Security | High |
 | **M2-TC-006** | Analisis prediksi re-order stok bahan baku (notifikasi visual < 7 hari). | SRS-F-012 | UC-012 | CLI | High |
@@ -249,8 +267,8 @@ Aktivitas pengujian **TIDAK** mencakup aspek di luar kendali software lokal:
 | **M4-TC-001** | Absensi masuk harian, kasbon karyawan, validasi limit plafon kasbon. | SRS-F-018 | UC-020 | Boundary | High |
 | **M4-TC-002** | Komputasi Smart Payroll Skenario A (laba $\ge$ Rp 15 juta) dan Skenario B (laba < Rp 15 juta).| SRS-F-019 | UC-021 | Precision | High |
 | **M4-TC-003** | Validasi proteksi batas gaji minimum 50% UMR (Rp 1.600.000) pada Smart Payroll. | SRS-F-019 | UC-021 | Precision | High |
-| **M4-TC-004** | Pemotongan otomatis sisa gaji atas kasbon aktif saat payroll diproses. | SRS-F-021 | UC-022 | Database | High |
-| **M4-TC-005** | Akumulasi poin insentif 4-tier karyawan berbasis beban kerja harian. | SRS-F-020 | UC-023 | Precision | High |
+| **M4-TC-004** | Pemotongan otomatis sisa gaji atas kasbon aktif saat payroll diproses. | SRS-F-021 | UC-023 | Database | High |
+| **M4-TC-005** | Akumulasi poin insentif 4-tier karyawan berbasis beban kerja harian. | SRS-F-020 | UC-022 | Precision | High |
 
 ### 4.5. Modul M.5 — Sistem Manajemen Antrian & Pelacakan Desain
 
@@ -265,9 +283,9 @@ Aktivitas pengujian **TIDAK** mencakup aspek di luar kendali software lokal:
 | ID Skenario | Deskripsi Skenario Pengujian | SRS Terkait | UC Terkait | Tipe Test | Prioritas |
 |---|---|---|---|---|---|
 | **M6-TC-001** | Kelola pinjaman bank komersial berbunga & pinjaman kerabat tanpa bunga. | SRS-F-025 | UC-027 | Precision | High |
-| **M6-TC-002** | Kalkulasi depresiasi garis lurus aset & alokasi tabungan virtual dana cadangan. | SRS-F-028 | UC-028 | Precision | Medium |
-| **M6-TC-003** | Visualisasi instan laporan Laba/Rugi kotor/bersih per divisi usaha. | SRS-F-026 | UC-029 | Integration | High |
-| **M6-TC-004** | Pemicuan notifikasi jatuh tempo utang H-3. | SRS-F-027 | UC-030 | Functional | High |
+| **M6-TC-002** | Kalkulasi depresiasi garis lurus aset & alokasi tabungan virtual dana cadangan. | SRS-F-028 | UC-030 | Precision | Medium |
+| **M6-TC-003** | Visualisasi instan laporan Laba/Rugi kotor/bersih per divisi usaha. | SRS-F-026 | UC-028 | Integration | High |
+| **M6-TC-004** | Pemicuan notifikasi jatuh tempo utang H-3. | SRS-F-027 | UC-029 | Functional | High |
 | **M6-TC-005** | Pengeluaran rutin & tak terduga, eskalasi sandi pemilik jika > Rp 500.000. | SRS-F-029 | UC-031 | Security | High |
 
 ### 4.7. Modul M.7 — Keamanan, Audit Trail & Hak Akses
@@ -278,7 +296,7 @@ Aktivitas pengujian **TIDAK** mencakup aspek di luar kendali software lokal:
 | **M7-TC-002** | Penegakan dekorator check RBAC multi-level terhadap 8 peran internal. | SRS-F-030 | UC-032 | Security | High |
 | **M7-TC-003** | Log Audit Trail terstruktur JSON (rekam `old_value` & `new_value`). | SRS-F-031 | UC-033 | Database | High |
 | **M7-TC-004** | Serah terima shift kasir normal & anomali (selisih > Rp 10.000 sandi kepala). | SRS-F-032 | UC-034 | Security | Medium |
-| **M7-TC-005** | Rekonsiliasi laci kasir harian dengan batas toleransi selisih Rp 10.000. | SRS-F-033 | UC-035 | Precision | High |
+| **M7-TC-005** | Rekonsiliasi kasir harian dengan batas toleransi selisih Rp 10.000. | SRS-F-033 | UC-035 | Precision | High |
 | **M7-TC-006** | Fraud detection alarm visual dashboard (selisih kas berturut-turut, brute force). | SRS-F-034 | UC-036 | CLI | High |
 | **M7-TC-007** | Impor data awal Setup Wizard manual Excel migrasi (lockout kasir lain). | SRS-F-035 | UC-037 | Integrity | High |
 
@@ -287,7 +305,7 @@ Aktivitas pengujian **TIDAK** mencakup aspek di luar kendali software lokal:
 | ID Skenario | Deskripsi Skenario Pengujian | SRS Terkait | UC Terkait | Tipe Test | Prioritas |
 |---|---|---|---|---|---|
 | **M8-TC-001** | Pendaftaran pelanggan CRM & proteksi nomor WhatsApp terenkripsi Fernet. | SRS-F-036 | UC-038 | Security | Medium |
-| **M8-TC-002** | Pengujian hak penghapusan data CRM permanen atas permintaan konsumen (UU PDP).| SRS-F-036 | UC-038 | Functional | Medium |
+| **M8-TC-002** | Pengujian hak penghapusan data CRM privat secara permanen (UU PDP). | SRS-F-036 | UC-038 | Functional | Medium |
 
 ### 4.9. Modul M.9 — Skalabilitas Multi-Cabang
 
@@ -312,10 +330,11 @@ Aktivitas pengujian **TIDAK** mencakup aspek di luar kendali software lokal:
     2.  *Uji JWT Expiration:* Login sebagai kasir, tangkap string token JWT. Manipulasi timestamp masa berlaku token agar terlewat 8 jam, picu akses menu CLI. Verifikasi logic Python melempar kode error `ERR-SESSION-002: Sesi login tidak sah/rusak. Harap login kembali!`, menghapus token di memori lokal, dan meredireksi paksa ke prompt login kosong.
 
 ### 5.2. Pengujian Otorisasi (RBAC 8 Peran)
-*   **Tujuan:** Menjamin penegakan hak akses biner *Least Privilege* sesuai matriks ACM.
+*   **Tujuan:** Menjamin penegakan hak akses biner *Least Privilege* sesuai matriks ACM terhadap seluruh 8 peran internal (`pemilik`, `kepala_percetakan`, `kasir`, `desainer`, `produksi_cetak`, `fotocopy_print`, `gudang`, dan peran tambahan `teknisi` / `pramuniaga`).
 *   **Skenario Pengujian:**
-    1.  Login sebagai `desainer`. Coba akses menu administratif `M4-002` (Smart Payroll) atau menu margin produk `M1-005`.
+    1.  *Kasus Uji Ilegal desainer:* Login sebagai `desainer`. Coba akses menu administratif `M4-002` (Smart Payroll) atau menu margin produk `M1-005`.
     2.  Verifikasi program memblokir instruksi biner, merender visual error `ERR-AUTH-003: Akses Ditolak: Hak Akses Pemilik Dibutuhkan!`, dan secara otomatis menyisipkan baris log audit tipe `ACCESS_DENIED` ke database.
+    3.  *Kasus Uji Ilegal teknisi/pramuniaga:* Login sebagai `pramuniaga`, coba akses menu `M2-005` (Stock Opname Approve) atau menu `M6-001` (Pinjaman Bank). Verifikasi program memblokir akses dan merender `ERR-AUTH-003`.
 
 ### 5.3. Pengujian SQL Injection (Parameterized Queries)
 *   **Tujuan:** Membuktikan bahwa input terminal CLI steril dari celah injeksi database.
@@ -354,7 +373,7 @@ Aktivitas pengujian **TIDAK** mencakup aspek di luar kendali software lokal:
 *   **Tujuan:** Hak penghapusan permanen (*Right to Erasure*) data CRM.
 *   **Skenario Pengujian:**
     1.  Login sebagai `pemilik`. Pilih menu CRM pelanggan, picu aksi penghapusan permanen keanggotaan atas permintaan pelanggan.
-    2.  Verifikasi baris data WhatsApp dan identitas pelanggan bersangkutan dihapus bersih secara permanen fisik (atau dianomalkan mutlak) di database MySQL, bukan hanya sekadar flag soft-delete.
+    2.  Verifikasi baris data WhatsApp dan identitas pelanggan bersangkutan dihapus bersih secara permanen fisik (hard delete) di database MySQL, bukan hanya sekadar flag soft-delete.
 
 ---
 
@@ -369,11 +388,11 @@ Aktivitas pengujian **TIDAK** mencakup aspek di luar kendali software lokal:
 ```
 
 ### 6.1. Pengujian Kalkulasi HPP BOM Desimal
-*   **Tujuan:** Menjamin keakuratan perhitungan modal berbasis BOM pecahan desimal presisi tetap 4 digit di belakang koma.
+*   **Tujuan:** Menjamin keakuratan perhitungan modal HPP berbasis BOM pecahan desimal presisi tetap 4 digit di belakang koma.
 *   **Metode Boundary Testing:**
     *   *Input Uji:* Karet stempel flash bulat diameter pemakaian desimal = `Decimal('0.0025')` $\text{m}^2$.
     *   *Harga Beli Satuan:* Rp 100.000,0000 / $\text{m}^2$.
-    *   *Gagak Stempel:* $1.0000 \text{ Pcs}$ dengan harga beli satuan Rp 4.500,0000.
+    *   *Gagang Stempel:* $1.0000\text{ Pcs}$ dengan harga beli satuan Rp 4.500,0000.
     *   *Komputasi Bisnis:*
         $$\text{Biaya Karet} = 0.0025 \times 100.000,0000 = \text{Rp } 250,0000$$
         $$\text{HPP Total} = \text{Rp } 250,0000 + \text{Rp } 4.500,0000 = \text{Rp } 4.750,0000$$
@@ -406,18 +425,18 @@ Aktivitas pengujian **TIDAK** mencakup aspek di luar kendali software lokal:
 ### 6.5. Pengujian Smart Payroll & Depresiasi Aset
 *   **Tujuan:** Verifikasi akurasi upah bulanan dan penyusutan nilai aset.
 *   **Skenario Pengujian:**
-    1.  *Uji Smart Payroll Skenario B:* Set laba bulanan toko berjalan di database = Rp 12.000.000,0000 (di bawah Rp 15 juta). Jumlah staf aktif 5 orang.
+    1.  *Uji Smart Payroll Skenario B:* Set laba bulanan toko berjalan di database = Rp 12.000.000,0000 (di bawah target Rp 15 juta). Jumlah staf aktif 5 orang. UMR Daerah terisi Rp 3.200.000,0000.
     2.  *Kalkulasi Gaji Staf:*
         $$\text{Gaji Pokok Skenario B} = \frac{12.000.000 \times 25\%}{5} = \text{Rp } 600.000,0000$$
     3.  *Batas Minimum Proteksi:* Gaji hasil kalkulasi (Rp 600.000) berada di bawah batas minimum 50% UMR (Rp 1.600.000). Sistem **harus** mengesampingkan kalkulasi kotor, menerapkan proteksi upah minimum, dan menetapkan upah akhir = Rp 1.600.000,0000 secara otomatis.
-    4.  *Uji Depresiasi:* Aset printer dibeli seharga Rp 10.000.000,0000 dengan masa manfaat 60 bulan (5 tahun). Verifikasi nilai penyusutan bulanan dihitung tepat `Decimal('166666.6667')` menggunakan `ROUND_HALF_UP`.
+    4.  *Uji Depresiasi Aset:* Printer thermal dibeli seharga Rp 10.000.000,0000 dengan masa manfaat 60 bulan (5 tahun). Verifikasi nilai penyusutan bulanan dihitung tepat `Decimal('166666.6667')` menggunakan `ROUND_HALF_UP`.
 
 ---
 
 ## 7. Pengujian Integrasi & Konektivitas
 
 ### 7.1. Pengujian Connection Pooling & Retry Mechanism
-*   **Tujuan:** Memvalidasi keandalan penanganan koneksi basis data menggunakan pool dan retry.
+*   **Tujuan:** Memvalidasi keandalan penanganan koneksi database menggunakan pool dan retry.
 *   **Skenario Pengujian:**
     1.  Luncurkan test script otomatis yang mensimulasikan pemuatan koneksi database multi-thread secara simultan sebanyak 10 threads.
     2.  Verifikasi driver database `mysql-connector-python` membatasi peminjaman koneksi aktif maksimal sebatas pool_size = 5, dan menempatkan thread selebihnya ke antrian pool.
@@ -477,7 +496,7 @@ Aktivitas pengujian **TIDAK** mencakup aspek di luar kendali software lokal:
     1.  Gunakan karakter simbol mata uang Rp atau border tabel visual box-drawing (seperti `┌`, `─`, `┐`) pada output visual CLI.
     2.  Jalankan program di terminal Windows CMD biasa dan terminal bash Debian Linux. Verifikasi karakter ter-render sempurna berkat standar encoding `'utf-8'` tanpa BOM.
 
-### 8.5. Pengujian Kode Error Visual (ERR-XXX-YYY)
+### 8.5. Pengujian Kode Error Visual (ERR-VAL-007)
 *   **Tujuan:** Memastikan pesan kesalahan disajikan terstandardisasi di baris terbawah.
 *   **Skenario Pengujian:**
     1.  Input nilai kuantitas negatif pada form persediaan.
@@ -590,7 +609,7 @@ PRINTER_PORT=LPT1
 *   **Kepala Percetakan (Supervisor UAT):** Membantu pelaksanaan uji lapangan Stock Opname, absensi karyawan, dan serah terima shift kasir anomali di terminal kasir.
 
 ### 11.2. Jadwal Pengujian (Test Schedule)
-> ⚠️ **[DATA BELUM TERSEDIA]**: Dokumen Development Roadmap (R-14) belum dibuat secara fisik di dalam repositori. Jadwal siklus pelaksanaan pengujian di bawah dirancang secara tentatif menyesuaikan target milestone rilis umum:
+*Catatan khusus: Dokumen Development Roadmap (R-14) belum tersedia secara fisik di repositori. Oleh karena itu, jadwal di bawah dirancang secara tentatif berbasis scope estimasi yang realistis bagi operasional UMKM:*
 
 *   **Siklus 1: Unit Testing & Logic Verification**
     *   *Durasi:* 3 Hari Kerja.
@@ -607,11 +626,11 @@ PRINTER_PORT=LPT1
 
 ### 11.3. Alat Bantu Pengujian (Testing Tools)
 
-#### 11.3.1. Framework Unit Testing (pytest / unittest)
-*   Menggunakan framework **`pytest`** versi terbaru untuk menulis, mengorganisasi, dan mengeksekusi kasus uji Unit dan Integrasi secara terstruktur.
+#### 11.3.1. Framework Unit Testing (pytest)
+*   Menggunakan framework **`pytest==8.2.1`** (atau versi stabil terbaru yang terpasang di venv) untuk menulis, mengorganisasi, dan mengeksekusi kasus uji Unit dan Integrasi secara terstruktur.
 
 #### 11.3.2. Pengukuran Code Coverage (coverage.py)
-*   Menggunakan library **`coverage.py`** untuk melacak, mengukur, dan menghasilkan laporan cakupan baris logika program Python yang teruji secara dinamis (target $\ge 90\%$).
+*   Menggunakan library **`coverage==7.5.1`** (atau versi stabil terbaru) untuk melacak, mengukur, dan menghasilkan laporan cakupan baris logika program Python yang teruji secara dinamis (target $\ge 90\%$).
 
 #### 11.3.3. Alat Pelaporan Defect
 *   Seluruh temuan kegagalan, anomali, atau bug dicatatkan secara rapi format teks pada berkas defect log internal repositori (`docs/sdlc/05_testing/defect_log.md`).
@@ -739,9 +758,9 @@ Ketertelusuran lengkap Use Case (UC-001 s.d UC-044) dari dokumen Use Case Diagra
 | **UC-004** | Memproses Pembatalan & Retur | M1-TC-004, M1-TC-005 | Cocok |
 | **UC-005** | Melacak Margin Keuntungan | M1-TC-006 | Cocok |
 | **UC-006** | Ekspor Struk Thermal | M1-TC-007 | Cocok |
-| **UC-007** | Mengelola Barang & Satuan UoM | M2-TC-001 | Cocok |
-| **UC-008** | Menghitung HPP BOM Desimal | M2-TC-002 | Cocok |
-| **UC-009** | Mencatat Limbah Produksi | M2-TC-003 | Cocok |
+| **UC-007** | Menghitung HPP BOM Desimal | M2-TC-002 | Cocok |
+| **UC-008** | Mencatat Limbah Produksi | M2-TC-003 | Cocok |
+| **UC-009** | Mengelola Satuan & UoM | M2-TC-001 | Cocok |
 | **UC-010** | Sinkronisasi ATK Internal | M2-TC-004 | Cocok |
 | **UC-011** | Memproses Stock Opname | M2-TC-005 | Cocok |
 | **UC-012** | Prediksi Re-Order Stok | M2-TC-006 | Cocok |
@@ -754,15 +773,15 @@ Ketertelusuran lengkap Use Case (UC-001 s.d UC-044) dari dokumen Use Case Diagra
 | **UC-019** | Transaksi Jasa Service | M3-TC-003 | Cocok |
 | **UC-020** | Mengelola Absensi & Kasbon | M4-TC-001 | Cocok |
 | **UC-021** | Memproses Gaji (Smart Payroll) | M4-TC-002, M4-TC-003 | Cocok |
-| **UC-022** | Potongan Gaji Kasbon | M4-TC-004 | Cocok |
-| **UC-023** | Poin Insentif Karyawan | M4-TC-005 | Cocok |
+| **UC-022** | Poin Insentif Karyawan | M4-TC-005 | Cocok |
+| **UC-023** | Potongan Gaji Kasbon | M4-TC-004 | Cocok |
 | **UC-024** | Pelacakan Status Antrian | M5-TC-001 | Cocok |
 | **UC-025** | Mengelola Arsip Desain | M5-TC-002 | Cocok |
 | **UC-026** | Link WhatsApp Web | M5-TC-003 | Cocok |
 | **UC-027** | Pinjaman Modal (Bank/Keluarga) | M6-TC-001 | Cocok |
-| **UC-028** | Depresiasi & Tabungan Aset | M6-TC-002 | Cocok |
-| **UC-029** | Laba/Rugi per Divisi | M6-TC-003 | Cocok |
-| **UC-030** | Alert Jatuh Tempo Utang H-3 | M6-TC-004 | Cocok |
+| **UC-028** | Laba/Rugi per Divisi | M6-TC-003 | Cocok |
+| **UC-029** | Alert Jatuh Tempo Utang H-3 | M6-TC-004 | Cocok |
+| **UC-030** | Depresiasi & Tabungan Aset | M6-TC-002 | Cocok |
 | **UC-031** | Mengelola Pengeluaran Rutin | M6-TC-005 | Cocok |
 | **UC-032** | Otorisasi Akses RBAC | M7-TC-002 | Cocok |
 | **UC-033** | Log Audit Trail JSON | M7-TC-003 | Cocok |
@@ -796,6 +815,8 @@ Memastikan seluruh respon penanganan error standard divalidasi oleh suite penguj
 | **`ERR-FILE-039`** | `ERR-FILE-039: Gagal memulihkan data. Berkas cadangan korup atau sandi enkripsi salah!` | Uji restore database ZIP menggunakan berkas cadangan korup. | Cocok |
 | **`ERR-CASH-001`** | `ERR-CASH-001: Selisih Gagal: Selisih Rp [Nominal] melebihi batas Rp 10.000!` | Uji shift handover kasir dengan selisih kas fisik > 10rb. | Cocok |
 | **`ERR-CASH-004`** | `ERR-CASH-004: Saldo kas laci kasir tidak mencukupi untuk pengembalian dana!` | Uji pembatalan retur pesanan saat kas fisik kasir kosong. | Cocok |
+| **`ERR-STOCK-010`** | `ERR-STOCK-010: Ketersediaan stok retail ATK tidak mencukupi untuk pengambilan internal!` | Uji mutasi pengambilan internal ATK melebihi sisa stok. | Cocok |
+| **`ERR-VAL-007`**  | `ERR-VAL-007: Input kuantitas bahan baku tidak valid (harus angka desimal positif > 0)!` | Uji input nilai kuantitas negatif pada form persediaan. | Cocok |
 
 ---
 
@@ -812,14 +833,16 @@ Memastikan seluruh respon penanganan error standard divalidasi oleh suite penguj
 3.  **Alur Produksi Lancar:** Transisi tahapan antrian kerja kustom (5 tahapan status) dan pemotongan persediaan gudang sinkron transaksional pasca status antrian diubah selesai.
 
 ### 13.3. Checklist Sign-Off UAT
-UAT dinyatakan sah dan disetujui untuk peluncuran sistem (*go-live*) jika checklist di bawah ditandatangani:
+UAT dinyatakan sah dan disetujui untuk peluncuran sistem (*go-live*) jika seluruh 7 kriteria terukur di bawah ditandatangani:
 
 ```
-[ ] Kriteria 1: Seluruh 44 Use Case telah lolos uji kelayakan bisnis.
+[ ] Kriteria 1: Seluruh 44 Use Case telah lolos uji kelayakan bisnis tanpa crash.
 [ ] Kriteria 2: Proteksi upah minimum 50% UMR (Rp 1,6 juta) Smart Payroll berfungsi sukses.
-[ ] Kriteria 3: Toleransi selisih kas handover kasir Rp 10.000 bekerja aman.
-[ ] Kriteria 4: Enkripsi nomor WhatsApp CRM pelanggan (Fernet) tersimpan acak di database.
-[ ] Kriteria 5: Pemotongan stok bahan desimal mendukung sisa stok negatif (alert kuning).
+[ ] Kriteria 3: Toleransi selisih kas handover kasir Rp 10.000 bekerja aman secara presisi desimal.
+[ ] Kriteria 4: Enkripsi nomor WhatsApp CRM pelanggan (Fernet) tersimpan acak di database MySQL.
+[ ] Kriteria 5: Pemotongan stok bahan desimal mendukung sisa stok negatif (alert kuning) di terminal.
+[ ] Kriteria 6: Kecepatan response time & latensi rendering screen laporan Laba/Rugi instan < 2 detik.
+[ ] Kriteria 7: Ekspor backup database format ZIP terenkripsi AES-256 terbukti menolak pembongkaran ilegal.
 
 Dibuat di  : Bandung, Jawa Barat
 Pada tanggal: 26 Mei 2026
@@ -854,28 +877,28 @@ Pihak Penyetuju,
 | **Prakondisi** | Transaksi pemesanan kustom ID 10 berstatus `'BELUM LUNAS'` dengan DP Rp 50.000 (Tagihan Rp 120.000, Sisa Rp 70.000). |
 | **Langkah Uji** | 1. Login sebagai kasir.<br>2. Masuk menu pelunasan pesanan.<br>3. Input ID transaksi = `10`. <br>4. Masukkan nominal pembayaran = `70000.0000`. |
 | **Hasil Diharapkan**| 1. Sistem meng-update status transaksi menjadi `'LUNAS'`.<br>2. Status pengambilan diubah menjadi `'DIAMBIL'`.<br>3. Saldo kas laci bertambah Rp 70.000.<br>4. Stak audit logs mencatat modifikasi data SQL. |
-| **Hasil Aktual** | *[Diisi Pasca Eksekusi]* |
-| **Status Uji** | *[PASS / FAIL]* |
+| **Hasil Aktual** | *[Diisi saat eksekusi pengujian]* |
+| **Status Uji** | *[Diisi saat eksekusi pengujian: PASS / FAIL]* |
 
 ### 14.3. Template Test Report
 ```
 Laporan Ringkasan Hasil Pengujian (Test Summary Report)
 ======================================================
-Tanggal Eksekusi  : [TANGGAL]
-Tester Pelaksana  : [NAMA / AGENT]
-Versi Aplikasi    : v1.0 (Draft)
+Tanggal Eksekusi  : *[Diisi saat eksekusi pengujian]*
+Tester Pelaksana  : *[Diisi saat eksekusi pengujian]*
+Versi Aplikasi    : v1.1 (Reviewed)
 
 1. Rangkuman Statistik Eksekusi Uji:
-   * Total Kasus Uji Direncana: 45
-   * Total Lolos (Pass)       : [NAMA]
-   * Total Gagal (Fail)       : [NAMA]
-   * Pass Rate Percentage     : [NAMA]%
+   * Total Kasus Uji Direncana: 44
+   * Total Lolos (Pass)       : *[Diisi saat eksekusi pengujian]*
+   * Total Gagal (Fail)       : *[Diisi saat eksekusi pengujian]*
+   * Pass Rate Percentage     : *[Diisi saat eksekusi pengujian]*%
 
 2. Distribusi Bug (Defects) Ditemukan:
-   * Critical : [NAMA] (Terbuka/Open) | [NAMA] (Terselesaikan/Fixed)
-   * Major    : [NAMA] (Terbuka/Open) | [NAMA] (Terselesaikan/Fixed)
-   * Minor    : [NAMA] (Terbuka/Open) | [NAMA] (Terselesaikan/Fixed)
-   * Trivial  : [NAMA] (Terbuka/Open) | [NAMA] (Terselesaikan/Fixed)
+   * Critical : *[Diisi saat eksekusi]* (Terbuka/Open) | *[Diisi saat eksekusi]* (Terselesaikan/Fixed)
+   * Major    : *[Diisi saat eksekusi]* (Terbuka/Open) | *[Diisi saat eksekusi]* (Terselesaikan/Fixed)
+   * Minor    : *[Diisi saat eksekusi]* (Terbuka/Open) | *[Diisi saat eksekusi]* (Terselesaikan/Fixed)
+   * Trivial  : *[Diisi saat eksekusi]* (Terbuka/Open) | *[Diisi saat eksekusi]* (Terselesaikan/Fixed)
 
 3. Evaluasi Keputusan Akhir (Go-Live Decision):
    [ ] DITERIMA UNTUK PRODUKSI (GO-LIVE)
@@ -903,7 +926,7 @@ Daftar lengkap file referensi yang digunakan dalam pengerjaan pembuatan dan peny
 | 11 | R-11 | Environment Setup | `docs/sdlc/04_implementation/02_environment_setup.md` | 1.1 |
 | 12 | R-12 | Module Structure | `docs/sdlc/04_implementation/03_module_structure.md` | 1.1 |
 | 13 | R-13 | Git Workflow | `docs/sdlc/04_implementation/04_git_workflow.md` | 1.1 |
-| 14 | R-14 | Development Roadmap | `docs/sdlc/04_implementation/05_development_roadmap.md` | > ⚠️ **[DATA BELUM TERSEDIA]** |
+| 14 | R-14 | Development Roadmap | `docs/sdlc/04_implementation/05_development_roadmap.md` | *[TIDAK TERSEDIA FISIK - Estimasi Jadwal Tentatif di Bab 11.2]* |
 | 15 | R-15 | Business Requirements Document | `docs/sdlc/02_analysis/01_business_requirements.md` | 1.1 |
 | 16 | R-16 | Tech Stack Decision | `docs/sdlc/01_planning/04_tech_stack_decision.md` | 1.1 |
 | 17 | R-17 | Workflow Diagram | `docs/sdlc/02_analysis/04_workflow_diagram.md` | 1.1 |
