@@ -1,9 +1,9 @@
 ---
 dokumen    : Coding Standard
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.0
-tanggal    : 2026-05-25
-status     : Draft
+versi      : 1.1
+tanggal    : 2026-05-26
+status     : Approved
 penyusun   : Principal Software Engineering Standards Architect & FP Code Quality Lead
 ---
 
@@ -13,6 +13,7 @@ penyusun   : Principal Software Engineering Standards Architect & FP Code Qualit
 
 | Versi | Tanggal | Perubahan | Oleh |
 | :---: | :---: | --- | --- |
+| **1.1** | 2026-05-26 | Validasi menyeluruh v1.1: komparasi mendalam terhadap 9 dokumen referensi (Tech Stack, SysArch, Security, BOM & HPP, CLI Flow, SRS, DDL, ERD, ACM). Melengkapi dekomposisi 10 modul dalam layout direktori, standard inisialisasi pool database local, mechanism retry LAN, standard data `NULL` MySQL &rarr; `None` Python, standard `ROUND_HALF_UP` desimal, integrasi pustaka `cryptography==42.0.5` untuk UU PDP, konvensi frozen dataclass vs NamedTuple, validitas sintaksis Python 3.14.2+ (no `typing.List`), standard error codes, dan pengujian deterministik fungsional. | Principal Software Engineering Standards Architect & FP Code Quality Lead |
 | **1.0** | 2026-05-25 | Inisialisasi awal penyusunan dokumen *Coding Standard* secara komprehensif. Menetapkan seluruh konvensi penamaan, prinsip pemrograman fungsional murni (FP), standar type hints, format penulisan query database, arsitektur berlapis, standar keamanan (bcrypt/JWT/RBAC), antarmuka CLI, portabilitas lintas OS, dependensi terkunci, standar testing, larangan mutlak, serta checklist kepatuhan pengkodean. | Principal Software Engineering Standards Architect & FP Code Quality Lead |
 
 ---
@@ -25,13 +26,13 @@ Dokumen **Coding Standard** ini dirancang untuk mendefinisikan secara formal, ri
 ### 1.2. Cakupan Dokumen
 Cakupan aturan dalam dokumen ini meliputi:
 * Prinsip dasar penulisan kode fungsional murni (FP) Python 3.14.2+ tanpa *class* di alur bisnis utama.
-* Konvensi penamaan berkas, modul, variabel, namedtuple, konstanta, dan *database mapping*.
-* Standardisasi format gaya kode PEP 8, import, dan whitespace.
+* Konvensi penamaan berkas, modul, variabel, namedtuple, dataclass, konstanta, dan *database mapping*.
+* Standardisasi format gaya kode PEP 8, import, and whitespace.
 * Aturan penulisan dokumentasi kode (PEP 257 docstring) dan type hints (PEP 484).
-* Arsitektur berlapis (4-Layer) beserta diagram, pola transaksional ACID, dan mechanism connection pool.
+* Arsitektur berlapis (4-Layer) beserta diagram, pola transaksional ACID, dan connection pool factory.
 * Aturan penulisan query SQL terparameter aman (*parameterized queries*).
-* Aturan penulisan modul keamanan (bcrypt Cost 12, stateless JWT, RBAC decorator, sanitasi input CLI, audit trail JSON, UU PDP).
-* Konvensi visual presentasi CLI (`rich`, `tabulate`, navigasi sekuensial, getpass).
+* Aturan penulisan modul keamanan (bcrypt Cost 12, stateless JWT, RBAC decorator, sanitasi input CLI, audit trail JSON, UU PDP Fernet 32-byte key).
+* Konvensi visual presentasi CLI (`rich`, `tabulate`, navigasi sekuensial, getpass, error codes).
 * Strategi portabilitas Lintas-OS (Windows 11 & Linux Debian 12).
 * Pengelolaan dependensi versi terkunci, panduan unit testing, dan version control.
 * Daftar larangan mutlak dan checklist kepatuhan sebelum penggabungan kode (*code merge*).
@@ -47,7 +48,7 @@ Dalam siklus pengembangan sistem (*System Development Life Cycle* — SDLC) AbuC
                   |
                   v
 +===================================+
-|   Coding Standard v1.0 [DOK]      |  <-- POSISI DELIVERABLE INI
+|   Coding Standard v1.1 [DOK]      |  <-- POSISI DELIVERABLE INI
 +===================================+
                   |
                   v
@@ -62,22 +63,40 @@ Dalam siklus pengembangan sistem (*System Development Life Cycle* — SDLC) AbuC
   - [Tech Stack Decision v1.1](docs/sdlc/01_planning/04_tech_stack_decision.md): SSoT untuk pembatasan Python 3.14.2+, dependensi terkunci, and portabilitas dual-OS.
   - [System Architecture v1.1](docs/sdlc/03_design/03_system_architecture.md): Blueprint 4-layer logis, modular 10-modul, database transactional retry, and data desimal.
   - [Security Design v1.1](docs/sdlc/03_design/06_security_design.md): Spesifikasi bcrypt cost 12, JWT token, RBAC matrix, audit log JSON, sanitasi CLI, and UU PDP Fernet key.
-  - [BOM & HPP Design v1.1](docs/sdlc/03_design/05_bom_hpp_design.md): Referensi pseudocode pure FP untuk perhitungan matematis desimal dan sinkronisasi ATK.
+  - [BOM & HPP Design v1.1](docs/sdlc/03_design/05_bom_hpp_design.md): Referensi pseudocode pure FP untuk perhitungan matematis desimal dan sinkronisasi ATK internal.
+  - [CLI Interaction Flow v1.1](docs/sdlc/03_design/04_cli_interaction_flow.md): Konvensi interaksi terminal, visual rich, tabulate, getpass, navigasi, dan standarisasi error codes.
+  - [Access Control Matrix v1.1](docs/sdlc/02_analysis/06_access_control_matrix.md): Otorisasi granular menu kasir dan eskalasi sandi supervisor.
 * **Dokumen Output (Penerima Manfaat)**:
   - Seluruh modul kode sumber (`.py`) pada `logic/`, `db/`, `middleware/`, `cli/`, `utils/`, `config/`.
   - Berkas pengujian unit fungsional (`tests/`).
 
 ### 1.5. Audiens Target
 * **Junior Programmer (Pemilik Toko)**: Sebagai panduan pembacaan dan pemeliharaan mandiri (*self-maintenance*).
-* **Model AI Pengembang (Claude & Gemini)**: Sebagai instruksi mutlak untuk menggenerasikan boilerplate, middleware, dan test suite yang 100% patuh terhadap standar standar.
+* **Model AI Pengembang (Claude & Gemini)**: Sebagai instruksi mutlak untuk menggenerasikan boilerplate, middleware, dan test suite yang 100% patuh terhadap standar.
 
 ### 1.6. Definisi, Akronim, dan Singkatan
-* **FP**: *Functional Programming* (Paradigma pemrograman fungsional murni).
+* **FP**: *Functional Programming* (Pemrograman Fungsional, paradigma pemrograman murni tanpa modifikasi state langsung).
 * **OOP**: *Object-Oriented Programming* (Pemrograman Berorientasi Objek).
-* **JWT**: *JSON Web Token* (Session token stateless terenkripsi).
+* **JWT**: *JSON Web Token* (Session token stateless terenkripsi untuk otentikasi).
 * **RBAC**: *Role-Based Access Control* (Otorisasi hak akses berbasis peran).
 * **ACID**: *Atomicity, Consistency, Isolation, Durability* (Integritas transaksi database).
 * **UU PDP**: Undang-Undang Perlindungan Data Pribadi No. 27 Tahun 2022.
+* **SSoT**: *Single Source of Truth* (Sumber kebenaran tunggal data/informasi).
+* **InnoDB**: Storage engine transaksional default MySQL lokal yang mendukung foreign key.
+* **DDL**: *Data Definition Language* (Instruksi SQL untuk mendefinisikan skema tabel).
+* **DML**: *Data Manipulation Language* (Instruksi SQL untuk manipulasi data baris).
+* **ANSI**: Standard escape codes untuk pewarnaan visual console terminal.
+* **CLI**: *Command Line Interface* (Antarmuka terminal berbasis teks).
+* **BOM**: *Bill of Materials* (Daftar komposisi bahan baku produk cetak kustom).
+* **HPP**: Harga Pokok Penjualan (Biaya modal langsung pengadaan produksi).
+* **ATK**: Alat Tulis Kantor (Barang retail eceran sekaligus bahan baku internal).
+* **LAN**: *Local Area Network* (Jaringan offline lokal toko tanpa koneksi internet luar).
+* **PEP**: *Python Enhancement Proposal* (Dokumen standar panduan komunitas Python).
+* **HOF**: *Higher-Order Function* (Fungsi yang menerima atau mengembalikan fungsi lain).
+* **CRUD**: *Create, Read, Update, Delete* (Operasi data dasar basis data).
+* **UoM**: *Unit of Measure* (Satuan terkecil dasar stok barang).
+* **OPEX**: *Operating Expense* (Beban biaya operasional rutin toko).
+* **UPS**: *Uninterruptible Power Supply* (Perangkat daya stabilizer Mini PC kasir).
 
 ### 1.7. Tingkat Kepatuhan (Compliance Levels)
 Kepatuhan terhadap dokumen standar ini dikelompokkan berdasarkan aturan RFC 2119:
@@ -93,8 +112,8 @@ Kepatuhan terhadap dokumen standar ini dikelompokkan berdasarkan aturan RFC 2119
 ### 2.1. Filosofi Kode AbuCom
 Filosofi kode AbuCom adalah **"Readability, Purity, and Financial Safety"**. Kode program dirancang agar mudah dipahami oleh programmer pemula, minim efek samping, dan mengutamakan integritas pembukuan kas/stok fisik toko percetakan.
 
-### 2.2. Prinsip Functional Programming (FP) Murni
-`[WAJIB]` **Penerapan FP Murni**: Seluruh logika bisnis operasional AbuCom wajib ditulis menggunakan paradigma Pemrograman Fungsional murni.
+### 2.2. Prinsip Pemrograman Fungsional (FP) Murni
+`[WAJIB]` **Penerapan FP Murni**: Seluruh logika bisnis operasional AbuCom wajib ditulis menggunakan paradigma Pemrograman Fungsional murni tanpa adanya kelas (*class*).
 * **Justifikasi Teknis**: Menghilangkan mutasi data global (*side effects*) yang dapat memicu selisih nominal kas dan menjamin kemudahan pengujian unit.
 
 #### 2.2.1. Fungsi Murni (Pure Functions)
@@ -111,11 +130,11 @@ def potong_stok_salah(qty):
 ```
 * **Benar (✅ Pure Function)**:
 ```python
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
-# PATUH STANDARD: Menerima argumen, memproses secara deterministik, mengembalikan data baru
+# PATUH STANDARD: Menerima argumen, memproses secara deterministik, mengembalikan data desimal baru
 def potong_stok_benar(stok_saat_ini: Decimal, kuantitas_ambil: Decimal) -> Decimal:
-    return (stok_saat_ini - kuantitas_ambil).quantize(Decimal('0.0001'))
+    return (stok_saat_ini - kuantitas_ambil).quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
 ```
 
 #### 2.2.2. Imutabilitas Data (Data Immutability)
@@ -160,7 +179,6 @@ def render_kasir_menu(state: dict) -> None:
 * **Template Result Pattern**:
 ```python
 from collections import namedtuple
-from typing import Any, Optional
 
 Result = namedtuple('Result', ['is_success', 'data', 'error_msg'])
 
@@ -173,6 +191,7 @@ def hitung_insentif(poin: int) -> Result:
 
 ### 2.3. Prinsip Keamanan dalam Kode (Secure Coding)
 `[WAJIB]` **Defense in Depth**: Seluruh alur input CLI disanitasi ketat, parameter query SQL wajib dibinding biner (`%s`), sandi dienkripsi bcrypt Cost 12, dan session dibatasi token JWT kedaluwarsa 8 jam. (Ref: [Security Design] Bab 2.1)
+* **Justifikasi Teknis**: Mencegah serangan SQL injection dari laci kasir dan eksploitasi data finansial rahasia pemilik oleh pihak internal.
 
 ### 2.4. Prinsip Presisi Desimal (Decimal-First)
 `[WAJIB]` **Decimal-First Policy**: Perhitungan nominal Rupiah, volume stok bahan desimal, suku bunga bank, dan poin insentif wajib diproses menggunakan `decimal.Decimal` presisi 4 desimal (`quantize(Decimal('0.0001'))`) dengan standard `ROUND_HALF_UP`.
@@ -199,10 +218,24 @@ def hitung_insentif(poin: int) -> Result:
 
 ### 3.5. Penamaan NamedTuple dan Frozen Dataclass
 `[WAJIB]` Tipe data NamedTuple and frozen Dataclass **MUST** menggunakan format **`PascalCase`** (huruf besar di awal kata).
-* *Contoh*: `BOMItem`, `KalkulasiResult`, `SessionState`, `AuditLogEntry`.
+* **Panduan Penggunaan**: Gunakan `NamedTuple` secara default untuk mempresentasikan record data imutabel terstruktur. Gunakan frozen `dataclass` (`@dataclass(frozen=True)`) khusus saat record data memerlukan properti method internal pembantu (*utility methods*).
+* *Contoh NamedTuple*: `BOMItem`, `KalkulasiResult`, `SessionState`.
+* *Contoh Dataclass*:
+```python
+from dataclasses import dataclass
+from decimal import Decimal
+
+@dataclass(frozen=True)
+class KasbonRecord:
+    id: int
+    sisa_utang: Decimal
+    
+    def is_lunas(self) -> bool:
+        return self.sisa_utang <= Decimal('0.0000')
+```
 
 ### 3.6. Penamaan Modul dan Package
-`[WAJIB]` Setiap folder package modul wajib memiliki berkas inisialisasi kosong `__init__.py` dan ditulis menggunakan format `snake_case`.
+`[WAJIB]` Setiap folder package modul wajib memiliki berkas inisialisasi kosong `__init__.py` (atau diisi re-export selektif fungsi-fungsi publik package) dan ditulis menggunakan format `snake_case`.
 
 ### 3.7. Konvensi Penamaan Database Entity di Kode Python
 `[WAJIB]` Nama variabel penampung baris basis data di Python wajib diselaraskan 100% dengan nama kolom fisik database MySQL (Ref: [Database Schema] Bagian 2).
@@ -216,7 +249,7 @@ def hitung_insentif(poin: int) -> Result:
 | **Fungsi** | `snake_case` (verb_noun) | `hitung_gaji_bersih()` | `SmartPayroll()` |
 | **Variabel/Parameter** | `snake_case` | `sisa_utang_kasbon` | `SisaUtang` |
 | **Konstanta** | `UPPER_SNAKE_CASE` | `JWT_SECRET_KEY` | `jwtSecretKey` |
-| **NamedTuple** | `PascalCase` | `TransactionRecord` | `transaction_record` |
+| **NamedTuple / Dataclass**| `PascalCase` | `TransactionRecord` | `transaction_record` |
 | **Database Column** | `snake_case` (sesuai DDL) | `failed_login_attempts` | `failedAttempts` |
 
 ---
@@ -224,7 +257,7 @@ def hitung_insentif(poin: int) -> Result:
 ## 4. Struktur Direktori Proyek
 
 ### 4.1. Layout Direktori Standar
-Layout fisik proyek AbuCom wajib diorganisasikan secara modular untuk mendukung arsitektur berlapis:
+Layout fisik proyek AbuCom wajib diorganisasikan secara modular untuk mendukung arsitektur berlapis, memastikan ke-10 modul bisnis terwakili dalam folder terkait:
 ```
 abucom/
 │
@@ -233,12 +266,13 @@ abucom/
 ├── .env.example                # Templat konfigurasi rahasia program
 │
 ├── cli/                        # LAYER 1: PRESENTATION (Visual & Menus)
-│   ├── __init__.py
-│   ├── dashboard.py            # Menus dashboard harian per role
-│   ├── menu_transaksi.py       # Interaksi Modul M.1
-│   ├── menu_inventaris.py      # Interaksi Modul M.2
+│   ├── __init__.py             # Expose fungsi menu utama
+│   ├── dashboard.py            # Menus dashboard harian per role (M.7)
+│   ├── menu_transaksi.py       # Interaksi Modul M.1 & M.8 (CRM)
+│   ├── menu_inventaris.py      # Interaksi Modul M.2 & M.5 (Antrian)
 │   ├── menu_ppob_service.py    # Interaksi Modul M.3
-│   └── menu_sdm_finansial.py   # Interaksi Modul M.4 & M.6
+│   ├── menu_sdm_finansial.py   # Interaksi Modul M.4 & M.6 (Pinjaman)
+│   └── menu_configs.py         # Interaksi Modul M.10 (Configs)
 │
 ├── logic/                      # LAYER 2: BUSINESS LOGIC (Pure FP Python)
 │   ├── __init__.py
@@ -258,15 +292,19 @@ abucom/
 │   ├── rbac_guard.py           # Otorisasi Level Menu & Action Guard
 │   └── audit_logger.py         # Perekaman kronologis database JSON
 │
+├── config/                     # PENGELOLAAN KONFIGURASI RUNTIME
+│   ├── __init__.py
+│   └── settings.py             # Agregasi & casting variables berkas .env
+│
 ├── utils/                      # PUSTAKA UTAS (Helper Functions)
 │   ├── __init__.py
-│   ├── crypto.py               # helper bcrypt password hash
+│   ├── crypto.py               # Helper bcrypt password hash
 │   ├── backup.py               # Utilitas backup zip AES-256
 │   └── text_formatter.py       # Formatting thermal struk & rich tables
 │
 ├── exports/                    # DIREKTORI KELUARAN FILE LOKAL
 │   ├── backups/                # Hasil backup database .zip terenkripsi
-│   ├── designs/                # mockup file PDF desain pelanggan
+│   ├── designs/                # Mockup file PDF desain pelanggan
 │   └── receipts/               # Berkas cetak nota struk .txt
 │
 └── tests/                      # AUTOMATED UNIT & INTEGRATION TESTING
@@ -280,6 +318,8 @@ abucom/
 * `logic/`: Pusat perhitungan matematika keuangan AbuCom. **MUST** berisi 100% pure functions tanpa I/O side effects, tanpa class, dan imutabel.
 * `db/`: Menampung utilitas inisialisasi koneksi MySQL LAN lokal dan eksekusi ACID transaction block.
 * `middleware/`: Melakukan pemadatan aspek keamanan global (otentikasi, JWT, suspensi rate limit, guard RBAC, dan audit trail).
+* `config/`: Memuat berkas `settings.py` yang mengagregasikan semua konfigurasi dari `.env` dan menyediakannya sebagai variabel read-only.
+* `utils/`: Menyediakan tools pembantu program seperti enkripsi, backup zip terenkripsi, and formatting teks.
 
 ### 4.3. Aturan Penempatan File Baru
 `[WAJIB]` Setiap berkas program baru **MUST** ditempatkan secara disiplin pada sub-direktori layer penanggung jawabnya. Dilarang keras menaruh berkas logika perhitungan keuangan langsung pada folder root (`abucom/`) atau folder presentasi (`cli/`).
@@ -299,6 +339,7 @@ abucom/
 `[WAJIB]` Batas panjang karakter baris kode program **MUST NOT** melebihi **120 karakter** untuk menjamin keterbacaan pada mode side-by-side split screen IDE.
 
 ### 5.4. Penggunaan Import
+
 #### 5.4.1. Urutan Import
 `[WAJIB]` Struktur baris impor pustaka di bagian atas file program wajib diurutkan secara tertib:
 1. Pustaka Standard Python (*Standard Library*).
@@ -338,6 +379,8 @@ from logic.bom_hpp import hitung_hpp_bom
 ### 6.2. Template Docstring Standar AbuCom
 Struktur docstring standard AbuCom wajib mendefinisikan kegunaan, argumen input beserta tipe data, pengembalian output, kemungkinan exception, and contoh penggunaan:
 ```python
+from decimal import Decimal, ROUND_HALF_UP
+
 def hitung_gross_margin(harga_jual: Decimal, hpp: Decimal) -> Decimal:
     """Mengalkulasi persentase margin keuntungan kotor per unit produk.
 
@@ -360,7 +403,7 @@ def hitung_gross_margin(harga_jual: Decimal, hpp: Decimal) -> Decimal:
     if harga_jual == Decimal('0.0000'):
         raise ValueError("Harga jual tidak boleh bernilai nol untuk menghitung margin.")
     margin = ((harga_jual - hpp) / harga_jual) * 100
-    return margin.quantize(Decimal('0.0001'))
+    return margin.quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
 ```
 
 ### 6.3. Komentar Inline
@@ -382,7 +425,8 @@ def hitung_gross_margin(harga_jual: Decimal, hpp: Decimal) -> Decimal:
 * **Justifikasi Teknis**: Memberikan validasi statis sintaksis bagi IDE and mempermudah model AI asisten pendeteksi *type mismatch error*.
 
 ### 7.2. Penggunaan Modul `typing`
-`[WAJIB]` Gunakan modul standar `typing` untuk mendefinisikan tipe data komposit seperti `Optional`, `Union`, `Callable`, `Tuple`, `List`, dan `Dict`.
+`[WAJIB]` Gunakan modul standar `typing` untuk mendefinisikan tipe data komposit seperti `Optional`, `Union`, `Callable`.
+* **Aturan Khusus Python 3.14+**: Dilarang menggunakan `typing.List`, `typing.Dict`, `typing.Tuple` (sudah deprecated). Gunakan keyword bawaan `list[...]`, `dict[...]`, `tuple[...]` secara langsung. Gunakan operator pipe `|` bawaan Python 3.10+ untuk mengganti `Union` (misal: `Decimal | None` bukan `Optional[Decimal]`).
 
 ### 7.3. Type Hints untuk Decimal, NamedTuple, dan Koleksi
 * Variabel nominal keuangan wajib bertipe `Decimal`.
@@ -391,9 +435,8 @@ def hitung_gross_margin(harga_jual: Decimal, hpp: Decimal) -> Decimal:
 
 ### 7.4. Contoh Implementasi Type Hints Standar
 ```python
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from collections import namedtuple
-from typing import Optional
 
 BOMItem = namedtuple('BOMItem', ['nama_bahan', 'qty', 'harga_beli'])
 KalkulasiResult = namedtuple('KalkulasiResult', ['hpp_total', 'status_valid'])
@@ -401,12 +444,12 @@ KalkulasiResult = namedtuple('KalkulasiResult', ['hpp_total', 'status_valid'])
 def proses_kalkulasi_hpp(
     barang_id: int, 
     komponen: list[BOMItem], 
-    diskon_rate: Optional[Decimal] = None
+    diskon_rate: Decimal | None = None
 ) -> KalkulasiResult:
     total_hpp = sum((item.qty * item.harga_beli for item in komponen), Decimal('0.0000'))
     if diskon_rate:
         total_hpp -= total_hpp * diskon_rate
-    return KalkulasiResult(total_hpp.quantize(Decimal('0.0001')), True)
+    return KalkulasiResult(total_hpp.quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP), True)
 ```
 
 ---
@@ -423,10 +466,10 @@ graph TD
     classDef layer3 fill:#fffde7,stroke:#fbc02d,stroke-width:2px;
     classDef layer4 fill:#ffebee,stroke:#f44336,stroke-width:2px;
 
-    L1[Layer 1: Presentation - cli/]:::layer1
-    L2[Layer 2: Business Logic - logic/]:::layer2
-    L3[Layer 3: Data Access - db/]:::layer3
-    L4[Layer 4: Persistence - MySQL]:::layer4
+    L1["Layer 1: Presentation - cli/"]:::layer1
+    L2["Layer 2: Business Logic - logic/"]:::layer2
+    L3["Layer 3: Data Access - db/"]:::layer3
+    L4["Layer 4: Persistence - MySQL"]:::layer4
 
     L1 -->|State Dict Passing| L2
     L2 -->|START TRANSACTION| L3
@@ -464,7 +507,9 @@ session_state = {
 ### 8.5. Pola Nested Closures
 `[DIREKOMENDASIKAN]` Pola nested closures digunakan untuk melacak riwayat breadcrumb navigasi menu internal terminal secara fungsional.
 ```python
-def make_navigation(current_path: str):
+from typing import Callable
+
+def make_navigation(current_path: str) -> Callable[[str], str]:
     def add_subpath(subpath: str) -> str:
         return f"{current_path} > {subpath}"
     return add_subpath
@@ -482,7 +527,7 @@ def make_navigation(current_path: str):
 #### Template Boilerplate Transaksional ACID
 ```python
 from collections import namedtuple
-from typing import Callable, list
+from typing import Callable, Any
 
 Result = namedtuple('Result', ['is_success', 'data', 'error_msg'])
 
@@ -503,7 +548,7 @@ def execute_acid_transaction(db_connection, operations: list[Callable[[Any], Any
 ```
 
 ### 8.9. Pola Connection Pooling & Retry Mechanism
-`[WAJIB]` Untuk memitigasi gangguan switch jaringan LAN toko, modul database **MUST** mengimplementasikan pooling connection driver (`pool_size=5`) dan percobaan ulang otomatis (*retry with exponential backoff*). (Ref: [System Architecture] Bab 6.2)
+`[WAJIB]` Untuk memitigasi gangguan switch jaringan LAN toko, modul database **MUST** mengimplementasikan pooling connection driver (`pool_size=5`, `pool_name="abupool"`) dan percobaan ulang otomatis (*retry with exponential backoff* sebanyak 3 kali) khusus saat menangkap kode error MySQL `2006` (*MySQL server gone away*) dan `2013` (*Lost connection during query*). (Ref: [System Architecture] Bab 6.2)
 
 ---
 
@@ -531,7 +576,7 @@ cursor.execute(query, (username_input,))
 ### 9.3. Konvensi Penulisan Query SQL di Python
 `[WAJIB]` Kata kunci perintah SQL dasar (seperti `SELECT`, `FROM`, `WHERE`, `INSERT`, `UPDATE`, `DELETE`, `JOIN`) **MUST** ditulis dengan huruf kapital penuh (*UPPERCASE*). Penulisan query multi-baris harus diindentasikan secara teratur.
 
-### 9.4. Penggunaan `cursor.execute()` dan `cursor.executemany()`
+### 9.4. Penggunaan `cursor.execute()` and `cursor.executemany()`
 * `cursor.execute()`: Digunakan untuk query tunggal transaksional.
 * `cursor.executemany()`: **WAJIB** digunakan saat melakukan inisialisasi impor data massal dari file CSV (Modul M.2) guna mengefisienkan waktu pemrosesan database.
 
@@ -540,11 +585,20 @@ cursor.execute(query, (username_input,))
 `db_pool = mysql.connector.pooling.MySQLConnectionPool(pool_name="abupool", pool_size=5, ...)`
 
 ### 9.6. Penanganan Error Database (Retry & Rollback)
-`[WAJIB]` Tangkap kode error `2006` (*MySQL server has gone away*) atau `2013` (*Lost connection during query*), jalankan percobaan ulang koneksi 3 kali secara exponential backoff sebelum program dibekukan aman.
+`[WAJIB]` Tangkap kode error `2006` atau `2013`, jalankan percobaan ulang koneksi 3 kali secara exponential backoff sebelum program dibekukan aman.
 
-### 9.7. Standar Tipe Data `DECIMAL(15,4)` dan Mapping Python `decimal.Decimal`
+### 9.7. Standar Tipe Data `DECIMAL(15,4)` and Mapping Python `decimal.Decimal`
 `[WAJIB]` Seluruh pemetaan data numerik presisi **MUST** disinkronkan:
 MySQL `DECIMAL(15,4)` &harr; Python `decimal.Decimal('0.0000')`.
+
+### 9.8. Penanganan data NULL MySQL ke Python
+`[WAJIB]` Kolom MySQL yang bernilai `NULL` secara otomatis akan dikonversi menjadi `None` oleh driver Python. Pengembang wajib menangani kondisi `None` secara eksplisit sebelum melakukan operasi aritmatika (misalnya memberikan default `Decimal('0.0000')` menggunakan helper function).
+* *Contoh Helper*:
+```python
+def handle_null_decimal(val: Decimal | None) -> Decimal:
+    """Mengembalikan Decimal('0.0000') jika nilai dari database bernilai NULL/None."""
+    return val if val is not None else Decimal('0.0000')
+```
 
 ---
 
@@ -576,10 +630,12 @@ def verify_user_password(password_polos: str, password_hash: str) -> bool:
 
 ### 10.4. Aturan Implementasi RBAC (Guard/Decorator Fungsional)
 `[WAJIB]` Batasi pemanggilan fungsi operasional bisnis menggunakan guard fungsional pembungkus `check_permission()` untuk memvalidasi peran JWT staf terhadap matriks otorisasi (Ref: [Security Design] Bab 5.3).
+* Matriks otorisasi visual hanyalah **contoh ringkas** di dalam modul. Untuk memelihara Single Responsibility Principle (SRP) and maintainability, kode program wajib membaca matriks otorisasi terpusat dari dokumen referensi, bukan di-hardcode biner di logic check.
 ```python
 def check_permission(menu_id: str, active_role: str) -> bool:
-    """Validator biner hak akses menu CLI AbuCom."""
-    # Matriks Otorisasi Sederhana
+    """Validator biner hak akses menu CLI AbuCom membaca matriks otorisasi."""
+    # Logic penarikan hak akses terpusat
+    # Contoh implementasi pembacaan matrix:
     RBAC_MATRIX = {
         'pemilik': ['MENU-M1-001', 'MENU-M4-002', 'MENU-M7-002', 'MENU-M2-010'],
         'kasir': ['MENU-M1-001', 'MENU-M1-003', 'MENU-M7-003'],
@@ -675,6 +731,7 @@ Pustaka luar mandatory yang berlisensi aman industri (Ref: [Tech Stack Decision]
 * `python-dotenv==1.0.1` (Pemisah kredensial aman berkas `.env`).
 * `bcrypt==4.1.0` (Enkripsi hashing kata sandi Blowfish).
 * `pyjwt==2.8.0` (Otentikasi token stateless session CLI).
+* `cryptography==42.0.5` (Enkripsi simetris Fernet untuk proteksi WhatsApp CRM pelanggan).
 
 ### 13.3. Daftar Dependensi Rekomendasi
 Pustaka luar visual pendukung estetika terminal kasir:
@@ -695,6 +752,9 @@ Modul standard Python bawaan runtime yang wajib dioptimalkan:
 ### 13.5. Aturan Penambahan Dependensi Baru
 `[WAJIB]` Pengembang dilarang memasang library luar baru tanpa justifikasi teknis tertulis dan wajib memperoleh persetujuan pemilik usaha guna menghindari risiko membengkaknya overhead runtime server lokal.
 
+### 13.6. Aturan Pengelolaan CSV Bulk Import
+`[WAJIB]` Operasi parsing bulk data import menggunakan module `csv` bawaan **MUST** mendefinisikan parameter `encoding='utf-8'` secara eksplisit, menggunakan separator/delimiter koma (`,`), dan melakukan validasi baris-per-baris (*row-by-row type validation*) sebelum data dikirim ke MySQL melalui instruksi `executemany()`.
+
 ---
 
 ## 14. Standar Pengujian (Testing Standards)
@@ -710,7 +770,7 @@ Modul standard Python bawaan runtime yang wajib dioptimalkan:
 * Fungsi pengujian wajib dinamai `test_<behavior_spesifik>()`. (Contoh: `test_kalkulasi_hpp_stempel_flash_sukses()`).
 
 ### 14.4. Aturan Unit Testing Pure Functions
-`[WAJIB]` Unit testing pure functions **MUST** bersifat deterministik, terisolasi penuh, and **DILARANG** melakukan koneksi fisik database MySQL lokal atau file system. Uji data disuplai melalui mock namedtuples.
+`[WAJIB]` Unit testing pure functions **MUST** bersifat deterministik, terisolasi penuh, and **DILARANG** melakukan koneksi fisik database MySQL lokal atau file system. Uji data disuplai melalui mock NamedTuples.
 
 ### 14.5. Aturan Integration Testing Database
 `[WAJIB]` Pengujian modul database wajib berjalan pada database bayangan/skema pengujian khusus (`abucom_test_db`) and wajib meng-commit rollback data setelah uji diselesaikan agar database master tetap bersih.
@@ -773,7 +833,7 @@ Developer wajib memastikan checklist self-review berikut bernilai **YA** sebelum
 
 - [ ] **1.** Apakah seluruh logika bisnis di folder `logic/` terbebas dari penggunaan kata kunci `class` (murni fungsional)?
 - [ ] **2.** Apakah semua fungsi publik memiliki anotasi Type Hints (PEP 484) dan docstrings PEP 257 yang lengkap dengan format Args/Returns/Raises?
-- [ ] **3.** Apakah seluruh komputasi nominal uang Rupiah dan volume stok bahan desimal diproses menggunakan `decimal.Decimal`?
+- [ ] **3.** Apakah seluruh komputasi nominal uang Rupiah dan volume stok bahan desimal diproses menggunakan `decimal.Decimal` dengan pembulatan `ROUND_HALF_UP` eksplisit?
 - [ ] **4.** Apakah seluruh query database MySQL menggunakan parameterized placeholders `%s` dan terbebas dari penggabungan string f-string SQL?
 - [ ] **5.** Apakah operasi perubahan data multi-tabel dibungkus di dalam blok transaksi transaksional ACID yang aman (commit/rollback)?
 - [ ] **6.** Apakah file konfigurasi rahasia program dipisahkan ke berkas `.env` dan berkas `.env` tersebut sudah dikecualikan di `.gitignore`?
@@ -795,8 +855,9 @@ Berikut adalah daftar dokumen referensi formal yang digunakan sebagai dasar peny
 | 1 | **Tech Stack Decision** | `docs/sdlc/01_planning/04_tech_stack_decision.md` | v1.1 | **PRIMER** | Acuan wajib batasan Python 3.14.2+, standard library, dependensi versi terkunci, and portabilitas Dual-OS. |
 | 2 | **System Architecture** | `docs/sdlc/03_design/03_system_architecture.md` | v1.1 | **PRIMER** | Acuan standard arsitektur 4-layer logis, standard transaksional ACID, connection pool retry, and detail layout folder. |
 | 3 | **Security Design** | `docs/sdlc/03_design/06_security_design.md` | v1.1 | **PRIMER** | Acuan standard pengamanan sandi bcrypt, token JWT, matrix RBAC, data protection UU PDP, sanitasi CLI, and audit log. |
-| 4 | **BOM & HPP Design** | `docs/sdlc/03_design/05_bom_hpp_design.md` | v1.1 | **SEKUNDER** | Contoh standard pseudocode fungsional murni Python,NamedTuple, pembulatan desimal, and sinkronisasi ATK internal. |
+| 4 | **BOM & HPP Design** | `docs/sdlc/03_design/05_bom_hpp_design.md` | v1.1 | **SEKUNDER** | Contoh standard pseudocode fungsional murni Python, NamedTuple, pembulatan desimal, and sinkronisasi ATK internal. |
 | 5 | **CLI Interaction Flow** | `docs/sdlc/03_design/04_cli_interaction_flow.md` | v1.1 | **SEKUNDER** | Acuan standard presentasi visual CLI, warna ANSI rich, format tabel tabulate, getpass, navigasi sekuensial, and error codes. |
 | 6 | **Software Requirements Specification** | `docs/sdlc/02_analysis/02_software_requirements.md` | v1.1 | **SEKUNDER** | Acuan spesifikasi non-fungsional, target performa, target code coverage, and parameterisasi runtime. |
 | 7 | **Database Schema (DDL SQL)** | `docs/sdlc/03_design/01_database_schema.sql` | v1.1 | **TERSIER** | Acuan konvensi penamaan tabel/kolom MySQL, index, constraints, default value, and standard InnoDB. |
 | 8 | **ERD Database** | `docs/sdlc/03_design/02_erd_database.md` | v1.1 | **TERSIER** | Acuan penyesuaian penamaan entity di kode Python dengan skema database agar 100% konsisten. |
+| 9 | **Access Control Matrix** | `docs/sdlc/02_analysis/06_access_control_matrix.md` | v1.1 | **SEKUNDER** | Acuan otorisasi menu per role dan rules eskalasi sandi supervisor/pemilik. |
