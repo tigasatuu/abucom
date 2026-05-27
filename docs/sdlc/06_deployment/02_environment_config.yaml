@@ -20,9 +20,9 @@ anchors:
 metadata:
   dokumen: "Environment Config"
   proyek: "AbuCom — Sistem Manajemen Terpadu Usaha Percetakan"
-  versi: "1.0"
+  versi: "1.1"
   tanggal: "2026-05-27"
-  status: "Tervalidasi"
+  status: "Tervalidasi v1.1"
   penyusun: "Senior DevOps Engineer & Infrastructure Configuration Specialist"
   deskripsi: "File konfigurasi referensi tunggal (Single Source of Configuration Truth) untuk seluruh parameter, variabel lingkungan, kredensial, dan konfigurasi infrastruktur AbuCom."
   posisi_sdlc: "Fase 06 — Deployment (Deliverable 2)"
@@ -47,7 +47,7 @@ environments:
       port: *db_port
       name: *db_name_test
       user: "root"
-      password: "[HARUS DIISI MANUAL]" # Data tidak ditemukan di file referensi. Isi secara manual oleh pemilik/admin.
+      password: "[HARUS DIISI MANUAL]" # Ganti dengan kata sandi root basis data lokal pengembang secara manual.
       pool_size: 1
       retry_attempts: 0
     security:
@@ -75,7 +75,7 @@ environments:
       port: *db_port
       name: *db_name_test
       user: *db_user_app
-      password: "[HARUS DIISI MANUAL]" # Data tidak ditemukan di file referensi. Isi secara manual oleh pemilik/admin.
+      password: "[HARUS DIISI MANUAL]" # [SENSITIF] Isi dengan kata sandi user database 'abucom_app' di lingkungan staging.
       pool_size: 2
       retry_attempts: 3
     security:
@@ -103,14 +103,14 @@ environments:
       port: *db_port
       name: *db_name_prod
       user: *db_user_app
-      password: "[HARUS DIISI MANUAL]" # Data tidak ditemukan di file referensi. Isi secara manual oleh pemilik/admin.
+      password: "[HARUS DIISI MANUAL]" # [SENSITIF] Isi dengan kata sandi user database 'abucom_app' di produksi (Sama dengan database.users[0].password).
       pool_size: 5
       retry_attempts: 3
     security:
-      jwt_secret_key: "[HARUS DIISI MANUAL]" # [SENSITIF] Generate via: python -c "import secrets; print(secrets.token_hex(32))"
+      jwt_secret_key: "[HARUS DIISI MANUAL]" # [SENSITIF] Kunci rahasia signature JWT. Generate via: python -c "import secrets; print(secrets.token_hex(32))"
       jwt_lifetime_seconds: *jwt_lifetime
       bcrypt_cost_factor: *bcrypt_cost
-      fernet_key: "[HARUS DIISI MANUAL]" # [SENSITIF] Generate via: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode('utf-8'))"
+      fernet_key: "[HARUS DIISI MANUAL]" # [SENSITIF] Kunci enkripsi simetris Fernet (UU PDP). Generate via: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode('utf-8'))"
       rate_limiting:
         max_attempts: 5
         lockout_minutes: 10
@@ -147,7 +147,7 @@ infrastructure:
         model: "Router Board MikroTik hEX lite"
         role: "DHCP Server, IP Static Bind, Gateway LAN lokal"
         default_gateway: "192.168.1.1"
-        admin_password: "[HARUS DIISI MANUAL]" # [SENSITIF] Data tidak ditemukan di file referensi. Isi secara manual oleh pemilik/admin.
+        admin_password: "[HARUS DIISI MANUAL]" # [SENSITIF] Sandi administrator Router Board MikroTik hEX lite.
       ups:
         - node: "server"
           model: "UPS 600VA / 360W"
@@ -184,10 +184,10 @@ operating_systems:
     hostname: "abuserver"
     users:
       - username: "root"
-        password: "[HARUS DIISI MANUAL]" # [SENSITIF] Data tidak ditemukan di file referensi. Isi secara manual oleh pemilik/admin.
+        password: "[HARUS DIISI MANUAL]" # [SENSITIF] Sandi user 'root' server Debian 12 (Catat di buku catatan fisik rahasia pemilik).
         role: "Super Administrator"
       - username: "abuadm"
-        password: "[HARUS DIISI MANUAL]" # [SENSITIF] Data tidak ditemukan di file referensi. Isi secara manual oleh pemilik/admin.
+        password: "[HARUS DIISI MANUAL]" # [SENSITIF] Sandi user administratif non-root 'abuadm' server Debian 12.
         role: "Non-Root Administrative User"
     network_interface:
       interface_name: "enp1s0"
@@ -261,7 +261,7 @@ database:
   users:
     - username: *db_user_app
       host: "192.168.1.%"
-      password: "[HARUS DIISI MANUAL]" # [SENSITIF] Data tidak ditemukan di file referensi. Isi secara manual oleh pemilik/admin.
+      password: "[HARUS DIISI MANUAL]" # [SENSITIF] Sandi user database 'abucom_app' untuk remote koneksi dari host IP segmen LAN.
   privileges:
     production:
       database: *db_name_prod
@@ -271,8 +271,8 @@ database:
       database: *db_name_test
       allowed_actions: ["SELECT", "INSERT", "UPDATE", "DELETE", "CREATE", "DROP"]
   schema_files:
-    schema: "/tmp/schema.sql"
-    seed: "/tmp/seed.sql"
+    schema: "docs/sdlc/03_design/01_database_schema.sql" # Sumber skema basis data fisik (DDL) permanen di repositori.
+    seed: "docs/sdlc/03_design/01_database_schema.sql" # Sumber data master inisial (DML) permanen di repositori.
 
 # --- BAGIAN 6: KONFIGURASI RUNTIME PYTHON ---
 python_runtime:
@@ -357,6 +357,8 @@ application:
       - "requirements.txt"
       - ".env.example"
       - ".gitignore"
+      - ".gitattributes"
+      - "setup_env.bat"
     folders:
       cli:
         - "__init__.py"
@@ -389,6 +391,7 @@ application:
         - "crypto.py"
         - "backup.py"
         - "text_formatter.py"
+        - "backup_cron.sh"
       exports:
         - "backups/"
         - "designs/"
@@ -422,7 +425,7 @@ application:
       - name: "DB_PASSWORD"
         type: "string"
         desc: "Kata sandi database"
-        example: "[HARUS DIISI MANUAL]" # [SENSITIF]
+        example: "[HARUS DIISI MANUAL]" # [SENSITIF] Contoh isi password database.
       - name: "DB_NAME"
         type: "string"
         desc: "Nama database utama"
@@ -434,7 +437,7 @@ application:
       - name: "JWT_SECRET_KEY"
         type: "string"
         desc: "Kunci rahasia signature JWT"
-        example: "[HARUS DIISI MANUAL]" # [SENSITIF]
+        example: "[HARUS DIISI MANUAL]" # [SENSITIF] Contoh isi JWT secret key.
       - name: "JWT_LIFETIME_SECONDS"
         type: "integer"
         desc: "Masa kedaluwarsa sesi token JWT"
@@ -442,11 +445,11 @@ application:
       - name: "FERNET_KEY"
         type: "string"
         desc: "Kunci enkripsi Fernet untuk data pribadi pelanggan"
-        example: "[HARUS DIISI MANUAL]" # [SENSITIF]
+        example: "[HARUS DIISI MANUAL]" # [SENSITIF] Contoh isi Fernet key.
       - name: "BACKUP_ZIP_PASSWORD"
         type: "string"
         desc: "Kata sandi ZIP cadangan terenkripsi"
-        example: "[HARUS DIISI MANUAL]" # [SENSITIF]
+        example: "[HARUS DIISI MANUAL]" # [SENSITIF] Contoh isi password ZIP backup.
       - name: "PRINTER_PORT"
         type: "string"
         desc: "Nama port printer thermal Windows kasir"
@@ -577,8 +580,8 @@ backup:
 version_control:
   system: "Git"
   identity:
-    user_name: "[HARUS DIISI MANUAL]" # Git identity user.name pemilik
-    user_email: "[HARUS DIISI MANUAL]" # Git identity user.email pemilik
+    user_name: "Junior Programmer" # Default baseline identity defined in R-01 & R-09.
+    user_email: "donsise@example.com" # Default baseline identity defined in R-01 & R-09.
   branching:
     main: "Stable release, lingkungan rilis stabil"
     features: "feature/modul-fitur (fitur baru dikerjakan di branch terpisah)"
