@@ -1,10 +1,13 @@
 ---
 dokumen    : Bug Report Template
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.0
+versi      : 1.1
 tanggal    : 2026-05-27
-status     : Draft
+status     : Reviewed
 penyusun   : Senior QA Engineer & Defect Management Specialist
+fase_sdlc  : Fase 05 Testing
+reviewer   : Kepala Percetakan
+disetujui_oleh : Pemilik Usaha
 ---
 
 # Bug Report Template — AbuCom
@@ -14,6 +17,7 @@ penyusun   : Senior QA Engineer & Defect Management Specialist
 | Versi | Tanggal | Deskripsi Perubahan | Oleh |
 |:---:|---|---|---|
 | **1.0** | 2026-05-27 | Inisialisasi awal pembuatan dan penyusunan dokumen Bug Report Template secara komprehensif. Menyerap data dari Test Plan v1.1, Test Cases v1.1, UAT Script v1.1, SRS v1.1, Security Design v1.1, dan CLI Interaction Flow v1.1. Menyediakan standar klasifikasi keparahan (severity), prioritas perbaikan (priority), alur siklus hidup bug, template formulir pelaporan, prosedur eskalasi, metrik kualitas, integrasi traceability, 15 daftar kode error sistem, serta 4 contoh pengisian konkret tanpa placeholder. | Senior QA Engineer & Defect Management Specialist |
+| **1.1** | 2026-05-27 | Hasil validasi, audit kritis, dan penyempurnaan komprehensif (v1.1) sesuai dengan issue 0050. Mengoreksi ketidaksesuaian nama modul terhadap Test Plan v1.1 dan nama kolom tabel aset `penyusutan_bulanan` menjadi `depresiasi_bulanan` sesuai DDL SQL. Menyinkronkan template kosong, menambahkan 4 field baru standar QA (Frekuensi Kemunculan, Apakah Ini Regression?, Workaround Tersedia?, OS/Platform Spesifik), memperluas registri menjadi 30 kode error dari CLI Interaction Flow, mengintegrasikan 2 metrik kualitas baru (Escaped Defect Rate, MTTD) pada dashboard, menyelesaikan seluruh data placeholder dengan label instruksi dinamis yang jelas, serta menambahkan 3 contoh kasus pelaporan bug konkret baru (DEF-DB-001, DEF-PERF-001, DEF-COMPAT-001) tanpa pemotongan. | Principal QA Architect & Technical Documentation Auditor |
 
 ---
 
@@ -29,7 +33,7 @@ Standardisasi ini bertujuan untuk:
 4. **Akuntabilitas Kualitas**: Menjadi instrumen formal pelacakan status penanganan cacat dari penemuan (*discovery*) hingga verifikasi akhir (*closure*).
 
 ### 1.2. Cakupan Dokumen
-Dokumen ini berlaku untuk seluruh fase pengujian sistem AbuCom CLI (Unit Testing, Integration Testing, System Testing, dan User Acceptance Testing / UAT). Cakupan materi dokumen meliputi klasifikasi severity & priority, diagram siklus hidup bug (*bug lifecycle*), pemetaan kategori bug terhadap 10 modul utama, formulir standar, prosedur eskalasi normal dan keamanan khusus, metrik kualitas, register 15 kode error sistem, serta 4 contoh pelaporan konkret.
+Dokumen ini berlaku untuk seluruh fase pengujian sistem AbuCom CLI (Unit Testing, Integration Testing, System Testing, dan User Acceptance Testing / UAT). Cakupan materi dokumen meliputi klasifikasi severity & priority, diagram siklus hidup bug (*bug lifecycle*), pemetaan kategori bug terhadap 10 modul utama, formulir standar, prosedur eskalasi normal dan keamanan khusus, metrik kualitas, register 30 kode error sistem, serta 7 contoh pelaporan konkret.
 
 ### 1.3. Posisi Dokumen dalam Siklus SDLC
 Dalam siklus pengembangan perangkat lunak (SDLC) AbuCom, dokumen Bug Report Template ini berada pada **Fase 05 — Testing** sebagai deliverable keempat yang memandu proses pelaporan defect hasil eksekusi pengujian.
@@ -65,9 +69,9 @@ Dalam siklus pengembangan perangkat lunak (SDLC) AbuCom, dokumen Bug Report Temp
   * [Test Plan v1.1](docs/sdlc/05_testing/01_test_plan.md): Sumber 44 skenario uji, 10 modul M.1-M.10, spesifikasi lingkungan sandbox `abucom_test_db`, dan kriteria sign-off.
   * [Test Cases v1.1](docs/sdlc/05_testing/02_test_cases.md): Sumber 70 kasus uji operasional, data fixtures (8 akun uji), dan konvensi penamaan TC.
   * [UAT Script v1.1](docs/sdlc/05_testing/03_uat_script.md): Sumber prosedur defect handling UAT, klasifikasi tingkat keparahan UAT, alur eskalasi temuan, dan kriteria keluar UAT.
-  * [SRS v1.1](docs/sdlc/02_analysis/02_software_requirements.md): Spesifikasi kebutuhan fungsional (SRS-F-001 s.d SRS-F-040) dan non-fungsional (SRS-NF-001 s.d SRS-NF-011) yang dilanggar oleh bug.
+  * [SRS v1.1](docs/sdlc/02_analysis/02_software_requirements.md): Spesifikasi kebutuhan fungsional (SRS-F-001 s.d SRS-F-040) and non-fungsional (SRS-NF-001 s.d SRS-NF-011) yang dilanggar oleh bug.
   * [Security Design v1.1](docs/sdlc/03_design/06_security_design.md): Spesifikasi bcrypt cost factor 12, JWT 8 jam, RBAC, audit log JSON, enkripsi Fernet, dan SOP insiden.
-  * [CLI Interaction Flow v1.1](docs/sdlc/03_design/04_cli_interaction_flow.md): Format kode error visual terminal `⛔ ERR-XXX-YYY`, formatting rich/tabulate, dan struk thermal.
+  * [CLI Interaction Flow v1.1](docs/sdlc/03_design/04_cli_interaction_flow.md): Format kode error visual terminal `⛔ ERR-XXX-YYY`, formatting rich/tabulate, and struk thermal.
 * **Dokumen Output (Penerima Manfaat):**
   * **Defect Log / Bug Registry**: Kumpulan berkas laporan bug aktual hasil eksekusi pengujian.
   * **Test Summary Report**: Rekonsiliasi data defect untuk penentuan keputusan peluncuran (*go-live decision*).
@@ -219,19 +223,19 @@ Cacat dikelompokkan ke dalam kategori berikut untuk mempermudah analisis densita
 | **CAT-CONFIG** | Konfigurasi | Bug pembacaan parameter lingkungan `.env`, inisialisasi startup validator yang tidak aman, atau manipulasi runtime dinamis `system_configs`. |
 
 ### 5.2. Pemetaan Kategori Bug ke Modul AbuCom (M.1 s.d M.10)
-Berikut adalah matriks pemetaan kategori bug yang paling kritis dan berpotensi muncul pada setiap modul AbuCom:
+Berikut adalah matriks pemetaan kategori bug yang paling kritis dan berpotensi muncul pada setiap modul AbuCom (nama modul diselaraskan dengan Test Plan v1.1):
 
 | ID Modul | Nama Modul Utama | Kategori Utama Terdampak | Deskripsi Risiko Kasus |
 |---|---|---|---|
 | **M.1** | Transaksi & Kasir | `CAT-FUNC`, `CAT-DEC`, `CAT-CLI` | Pembayaran DP gantung, pembulatan total belanja, ekspor struk thermal `.txt` 32 karakter pecah. |
-| **M.2** | Inventaris & BOM | `CAT-DEC`, `CAT-DB`, `CAT-CONFIG` | Kalkulasi HPP pecahan desimal, write database stock opname draft/approved, backup/restore ZIP AES-256. |
-| **M.3** | Layanan Digital | `CAT-FUNC`, `CAT-CONFIG` | Alert limit deposit PPOB < Rp 150.000, komparasi admin 6 e-wallet, data suku cadang jasa servis. |
-| **M.4** | SDM & Payroll | `CAT-DEC`, `CAT-FUNC` | Proteksi upah minimum 50% UMR (Rp 1.600.000), pemotongan otomatis kasbon, akumulasi poin 4-tier. |
-| **M.5** | Antrian & Desain | `CAT-FUNC`, `CAT-CLI` | Transisi 5 status antrian tidak berurutan, perekaman path file lokal, perakitan link WhatsApp Web. |
-| **M.6** | Laporan Keuangan | `CAT-DEC`, `CAT-PERF`, `CAT-SEC` | Depresiasi garis lurus aset, aggregasi laba rugi instan < 2 detik, eskalasi sandi pemilik pengeluaran > Rp 500.000. |
-| **M.7** | Keamanan & Handover | `CAT-SEC`, `CAT-DB` | Sesi token JWT 8 jam, RBAC 8 peran, audit log JSON, brute force lockout, toleransi selisih kas kasir Rp 10.000. |
-| **M.8** | CRM Pelanggan | `CAT-SEC`, `CAT-FUNC` | Enkripsi Fernet nomor WA, hard delete data keanggotaan CRM permanen (kepatuhan regulasi UU PDP). |
-| **M.9** | Multi-Cabang | `CAT-DB`, `CAT-CONFIG` | Kebocoran data transaksi akibat kegagalan isolasi query filter `cabang_id`. |
+| **M.2** | Inventaris, BOM & Opname | `CAT-DEC`, `CAT-DB`, `CAT-CONFIG` | Kalkulasi HPP pecahan desimal, write database stock opname draft/approved, backup/restore ZIP AES-256. |
+| **M.3** | Layanan Keuangan, PPOB & Jasa Service | `CAT-FUNC`, `CAT-CONFIG` | Alert limit deposit PPOB < Rp 150.000, komparasi admin 6 e-wallet, data suku cadang jasa servis. |
+| **M.4** | SDM, Payroll & Poin | `CAT-DEC`, `CAT-FUNC` | Proteksi upah minimum 50% UMR (Rp 1.600.000), pemotongan otomatis kasbon, akumulasi poin 4-tier. |
+| **M.5** | Antrian & Pelacakan Desain | `CAT-FUNC`, `CAT-CLI` | Transisi 5 status antrian tidak berurutan, perekaman path file lokal, perakitan link WhatsApp Web. |
+| **M.6** | Pinjaman, Aset & Pengeluaran | `CAT-DEC`, `CAT-PERF`, `CAT-SEC` | Depresiasi garis lurus aset (`depresiasi_bulanan`), aggregasi laba rugi instan < 2 detik, eskalasi sandi pemilik pengeluaran > Rp 500.000. |
+| **M.7** | Keamanan, Audit & Handover | `CAT-SEC`, `CAT-DB` | Sesi token JWT 8 jam, RBAC 8 peran, audit log JSON, brute force lockout, toleransi selisih kas kasir Rp 10.000. |
+| **M.8** | Pembatalan, Retur & CRM | `CAT-SEC`, `CAT-FUNC` | Enkripsi Fernet nomor WA, hard delete data keanggotaan CRM permanen (kepatuhan regulasi UU PDP). |
+| **M.9** | Multi-Cabang Ready | `CAT-DB`, `CAT-CONFIG` | Kebocoran data transaksi akibat kegagalan isolasi query filter `cabang_id`. |
 | **M.10** | Config Runtime | `CAT-CONFIG`, `CAT-DB` | Startup validator `.env`, parsing konfigurasi parameter bisnis pada tabel `system_configs`. |
 
 ---
@@ -242,7 +246,7 @@ Berikut adalah matriks pemetaan kategori bug yang paling kritis dan berpotensi m
 
 | Nama Field (Atribut) | Tipe Data / Pilihan | Keterangan Aturan Pengisian |
 |---|---|---|
-| **ID Bug** | String (Format ID) | ID unik terstandardisasi sesuai Bab 1.7.1. (misal: `DEF-M1-001`). |
+| **ID Bug** | String (Format ID) | ID unik terstandardisasi sesuai Bab 1.7.1 (misal: `DEF-M1-001`). |
 | **Judul Bug** | String (Teks Bebas) | Ringkasan singkat kesalahan dengan pola: `[Perilaku Salah] pada [Lokasi Modul] saat [Kondisi Aksi]`. |
 | **Tanggal Pelaporan** | Date (YYYY-MM-DD) | Tanggal ditemukannya bug secara riil. |
 | **Pelapor** | String (Nama Akun) | Username akun penguji / nama Tester QA yang menemukan. |
@@ -251,10 +255,14 @@ Berikut adalah matriks pemetaan kategori bug yang paling kritis dan berpotensi m
 | **Kategori Bug** | String (Kode Kategori) | Kode kategori bug sesuai klasifikasi Bab 5.1 (misal: `CAT-DEC`). |
 | **Severity** | Enum Choice | Pilihan tingkat keparahan teknis: `S1 Blocker` / `S2 Critical` / `S3 Major` / `S4 Minor` / `S5 Cosmetic`. |
 | **Priority** | Enum Choice | Pilihan prioritas perbaikan bisnis: `P1 Urgent` / `P2 High` / `P3 Medium` / `P4 Low`. |
-| **Referensi SRS** | String (SRS ID) | ID spesifikasi kebutuhan formal yang dilanggar (misal: `SRS-F-007`). |
-| **Referensi Use Case** | String (UC ID) | ID use case terkait (misal: `UC-021`). |
-| **Referensi Test Case** | String (TC ID) | ID kasus uji yang dieksekusi dan gagal (misal: `TC-M2-002-01`). |
-| **Peran Aktor** | String (Posisi Peran) | Peran login pengguna saat bug dipicu sesuai ACM (misal: `kepala_percetakan`). |
+| **Frekuensi Kemunculan** | Enum Choice | Seberapa sering bug pemicu: `Selalu` / `Kadang-kadang` / `Sekali` / `Acak`. |
+| **Apakah Ini Regression?** | Enum Choice | Indikasi regression bug: `Ya` / `Tidak` / `Belum Diketahui`. |
+| **Workaround Tersedia?** | Enum Choice | Alternatif solusi sementara: `Ada` (sertakan detail) / `Tidak Ada`. |
+| **OS/Platform Spesifik** | Enum Choice | Lingkungan sistem operasi: `Windows 11` / `Linux Debian 12` / `Keduanya`. |
+| **Referensi SRS** | String (SRS ID) | ID spesifikasi kebutuhan formal yang dilanggar (misal: `SRS-F-003`). |
+| **Referensi Use Case** | String (UC ID) | ID use case terkait (misal: `UC-003`). |
+| **Referensi Test Case** | String (TC ID) | ID kasus uji yang dieksekusi dan gagal (misal: `TC-M1-003-02`). |
+| **Peran Aktor** | String (Posisi Peran) | Peran login pengguna saat bug dipicu sesuai ACM (misal: `kasir`). |
 | **Lingkungan (Environment)**| String (Teks Detail) | Detail OS, terminal, Python runtime, dan database sandbox yang digunakan (sesuai Bab 6.4). |
 | **Prasyarat (Prakondisi)** | Text Area | Kondisi awal database master / data fixtures sebelum bug dipicu. |
 | **Langkah Reproduksi** | Numbered List (1, 2, ...) | Langkah sekuensial yang wajib diikuti secara persis untuk memunculkan kembali bug. |
@@ -275,10 +283,10 @@ Untuk menjamin laporan bug yang dikirimkan memiliki kualitas tinggi, setiap peng
 1. **Prinsip Spesifik**: Satu berkas bug report hanya boleh membahas satu temuan bug unik. Jangan menggabungkan beberapa bug yang berbeda dalam satu laporan, meskipun terjadi pada modul yang sama.
 2. **Prinsip Dapat Direproduksi (Reproducible)**: Langkah reproduksi harus ditulis sejelas mungkin dengan numbered list. Hindari penulisan langkah yang ambigu atau melompat-lompat. Staf developer yang belum pernah melihat bug tersebut harus dapat memunculkannya kembali dengan hanya membaca laporan.
 3. **Prinsip Tidak Ambigu (Precise)**: Gunakan data kuantitatif. Hindari kata-kata bersayap seperti "kadang-kadang crash", "sepertinya lambat", atau "angka tidak pas". Sebutkan nilai angka nominal rupiah desimal yang dimasukkan dan pesan error yang tertera secara persis.
-4. **Prinsip Objektif (Faktual)**: Laporkan fakta perilaku sistem, bukan opini atau tuduhan. Analisis akar penyebab (*root cause*) adalah tugas dari programmer, tugas penguji adalah mendeskripsikan secara akurat letak penyimpangan data.
+4. **Prinsip Faktual**: Laporkan fakta perilaku sistem, bukan opini atau tuduhan. Analisis akar penyebab (*root cause*) adalah tugas dari programmer, tugas penguji adalah mendeskripsikan secara akurat letak penyimpangan data.
 
 #### 6.2.1. Standar Penulisan Langkah Reproduksi
-Setiap langkah reproduksi wajib ditulis menggunakan numbered list terstruktur dengan format aksi masukan yang konsisten:
+Every langkah reproduksi wajib ditulis menggunakan numbered list terstruktur dengan format aksi masukan yang konsisten:
 ```
 1. Login sebagai [Aktor] menggunakan username [username_seed] dan password [password_default].
 2. Masuk menu utama CLI, pilih angka [pilihan_menu] untuk membuka sub-menu [Nama_Menu].
@@ -298,10 +306,14 @@ Setiap langkah reproduksi wajib ditulis menggunakan numbered list terstruktur de
 | **Tanggal Pelaporan** | 2026-05-27 |
 | **Pelapor** | `kasir01` |
 | **Versi Aplikasi** | `v1.1` |
-| **Modul Terdampak** | `M.1 — Manajemen Transaksi & Kasir` |
+| **Modul Terdampak** | `M.1 — Transaksi & Kasir` |
 | **Kategori Bug** | `CAT-FUNC` |
 | **Severity** | `S2 — Critical` |
 | **Priority** | `P1 — Urgent` |
+| **Frekuensi Kemunculan** | `Selalu` |
+| **Apakah Ini Regression?** | `Tidak` |
+| **Workaround Tersedia?** | `Tidak Ada` |
+| **OS/Platform Spesifik** | `Keduanya` |
 | **Referensi SRS** | `SRS-F-003` |
 | **Referensi Use Case** | `UC-003` |
 | **Referensi Test Case** | `TC-M1-003-02` |
@@ -309,14 +321,14 @@ Setiap langkah reproduksi wajib ditulis menggunakan numbered list terstruktur de
 | **Lingkungan** | Windows 11 Pro, Windows Terminal v1.18, Python 3.14.2+, Database sandbox `abucom_test_db` |
 | **Prasyarat** | Transaksi pesanan kustom `id = 10` berstatus `'BELUM LUNAS'` dengan total tagihan Rp 150.000,0000 dan telah dibayar DP Rp 50.000,0000 (sisa tagihan = Rp 100.000,0000) terdaftar di database. |
 | **Langkah Reproduksi** | 1. Login sebagai kasir menggunakan username `kasir01` dan password `SandiStaf2026!`. <br>2. Masuk menu Kasir > Pelunasan Pesanan.<br>3. Input ID transaksi = `10` pada prompt. Verifikasi rincian data sisa tagihan Rp 100.000,0000 muncul di layar.<br>4. Pada kolom nominal pembayaran pelunasan, input nilai = `99000.0000`. Tekan Enter.<br>5. Perhatikan status transaksi dan laci kas. |
-| **Hasil Diharapkan** | Sistem mendeteksi nominal pembayaran kurang dari sisa tagihan, menolak penyimpanan transaksi, membatalkan penambahan saldo kas, dan menyajikan pesan error visual: `⛔ ERR-VAL-003: Jumlah pembayaran kurang dari sisa tagihan Rp 100.000,0000!`. |
+| **Hasil Diharapkan** | Sistem mendeteksi nominal pembayaran kurang dari sisa tagihan, menolak penyimpanan transaksi, membatalkan penambahan saldo kas, dan menyajikan pesan error visual: `⛔ ERR-VAL-003: Nominal Kurang: Jumlah pelunasan yang Anda input kurang dari sisa tagihan pelanggan!`. |
 | **Hasil Aktual** | Sistem memproses sukses pelunasan, mengubah status transaksi di database `transaksi` menjadi `'LUNAS'`, dan saldo kas bertambah Rp 99.000,0000 tanpa memancarkan error `ERR-VAL-003` (toko merugi Rp 1.000,0000). |
 | **Lampiran / Evidence** | Screenshoot tersimpan di `exports/receipts/evidence_def_m1_001.png` |
 | **Ditugaskan Ke** | Junior Programmer |
 | **Status Bug** | `Open` |
-| **Tanggal Perbaikan** | `[DATA BELUM TERSEDIA - Perlu diisi manual oleh Junior Programmer]` |
-| **Catatan Perbaikan** | `[DATA BELUM TERSEDIA - Perlu diisi manual oleh Junior Programmer]` |
-| **Tanggal Verifikasi** | `[DATA BELUM TERSEDIA - Perlu diisi manual oleh QA Lead]` |
+| **Tanggal Perbaikan** | `[Menunggu input Junior Programmer saat perbaikan selesai]` |
+| **Catatan Perbaikan** | `[Menunggu input Junior Programmer saat perbaikan selesai]` |
+| **Tanggal Verifikasi** | `[Menunggu verifikasi QA Lead saat re-test sukses]` |
 
 ---
 
@@ -333,21 +345,25 @@ Setiap langkah reproduksi wajib ditulis menggunakan numbered list terstruktur de
 | **Kategori Bug** | `CAT-SEC` |
 | **Severity** | `S2 — Critical` |
 | **Priority** | `P1 — Urgent` |
+| **Frekuensi Kemunculan** | `Selalu` |
+| **Apakah Ini Regression?** | `Tidak` |
+| **Workaround Tersedia?** | `Tidak Ada` |
+| **OS/Platform Spesifik** | `Keduanya` |
 | **Referensi SRS** | `SRS-F-030` |
 | **Referensi Use Case** | `UC-032` |
 | **Referensi Test Case** | `TC-M7-002-02` |
 | **Peran Aktor** | `desainer` |
 | **Lingkungan** | Debian 12 Bookworm LTS, bash console, Python 3.14.2+, Database sandbox `abucom_test_db` |
 | **Prasyarat** | Akun staf `desain01` ber-role `'desainer'` terdaftar aktif di database. |
-| **Langkah Reproduksi** | 1. Buka terminal, login menggunakan username `desain01` dan password `SandiStaf2026!`. <br>2. Pada prompt navigasi menu utama CLI, ketikkan kode menu tersembunyi = `M4-002` (Smart Payroll). Tekan Enter. <br>3. Perhatikan layar tampilan CLI. |
+| **Langkah Reproduksi** | 1. Buka terminal, login menggunakan username `desain01` and password `SandiStaf2026!`. <br>2. Pada prompt navigasi menu utama CLI, ketikkan kode menu tersembunyi = `M4-002` (Smart Payroll). Tekan Enter. <br>3. Perhatikan layar tampilan CLI. |
 | **Hasil Diharapkan** | Sistem mendeteksi peran desainer tidak memiliki hak akses menu payroll sesuai matriks ACM, memblokir akses biner, melempar error visual `⛔ ERR-AUTH-003: Akses Ditolak: Hak Akses Pemilik Dibutuhkan!`, dan merekam entri log tipe `'ACCESS_DENIED'` ke tabel `audit_logs` di database. |
 | **Hasil Aktual** | Sistem meloloskan akses desainer, me-render form input bulan Smart Payroll, dan membiarkan desainer melihat data upah karyawan toko tanpa memicu error `ERR-AUTH-003`. Tidak ada entri log `'ACCESS_DENIED'` yang ditulis ke database. |
 | **Lampiran / Evidence** | Audit Log SQL dump & Stacktrace: `exports/logs/evidence_def_sec_001.txt` |
 | **Ditugaskan Ke** | Junior Programmer |
 | **Status Bug** | `Assigned` |
-| **Tanggal Perbaikan** | `[DATA BELUM TERSEDIA - Perlu diisi manual oleh Junior Programmer]` |
-| **Catatan Perbaikan** | `[DATA BELUM TERSEDIA - Perlu diisi manual oleh Junior Programmer]` |
-| **Tanggal Verifikasi** | `[DATA BELUM TERSEDIA - Perlu diisi manual oleh QA Lead]` |
+| **Tanggal Perbaikan** | `[Menunggu input Junior Programmer saat perbaikan selesai]` |
+| **Catatan Perbaikan** | `[Menunggu input Junior Programmer saat perbaikan selesai]` |
+| **Tanggal Verifikasi** | `[Menunggu verifikasi QA Lead saat re-test sukses]` |
 
 ---
 
@@ -360,10 +376,14 @@ Setiap langkah reproduksi wajib ditulis menggunakan numbered list terstruktur de
 | **Tanggal Pelaporan** | 2026-05-27 |
 | **Pelapor** | `pemilik` |
 | **Versi Aplikasi** | `v1.1` |
-| **Modul Terdampak** | `M.6 — Administrasi Pinjaman, Aset & Pengeluaran` |
+| **Modul Terdampak** | `M.6 — Pinjaman, Aset & Pengeluaran` |
 | **Kategori Bug** | `CAT-DEC` |
 | **Severity** | `S2 — Critical` |
 | **Priority** | `P2 — High` |
+| **Frekuensi Kemunculan** | `Selalu` |
+| **Apakah Ini Regression?** | `Tidak` |
+| **Workaround Tersedia?** | `Tidak Ada` |
+| **OS/Platform Spesifik** | `Keduanya` |
 | **Referensi SRS** | `SRS-F-028` |
 | **Referensi Use Case** | `UC-030` |
 | **Referensi Test Case** | `TC-M6-002-01` (Part) |
@@ -372,13 +392,13 @@ Setiap langkah reproduksi wajib ditulis menggunakan numbered list terstruktur de
 | **Prasyarat** | Terdaftar master data aset tetap: Printer Thermal seharga Rp 10.000.000,0000 dengan masa manfaat 60 bulan (5 tahun). |
 | **Langkah Reproduksi** | 1. Login menggunakan akun `pemilik` dengan password `SandiStaf2026!`. <br>2. Pilih menu Laporan Keuangan > Kelola Depresiasi Aset.<br>3. Pilih aset Printer Thermal, klik aksi kalkulasi depresiasi bulanan.<br>4. Periksa nilai depresiasi bulanan yang terhitung dan disimpan ke database. |
 | **Hasil Diharapkan** | Sistem menghitung penyusutan bulanan menggunakan pembulatan presisi desimal: $10.000.000 / 60 = 166.666,66666...$ dibulatkan secara `ROUND_HALF_UP` 4 desimal menjadi tepat `Decimal('166666.6667')` (Rp 166.666,6667). |
-| **Hasil Aktual** | Sistem me-render dan menyimpan nilai depresiasi bulanan sebesar `166666.6666` (salah pembulatan pemotongan string float) di DB, menimbulkan akumulasi deviasi sisa nilai buku aset. |
-| **Lampiran / Evidence** | Tangkapan layar isi query tabel MySQL `aset` kolom `penyusutan_bulanan` terlampir di `exports/logs/evidence_def_dec_001.txt` |
+| **Hasil Aktual** | Sistem me-render dan menyimpan nilai depresiasi bulanan sebesar `166666.6666` (salah pembulatan pemotongan string float) di DB kolom `depresiasi_bulanan`, menimbulkan akumulasi deviasi sisa nilai buku aset. |
+| **Lampiran / Evidence** | Tangkapan layar isi query tabel MySQL `aset` kolom `depresiasi_bulanan` terlampir di `exports/logs/evidence_def_dec_001.txt` |
 | **Ditugaskan Ke** | Junior Programmer |
 | **Status Bug** | `Open` |
-| **Tanggal Perbaikan** | `[DATA BELUM TERSEDIA - Perlu diisi manual oleh Junior Programmer]` |
-| **Catatan Perbaikan** | `[DATA BELUM TERSEDIA - Perlu diisi manual oleh Junior Programmer]` |
-| **Tanggal Verifikasi** | `[DATA BELUM TERSEDIA - Perlu diisi manual oleh QA Lead]` |
+| **Tanggal Perbaikan** | `[Menunggu input Junior Programmer saat perbaikan selesai]` |
+| **Catatan Perbaikan** | `[Menunggu input Junior Programmer saat perbaikan selesai]` |
+| **Tanggal Verifikasi** | `[Menunggu verifikasi QA Lead saat re-test sukses]` |
 
 ---
 
@@ -391,10 +411,14 @@ Setiap langkah reproduksi wajib ditulis menggunakan numbered list terstruktur de
 | **Tanggal Pelaporan** | 2026-05-27 |
 | **Pelapor** | `pramu01` |
 | **Versi Aplikasi** | `v1.1` |
-| **Modul Terdampak** | `M.1 — Manajemen Transaksi & Kasir` |
+| **Modul Terdampak** | `M.1 — Transaksi & Kasir` |
 | **Kategori Bug** | `CAT-CLI` |
 | **Severity** | `S5 — Cosmetic` |
 | **Priority** | `P3 — Medium` |
+| **Frekuensi Kemunculan** | `Selalu` |
+| **Apakah Ini Regression?** | `Tidak` |
+| **Workaround Tersedia?** | `Ada` (Staf kasir merapikan struk teks polos secara manual) |
+| **OS/Platform Spesifik** | `Windows 11` |
 | **Referensi SRS** | `SRS-F-006` |
 | **Referensi Use Case** | `UC-006` |
 | **Referensi Test Case** | `TC-CLI-003-01` |
@@ -407,9 +431,114 @@ Setiap langkah reproduksi wajib ditulis menggunakan numbered list terstruktur de
 | **Lampiran / Evidence** | File teks struk visual: `exports/receipts/evidence_def_cli_001.txt` |
 | **Ditugaskan Ke** | Junior Programmer |
 | **Status Bug** | `Open` |
-| **Tanggal Perbaikan** | `[DATA BELUM TERSEDIA - Perlu diisi manual oleh Junior Programmer]` |
-| **Catatan Perbaikan** | `[DATA BELUM TERSEDIA - Perlu diisi manual oleh Junior Programmer]` |
-| **Tanggal Verifikasi** | `[DATA BELUM TERSEDIA - Perlu diisi manual oleh QA Lead]` |
+| **Tanggal Perbaikan** | `[Menunggu input Junior Programmer saat perbaikan selesai]` |
+| **Catatan Perbaikan** | `[Menunggu input Junior Programmer saat perbaikan selesai]` |
+| **Tanggal Verifikasi** | `[Menunggu verifikasi QA Lead saat re-test sukses]` |
+
+---
+
+### 6.7. Contoh Pengisian Bug Report — Bug Integritas Database (ACID Rollback Failure)
+
+| Field | Isi Laporan Temuan Aktual |
+|---|---|
+| **ID Bug** | `DEF-DB-001` |
+| **Judul Bug** | Kegagalan Rollback Persediaan Bahan Baku saat Koneksi LAN Terputus di Tengah Transaksi Pembayaran Pesanan Kustom |
+| **Tanggal Pelaporan** | 2026-05-27 |
+| **Pelapor** | `QA_Lead_Agent` |
+| **Versi Aplikasi** | `v1.1` |
+| **Modul Terdampak** | `M.2 — Inventaris, BOM & Opname` |
+| **Kategori Bug** | `CAT-DB` |
+| **Severity** | `S2 — Critical` |
+| **Priority** | `P1 — Urgent` |
+| **Frekuensi Kemunculan** | `Acak` |
+| **Apakah Ini Regression?** | `Tidak` |
+| **Workaround Tersedia?** | `Tidak Ada` |
+| **OS/Platform Spesifik** | `Keduanya` |
+| **Referensi SRS** | `SRS-F-003` |
+| **Referensi Use Case** | `UC-003` |
+| **Referensi Test Case** | `TC-INT-002-01` |
+| **Peran Aktor** | `kasir` |
+| **Lingkungan** | Windows 11 Pro (Klien), Debian 12 (Server), Python 3.14.2+, Database sandbox `abucom_test_db` |
+| **Prasyarat** | Transaksi pesanan kustom `id = 20` berstatus `'BELUM LUNAS'` dengan komposisi BOM membutuhkan 2 bahan baku: Karet Flash (stok: `1.0000` m^2) dan Gagang Kayu (stok: `10.0000` Pcs). |
+| **Langkah Reproduksi** | 1. Login sebagai kasir. Masuk menu Kasir > Pelunasan Pesanan kustom ID = `20`. <br>2. Masukkan nominal pelunasan dan tekan Enter. <br>3. Secara fisik, cabut kabel LAN klien saat program sedang memproses penyimpanan di database (disimulasikan dengan timeout paksa kueri SQL kedua). <br>4. Hubungkan kembali LAN, lalu periksa sisa stok bahan baku di database MySQL. |
+| **Hasil Diharapkan** | Karena transaksi database menggunakan blok transaksional ACID (All or Nothing), kegagalan koneksi di tengah jalan harus memicu `ROLLBACK` total. Sisa stok Karet Flash harus tetap `1.0000` m^2 dan Gagang Kayu tetap `10.0000` Pcs di DB. |
+| **Hasil Aktual** | Blok transaksi MySQL tidak di-rollback otomatis. Stok Karet Flash telah terpotong `0.0025` m^2 menjadi `0.9975` m^2 di DB, tetapi stok Gagang Kayu tetap `10.0000` Pcs karena query kedua terputus (terjadi inkonsistensi stok biner akibat ACID rollback failure). |
+| **Lampiran / Evidence** | SQL exceptions trace log: `exports/logs/evidence_def_db_001.txt` |
+| **Ditugaskan Ke** | Junior Programmer |
+| **Status Bug** | `Open` |
+| **Tanggal Perbaikan** | `[Menunggu input Junior Programmer saat perbaikan selesai]` |
+| **Catatan Perbaikan** | `[Menunggu input Junior Programmer saat perbaikan selesai]` |
+| **Tanggal Verifikasi** | `[Menunggu verifikasi QA Lead saat re-test sukses]` |
+
+---
+
+### 6.8. Contoh Pengisian Bug Report — Bug Performa (Query Latency)
+
+| Field | Isi Laporan Temuan Aktual |
+|---|---|
+| **ID Bug** | `DEF-PERF-001` |
+| **Judul Bug** | Latensi Pemrosesan Laporan Laba/Rugi Semester Berjalan Melebihi 2.0 Detik pada Volume Data Tinggi |
+| **Tanggal Pelaporan** | 2026-05-27 |
+| **Pelapor** | `pemilik` |
+| **Versi Aplikasi** | `v1.1` |
+| **Modul Terdampak** | `M.6 — Pinjaman, Aset & Pengeluaran` |
+| **Kategori Bug** | `CAT-PERF` |
+| **Severity** | `S3 — Major` |
+| **Priority** | `P3 — Medium` |
+| **Frekuensi Kemunculan** | `Selalu` |
+| **Apakah Ini Regression?** | `Tidak` |
+| **Workaround Tersedia?** | `Ada` (Memperkecil rentang filter tanggal laporan menjadi bulanan) |
+| **OS/Platform Spesifik** | `Keduanya` |
+| **Referensi SRS** | `SRS-F-026` |
+| **Referensi Use Case** | `UC-028` |
+| **Referensi Test Case** | `TC-NF-001-01` |
+| **Peran Aktor** | `pemilik` |
+| **Lingkungan** | Debian 12 Bookworm LTS server, Core i5, RAM 16GB, Python 3.14.2+, Database sandbox `abucom_test_db` |
+| **Prasyarat** | Database terisi data seed transaksi historis operasional toko sebanyak 50.000 baris records. |
+| **Langkah Reproduksi** | 1. Login menggunakan akun `pemilik`. <br>2. Masuk menu Finansial > Laporan Laba/Rugi Instan. <br>3. Masukkan filter tanggal semester berjalan (6 bulan). Tekan Enter. <br>4. Gunakan timer internal program untuk mengukur waktu response time. |
+| **Hasil Diharapkan** | Sistem melakukan pemrosesan agregasi laba rugi instan luring dan menyajikannya di antarmuka CLI dalam waktu kurang dari **2,0 detik** (sesuai spesifikasi performa non-fungsional `SRS-NF-010`). |
+| **Hasil Aktual** | Sistem membutuhkan waktu pemrosesan selama **8,75 detik** di terminal CLI (melebihi batas toleransi < 2 detik), mengakibatkan degradasi performa visual. |
+| **Lampiran / Evidence** | Query Execution Plan & Profile log: `exports/logs/evidence_def_perf_001.txt` |
+| **Ditugaskan Ke** | Junior Programmer |
+| **Status Bug** | `Open` |
+| **Tanggal Perbaikan** | `[Menunggu input Junior Programmer saat perbaikan selesai]` |
+| **Catatan Perbaikan** | `[Menunggu input Junior Programmer saat perbaikan selesai]` |
+| **Tanggal Verifikasi** | `[Menunggu verifikasi QA Lead saat re-test sukses]` |
+
+---
+
+### 6.9. Contoh Pengisian Bug Report — Bug Kompatibilitas (Dual-OS Rendering Glitch)
+
+| Field | Isi Laporan Temuan Aktual |
+|---|---|
+| **ID Bug** | `DEF-COMPAT-001` |
+| **Judul Bug** | Glitch Rendering Karakter Visual Box-Drawing (Mojibake) di Terminal Windows CMD cp1252 |
+| **Tanggal Pelaporan** | 2026-05-27 |
+| **Pelapor** | `kasir01` |
+| **Versi Aplikasi** | `v1.1` |
+| **Modul Terdampak** | `M.1 — Transaksi & Kasir` |
+| **Kategori Bug** | `CAT-COMPAT` |
+| **Severity** | `S5 — Cosmetic` |
+| **Priority** | `P4 — Low` |
+| **Frekuensi Kemunculan** | `Selalu` |
+| **Apakah Ini Regression?** | `Tidak` |
+| **Workaround Tersedia?** | `Ada` (Menjalankan aplikasi menggunakan Windows Terminal modern dengan font Cascadia) |
+| **OS/Platform Spesifik** | `Windows 11` |
+| **Referensi SRS** | `SRS-NF-009` |
+| **Referensi Use Case** | `UC-043` |
+| **Referensi Test Case** | `TC-CLI-002-01` |
+| **Peran Aktor** | `kasir` |
+| **Lingkungan** | Windows 11 Pro klien PC Kasir, cmd.exe default active code page 1252 (ANSI), Python 3.14.2+ |
+| **Prasyarat** | Aplikasi dijalankan pada jendela Command Prompt default Windows 11 tanpa konfigurasi UTF-8. |
+| **Langkah Reproduksi** | 1. Buka cmd.exe, ketik `python main.py` untuk menjalankan aplikasi. <br>2. Login sebagai kasir. Buka Dashboard utama atau Form Input Transaksi. <br>3. Amati garis border tabel visual. |
+| **Hasil Diharapkan** | Karakter border visual box-drawing (seperti `┌`, `─`, `┐`, `│`) ter-render rapi dan presisi di layar konsol terminal (sesuai standardisasi Dual-OS `SRS-NF-009`). |
+| **Hasil Aktual** | Karakter border visual box-drawing hancur dan ter-render menjadi karakter aneh (mojibake) seperti `â”Œ`, `â”€`, `â”`, merusak visual layout. |
+| **Lampiran / Evidence** | Screenshoot layout visual: `exports/receipts/evidence_def_compat_001.png` |
+| **Ditugaskan Ke** | Junior Programmer |
+| **Status Bug** | `Open` |
+| **Tanggal Perbaikan** | `[Menunggu input Junior Programmer saat perbaikan selesai]` |
+| **Catatan Perbaikan** | `[Menunggu input Junior Programmer saat perbaikan selesai]` |
+| **Tanggal Verifikasi** | `[Menunggu verifikasi QA Lead saat re-test sukses]` |
 
 ---
 
@@ -494,10 +623,13 @@ Matriks ketertelusuran di bawah ini menjamin setiap bug terdokumentasi asal-usul
 
 | ID Bug | Test Case Gagal | Skenario Asal | Spesifikasi SRS Dilanggar | Use Case Terkait | Modul Bisnis | Status Akhir |
 |---|---|---|---|---|---|:---:|
-| **`DEF-M1-001`** | `TC-M1-003-02` | `M1-TC-003` | `SRS-F-003` | `UC-003` | M.1 Transaksi | `Open` |
-| **`DEF-SEC-001`**| `TC-M7-002-02` | `M7-TC-002` | `SRS-F-030` | `UC-032` | M.7 Keamanan | `Assigned` |
-| **`DEF-DEC-001`**| `TC-M6-002-01` | `M6-TC-002` | `SRS-F-028` | `UC-030` | M.6 Laporan | `Open` |
-| **`DEF-CLI-001`**| `TC-CLI-003-01` | `M1-TC-007` | `SRS-F-006` | `UC-006` | M.1 Transaksi | `Open` |
+| **`DEF-M1-001`** | `TC-M1-003-02` | `M1-TC-003` | `SRS-F-003` | `UC-003` | M.1 Transaksi & Kasir | `Open` |
+| **`DEF-SEC-001`**| `TC-M7-002-02` | `M7-TC-002` | `SRS-F-030` | `UC-032` | M.7 Keamanan, Audit & Handover | `Assigned` |
+| **`DEF-DEC-001`**| `TC-M6-002-01` | `M6-TC-002` | `SRS-F-028` | `UC-030` | M.6 Pinjaman, Aset & Pengeluaran | `Open` |
+| **`DEF-CLI-001`**| `TC-CLI-003-01` | `M1-TC-007` | `SRS-F-006` | `UC-006` | M.1 Transaksi & Kasir | `Open` |
+| **`DEF-DB-001`** | `TC-INT-002-01` | `M1-TC-003` | `SRS-F-003` | `UC-003` | M.2 Inventaris, BOM & Opname | `Open` |
+| **`DEF-PERF-001`**| `TC-NF-001-01`  | `M6-TC-003` | `SRS-F-026` | `UC-028` | M.6 Pinjaman, Aset & Pengeluaran | `Open` |
+| **`DEF-COMPAT-001`**| `TC-CLI-002-01`| `M1-TC-007` | `SRS-NF-009`| `UC-043` | M.1 Transaksi & Kasir | `Open` |
 
 ---
 
@@ -517,42 +649,47 @@ Penyusun Laporan   : Senior QA Engineer
 --------------------------------------------------------------------------------
 
 1. RANGKUMAN STATISTIK CACAT (DEFECTS):
-   * Total Bug Ditemukan (All) : 4
-   * Total Bug Berstatus Open  : 3
+   * Total Bug Ditemukan (All) : 7
+   * Total Bug Berstatus Open  : 6
+   * Total Bug Berstatus Assigned: 1
    * Total Bug Berstatus Fixed : 0
    * Total Bug Berstatus Closed: 0
 
 2. DISTRIBUSI STATUS BUG PER LEVEL SEVERITY:
-   * S1 - Blocker  : [0] Open | [0] Fixed | [0] Closed | Total: 0
-   * S2 - Critical : [3] Open | [0] Fixed | [0] Closed | Total: 3
-   * S3 - Major    : [0] Open | [0] Fixed | [0] Closed | Total: 0
-   * S4 - Minor    : [0] Open | [0] Fixed | [0] Closed | Total: 0
-   * S5 - Cosmetic : [1] Open | [0] Fixed | [0] Closed | Total: 1
+   * S1 - Blocker  : [0] Open | [0] Assigned | [0] Closed | Total: 0
+   * S2 - Critical : [4] Open | [1] Assigned | [0] Closed | Total: 5
+   * S3 - Major    : [1] Open | [0] Assigned | [0] Closed | Total: 1
+   * S4 - Minor    : [0] Open | [0] Assigned | [0] Closed | Total: 0
+   * S5 - Cosmetic : [1] Open | [0] Assigned | [0] Closed | Total: 1
 
 3. DENSITAS CACAT PER MODUL SISTEM (DEFECT DENSITY):
-   * M.1 — Manajemen Transaksi & Kasir : 2 Bug
-   * M.2 — Inventaris, BOM & Opname    : 0 Bug
-   * M.6 — Pinjaman, Aset & Pengeluaran: 1 Bug
-   * M.7 — Keamanan, Audit & Handover  : 1 Bug
-   * Modul Lainnya (M.3, M.4, M.5, ...) : 0 Bug
+   * M.1 — Transaksi & Kasir                  : 3 Bug
+   * M.2 — Inventaris, BOM & Opname           : 1 Bug
+   * M.6 — Pinjaman, Aset & Pengeluaran       : 2 Bug
+   * M.7 — Keamanan, Audit & Handover         : 1 Bug
+   * Modul Lainnya (M.3, M.4, M.5, M.8, ...)  : 0 Bug
 
 4. METRIK EVALUASI KUALITAS PENGERJAAN:
    * Bug Resolution Rate  : 0.00% (Closed / Total Ditemukan)
    * Bug Reopen Rate      : 0.00% (Reopened / Total Closed)
+   * Escaped Defect Rate  : 0.00% (Bug Lolos Produksi / Total Temuan)
+   * Mean Time to Detect  : 0.00 jam (Rata-rata durasi deteksi cacat)
    * Mean Time to Resolve : 0.00 jam (Rata-rata durasi perbaikan P1/P2)
 --------------------------------------------------------------------------------
-STATUS KELAYAKAN GO-LIVE: DITANGGUHKAN (Terdapat 3 Bug Critical aktif!)
+STATUS KELAYAKAN GO-LIVE: DITANGGUHKAN (Terdapat 5 Bug Critical & 1 Bug Major aktif!)
 ================================================================================
 ```
 
 ### 9.2. Metrik Kualitas yang Dilacak
-QA Lead wajib melakukan pemantauan berkala terhadap 5 metrik kualitas berikut untuk mengukur stabilitas kode program:
+QA Lead wajib melakukan pemantauan berkala terhadap 7 metrik kualitas berikut untuk mengukur stabilitas kode program:
 
 1. **Bug Discovery Rate**: Jumlah temuan bug baru per hari atau per sesi eksekusi uji. Kenaikan tajam di akhir fase menandakan stabilitas kode masih rendah.
 2. **Bug Resolution Rate**: Persentase jumlah bug yang ditutup sukses (`Closed`) dibandingkan total temuan bug. Standar minimal kelayakan rilis Go-Live adalah **$\ge$ 95%** (dengan 0% Blocker/Critical/Major terbuka).
 3. **Bug Reopen Rate**: Persentase bug yang dibuka kembali (`Reopened`) setelah sebelumnya dinyatakan `Fixed`. Metrik reopen rate yang tinggi ($\ge$ 10%) menandakan kualitas patch programmer kurang andal atau pengujian lokal developer lemah.
 4. **Mean Time to Resolve (MTTR)**: Rata-rata waktu (dalam satuan jam/hari) yang dibutuhkan programmer untuk menyelesaikan perbaikan cacat sejak status diubah menjadi `Assigned` hingga `Fixed` berdasarkan SLA Bab 7.3.
 5. **Defect Density (Kerapatan Bug)**: Jumlah temuan bug per modul fungsional atau per 1000 baris kode program (*Lines of Code / LOC*). Modul dengan kerapatan bug yang tinggi wajib dijadikan sasaran audit kode statis dan pengujian regresi intensif.
+6. **Escaped Defect Rate**: Rasio cacat yang tidak terdeteksi selama fase testing dan baru dilaporkan oleh pengguna setelah sistem dirilis ke operasional produksi (Go-Live) terhadap total temuan cacat. Target ideal adalah **0%** untuk menjaga integritas keuangan dan keamanan.
+7. **Mean Time to Detect (MTTD)**: Rata-rata waktu yang dibutuhkan oleh tim penguji untuk mendeteksi adanya cacat sejak rilis baru dideploy ke sandbox pengujian. MTTD yang kecil membuktikan sensitivitas test suite otomatis.
 
 ---
 
@@ -574,25 +711,40 @@ QA Lead wajib melakukan pemantauan berkala terhadap 5 metrik kualitas berikut un
 * **Stateless Session**: Manajemen sesi pengguna yang tidak bergantung pada penyimpanan status server konvensional.
 
 ### 10.2. Daftar Kode Error Sistem AbuCom (Error Code Registry)
-Daftar formal 15 kode error standar yang ter-seeding dalam program AbuCom CLI dan wajib dirujuk dalam laporan bug:
+Daftar formal 30 kode error standar yang ter-seeding dalam program AbuCom CLI dan wajib dirujuk dalam laporan bug:
 
 | Kode Error | String Pesan Kesalahan Terkait | Skenario Pemicu Error | Status RTM |
 |---|---|---|:---:|
-| **`ERR-AUTH-001`** | `ERR-AUTH-001: Kredensial tidak valid. Silakan coba kembali!` | Login gagal karena salah username atau sandi polos. | Cocok |
-| **`ERR-AUTH-002`** | `ERR-AUTH-002: Sandi Gagal: Akun ditangguhkan selama 10 menit akibat brute-force!` | Blokir login akibat kegagalan masuk ke-5 berturut-turut. | Cocok |
-| **`ERR-AUTH-003`** | `ERR-AUTH-003: Akses Ditolak: Hak Akses Pemilik Dibutuhkan!` | Staf non-pemilik mencoba masuk menu administratif pemilik. | Cocok |
-| **`ERR-AUTH-011`** | `ERR-AUTH-011: Hak akses supervisor dibutuhkan untuk menyetujui Stock Opname!` | Gudang mencoba approve draf stock opname. | Cocok |
-| **`ERR-AUTH-029`** | `ERR-AUTH-029: Verifikasi sandi Pemilik gagal. Pengeluaran besar dibatalkan!` | Salah memasukkan sandi eskalasi pengeluaran > Rp 500.000. | Cocok |
+| **`ERR-AUTH-001`** | `ERR-AUTH-001: Kredensial Salah: Nama pengguna atau kata sandi yang Anda masukkan tidak valid!` | Login gagal karena salah username atau sandi polos. | Cocok |
+| **`ERR-AUTH-002`** | `ERR-AUTH-002: Sandi Gagal: Akun ditangguhkan selama 10 menit akibat terdeteksi serangan brute-force!` | Blokir login akibat kegagalan masuk ke-5 berturut-turut. | Cocok |
+| **`ERR-AUTH-003`** | `ERR-AUTH-003: Akses Ditolak: Sandi supervisor salah. Hak akses Pemilik dibutuhkan untuk meretur!` | Staf non-pemilik mencoba masuk menu administratif pemilik / salah input sandi. | Cocok |
+| **`ERR-AUTH-011`** | `ERR-AUTH-011: Otorisasi Ditolak: Sandi supervisor salah. Persetujuan Stock Opname dibatalkan!` | Gudang mencoba approve draf stock opname / salah input sandi. | Cocok |
+| **`ERR-AUTH-029`** | `ERR-AUTH-029: Sandi Salah: Verifikasi sandi Pemilik gagal. Pengeluaran besar di atas Rp 500.000 dibatalkan!` | Salah memasukkan sandi eskalasi pengeluaran > Rp 500.000. | Cocok |
+| **`ERR-VAL-044`**  | `ERR-VAL-044: Konvalidasi Gagal: Kata sandi baru minimal harus 8 karakter dan bernilai cocok pada kedua input!` | Password baru < 8 karakter atau konfirmasi double input tidak cocok. | Cocok |
+| **`ERR-AUTH-044`** | `ERR-AUTH-044: Otorisasi Gagal: Kata sandi lama yang Anda masukkan tidak valid!` | Salah memasukkan password lama pada form ubah sandi. | Cocok |
+| **`ERR-VAL-001`**  | `ERR-VAL-001: Input Salah: ID barang tidak valid atau kuantitas harus diisi berupa angka positif!` | Memasukkan ID barang retail fiktif atau qty non-numerik di kasir. | Cocok |
+| **`ERR-VAL-002`**  | `ERR-VAL-002: Format Kolom Rusak: Struktur kolom CSV tidak sesuai standar skema database. Impor massal dibatalkan (Rollback)!` | Struktur baris Excel/CSV yang diimpor tidak sesuai tipe DDL DB. | Cocok |
+| **`ERR-VAL-003`**  | `ERR-VAL-003: Nominal Kurang: Jumlah pelunasan yang Anda input kurang dari sisa tagihan pelanggan!` | Input uang pembayaran pelunasan kustom kurang dari tagihan piutang. | Cocok |
+| **`ERR-VAL-015`**  | `ERR-VAL-015: Batas Minimal: Nominal pengisian deposit saldo PPOB minimal harus sebesar Rp 500.000!` | Mengisi deposit virtual PPOB di bawah ambang batas minimal Rp 500.000. | Cocok |
+| **`ERR-VAL-025`**  | `ERR-VAL-025: Melebihi Batas: Nominal plafon pinjaman bank melebihi batas sistem maksimum Rp 50.000.000!` | Menginput plafon pinjaman modal bank melebihi batas atas Rp 50 juta. | Cocok |
+| **`ERR-VAL-028`**  | `ERR-VAL-028: Nominal Melebihi Batas: Jumlah alokasi tabungan virtual aset tidak boleh melebihi total laba bersih bulan berjalan!` | Mengalokasikan dana aset virtual melebihi sisa laba bersih bulanan. | Cocok |
+| **`ERR-VAL-036`**  | `ERR-VAL-036: WhatsApp Tidak Valid: Nomor WhatsApp pelanggan minimal 10 digit angka numerik!` | Pendaftaran CRM pelanggan dengan nomor WA di bawah 10 digit. | Cocok |
+| **`ERR-VAL-038`**  | `ERR-VAL-038: Input Salah: Nilai parameter baru harus diisi berupa angka positif desimal!` | Mengubah parameter static `system_configs` dengan angka negatif. | Cocok |
+| **`ERR-LIMIT-KASBON`**| `ERR-LIMIT-KASBON: Melebihi Batas: Nominal pengajuan pinjaman kasbon staf melebihi batas sistem maksimum Rp 1.000.000!` | Mengajukan pinjaman kasbon staf melebihi threshold batas atas Rp 1 juta. | Cocok |
+| **`ERR-FLOW-022`** | `ERR-FLOW-022: Transisi Tidak Valid: Perubahan status ditolak. Anda tidak boleh melompati tahapan sekuensial antrian!` | Mencoba mengubah status antrian kerja kustom melompati flow (misal Antri -> Siap). | Cocok |
+| **`ERR-AUTH-030`** | `ERR-AUTH-030: Akses Ditolak: Peran Desainer tidak diizinkan mengubah status antrian ke tahapan pengambilan!` | Desainer mencoba mengupdate status antrian ke 'Diambil' (kewenangan kasir). | Cocok |
+| **`ERR-SYS-006`**  | `ERR-SYS-006: File Tidak Ditemukan: Berkas CSV di path exports/master_ATK.csv tidak dapat diakses atau dibaca!` | Mengimpor berkas CSV dengan file path yang salah atau file terkunci OS. | Cocok |
+| **`ERR-SYS-028`**  | `ERR-SYS-028: Timeout Pemrosesan: Agregasi data transaksi bulanan terdeteksi lambat. Coba perkecil parameter filter rentang waktu!`| Query data MySQL melebihi 5 detik pada data transaksi historis. | Cocok |
 | **`ERR-SESSION-001`**| `ERR-SESSION-001: Sesi login tidak ditemukan. Harap login terlebih dahulu!` | Mengakses menu CLI fungsional tanpa token JWT aktif. | Cocok |
 | **`ERR-SESSION-002`**| `ERR-SESSION-002: Sesi login tidak sah/rusak. Harap login kembali!` | Token JWT kedaluwarsa melampaui batas aktif 8 jam. | Cocok |
-| **`ERR-DB-001`** | `ERR-DB-001: Koneksi terputus. Penyimpanan transaksi dibatalkan!` | Kegagalan LAN offline MySQL terputus melebihi batas retry. | Cocok |
-| **`ERR-DB-002`** | `ERR-DB-002: Pelanggaran integritas basis data. Transaksi dibatalkan!` | Kegagalan Foreign Key atau Unique Constraint MySQL. | Cocok |
-| **`ERR-FILE-001`** | `ERR-FILE-001: Berkas konfigurasi .env tidak ditemukan. Aplikasi ditutup!` | File konfigurasi `.env` hilang pada folder root. | Cocok |
-| **`ERR-FILE-039`** | `ERR-FILE-039: Gagal memulihkan data. Berkas cadangan korup atau sandi enkripsi salah!` | Gagal memulihkan basis data dari berkas cadangan ZIP AES-256. | Cocok |
-| **`ERR-CASH-001`** | `ERR-CASH-001: Selisih Gagal: Selisih Rp [Nominal] melebihi batas Rp 10.000!` | Handover kasir mencatat selisih fisik kasir > Rp 10.000. | Cocok |
-| **`ERR-CASH-004`** | `ERR-CASH-004: Saldo kas laci kasir tidak mencukupi untuk pengembalian dana!` | Saldo laci tunai minus saat pembatalan DP atau retur. | Cocok |
+| **`ERR-DB-001`**   | `ERR-DB-001: Koneksi terputus. Penyimpanan transaksi dibatalkan!` | Kegagalan LAN offline MySQL terputus melebihi batas retry 3x. | Cocok |
+| **`ERR-DB-002`**   | `ERR-DB-002: Pelanggaran integritas basis data. Transaksi dibatalkan!` | Kegagalan Foreign Key atau Unique Constraint database. | Cocok |
+| **`ERR-FILE-001`**  | `ERR-FILE-001: Berkas konfigurasi .env tidak ditemukan. Aplikasi ditutup!` | File konfigurasi `.env` hilang pada folder root saat startup. | Cocok |
+| **`ERR-FILE-039`**  | `ERR-FILE-039: Gagal memulihkan data. Berkas cadangan korup atau sandi enkripsi salah!` | Gagal memulihkan basis data dari berkas cadangan ZIP AES-256. | Cocok |
+| **`ERR-CASH-001`**  | `ERR-CASH-001: Selisih Gagal: Memo alasan wajib diinput jika nominal selisih kas laci kasir melebihi Rp 10.000!` | Handover kasir mencatat selisih kas > Rp 10.000 tanpa mengisi memo. | Cocok |
+| **`ERR-CASH-004`**  | `ERR-CASH-004: Saldo kas laci kasir tidak mencukupi untuk pengembalian dana!` | Saldo laci tunai minus saat pembatalan DP atau retur. | Cocok |
 | **`ERR-STOCK-010`** | `ERR-STOCK-010: Ketersediaan stok retail ATK tidak mencukupi untuk pengambilan internal!` | Ambil ATK internal produksi melebihi sisa stok di database. | Cocok |
-| **`ERR-VAL-007`**  | `ERR-VAL-007: Input kuantitas bahan baku tidak valid (harus angka desimal positif > 0)!` | Input kuantitas bernilai negatif atau nol pada form. | Cocok |
+| **`ERR-VAL-007`**   | `ERR-VAL-007: Input kuantitas bahan baku tidak valid (harus angka desimal positif > 0)!` | Input kuantitas bernilai negatif atau nol pada form master / transaksi. | Cocok |
 
 ---
 
@@ -604,8 +756,12 @@ Gunakan kode di bawah ini untuk disalin secara langsung sebagai templat pembuata
 ===========================================
 ID Cacat        : DEF-[MODUL]-[NOMOR_URUT] 
 Judul Temuan    : [Format: Kelakuan Salah pada Modul saat Aksi]
-Prioritas       : Blocker / Critical / Major / Minor / Trivial
-Tingkat Keparahan: High / Medium / Low
+Prioritas       : High / Medium / Low
+Tingkat Keparahan: Blocker / Critical / Major / Minor / Cosmetic
+Frekuensi Uji   : Selalu / Kadang-kadang / Sekali / Acak
+Regression Bug? : Ya / Tidak / Belum Diketahui
+Workaround?     : Ada [Tulis penjelasannya] / Tidak Ada
+OS/Platform     : Windows 11 / Linux Debian 12 / Keduanya
 Ditemukan Oleh  : [Username Penguji]
 Tanggal Temuan  : YYYY-MM-DD
 Versi Aplikasi  : v1.1
@@ -613,35 +769,42 @@ Versi Aplikasi  : v1.1
 1. Deskripsi Bug:
    [Deskripsi perilaku salah program yang menyimpang dari expected result]
 
-2. Langkah Reproduksi Bug:
+2. Referensi & Traceability:
+   * Referensi SRS       : SRS-F-[XXX] / SRS-NF-[XXX]
+   * Referensi Use Case  : UC-[XXX]
+   * Referensi Test Case : TC-[MODUL]-[SKENARIO]-[URUT]
+
+3. Langkah Reproduksi Bug:
    1. Login sebagai [Aktor]...
    2. Masuk menu...
    3. Input data...
    4. Klik...
 
-3. Hasil Aktual (Actual Result):
+4. Hasil Aktual (Actual Result):
    [Visual pesan crash / data salah di DB]
 
-4. Hasil Diharapkan (Expected Result):
+5. Hasil Diharapkan (Expected Result):
    [Sesuai spesifikasi dokumen Test Case]
 
-5. Informasi Tambahan / Lampiran:
+6. Informasi Tambahan / Lampiran:
    * Screenshot layar CLI / Stacktrace log error python.
 ```
 
 ---
 
 ### 10.4. Checklist Kelengkapan Bug Report
-Setiap penguji wajib memverifikasi kelengkapan berkas laporan bug menggunakan 8 parameter di bawah ini sebelum menyerahkannya kepada QA Lead:
+Setiap penguji wajib memverifikasi kelengkapan berkas laporan bug menggunakan 10 parameter di bawah ini sebelum menyerahkannya kepada QA Lead:
 
 - `[ ]` **1. Standardisasi ID**: ID bug ditulis dengan konvensi penamaan yang benar (`DEF-...` atau `UAT-BUG-...`).
 - `[ ]` **2. Judul Deskriptif**: Judul merepresentasikan ringkasan fungsionalitas salah secara jelas tanpa kalimat mengambang.
-- `[ ]` **3. Traceability Valid**: Mencantumkan referensi ID Test Case, nomor Use Case, dan klausa SRS secara akurat.
-- `[ ]` **4. Severity & Priority Objektif**: Tingkat keparahan teknis dan prioritas bisnis terisi rasional sesuai matriks Bab 3.3.
+- `[ ]` **3. Traceability Valid**: Mencantumkan referensi ID Test Case, nomor Use Case, dan klausul SRS secara akurat.
+- `[ ]` **4. Severity & Priority Terpisah**: Pilihan tingkat keparahan teknis dan prioritas bisnis terisi rasional secara terpisah sesuai matriks Bab 3.3.
 - `[ ]` **5. Langkah Reproduksi Atomik**: Setiap langkah ditulis runtut menggunakan list angka terperinci dengan menyertakan data masukan konkret.
 - `[ ]` **6. Kontras Hasil**: Deskripsi hasil diharapkan vs aktual tersaji kuantitatif dan didasarkan pada fakta sistem.
 - `[ ]` **7. Lampiran Valid**: Menyertakan file path bukti tangkapan layar CLI atau file teks error traceback yang sahih.
-- `[ ]` **8. Bebas Placeholder**: Tidak menyisipkan teks template sisa atau data *dummy* kosong.
+- `[ ]` **8. Data Fixtures Konsisten**: Nama akun fixtures dan peran yang dicantumkan sesuai ACM.
+- `[ ]` **9. Detail Lingkungan Sandbox**: Mencantumkan versi Python, OS klien/server, dan database sandbox yang digunakan.
+- `[ ]` **10. Bebas Placeholder**: Tidak menyisipkan teks template sisa atau data *dummy* kosong.
 
 ---
 
@@ -669,8 +832,8 @@ Daftar lengkap berkas dokumentasi SDLC sistem AbuCom yang dirujuk dalam penyusun
 > [!NOTE]
 > Lembar ini mencatat persetujuan formal atas berlakunya dokumen Bug Report Template ini untuk memandu aktivitas defect management selama siklus hidup proyek AbuCom.
 
-Dibuat di  : [DATA BELUM TERSEDIA - Perlu diisi manual oleh Pemilik Usaha]
-Pada tanggal: [DATA BELUM TERSEDIA - Perlu diisi manual oleh Pemilik Usaha]
+Dibuat di  : [Diisi oleh Pemilik Usaha pada saat pengesahan]
+Pada tanggal: [Diisi oleh Pemilik Usaha pada saat pengesahan]
 
 **KEPUTUSAN VALIDASI DOKUMEN:**
 `[ ]` DITERIMA & DIBERLAKUKAN  
