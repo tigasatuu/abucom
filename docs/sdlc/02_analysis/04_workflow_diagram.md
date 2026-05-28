@@ -1,8 +1,8 @@
 ---
 dokumen    : Workflow Diagram
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.1
-tanggal    : 2026-05-23
+versi      : 1.2
+tanggal    : 2026-05-28
 status     : Final
 penyusun   : Senior Business Process Analyst & Workflow Modeling Specialist
 ---
@@ -13,6 +13,7 @@ penyusun   : Senior Business Process Analyst & Workflow Modeling Specialist
 
 | Versi | Tanggal    | Perubahan | Oleh |
 |---|---|---|---|
+| 1.2 | 2026-05-28 | Validasi dan pemutakhiran menyeluruh dokumen (Tahap 1-10). Penambahan derivasi pada WF-OP-01, sinkronisasi referensi kode pada WF-M7-01, dan perbaikan konsistensi node warna Mermaid.js. Dokumentasi direvisi seluruhnya (*full overwrite*). | Senior Business Process Analyst & Workflow Modeling Specialist |
 | 1.1 | 2026-05-23 | Audit dan pemutakhiran menyeluruh. Penambahan alur ubah password (WF-M7-08), sinkronisasi matriks traceability (44 UC, 40 BR, 40 SRS), pemutakhiran decision points dan exception flow, sinkronisasi glosarium, dan pemutakhiran Bagian 9 dengan berkas studi kelayakan. | Senior Business Process Analyst & Workflow Modeling Specialist |
 | 1.0   | 2026-05-23 | Pembuatan awal dokumen secara komprehensif berdasarkan analisis berkas BRD v1.1, SRS v1.1, UCD v1.1, dan narasi operasional pemilik usaha. Menyediakan legenda notasi, diagram makro, 6 alur kerja As-Is manual, 38 alur kerja To-Be sistem per modul, 3 alur lintas modul (cross-module), serta matriks ketelusuran (traceability) lengkap. | Senior Business Process Analyst & Workflow Modeling Specialist |
 
@@ -296,6 +297,8 @@ flowchart TD
 ## 4. Workflow Diagram Proses Bisnis To-Be (Kondisi Target — Sistem AbuCom CLI)
 
 ### 4.1. Workflow Operasional Harian Toko (Daily Operation Master Workflow - WF-OP-01)
+*   **Derivasi**: UC-041, UC-042, UC-043, Tambahan, SRS-F-ADD-01, SRS-F-ADD-03, SRS-F-ADD-04, SRS-F-ADD-05.
+
 Alur operasional terintegrasi dari toko dibuka hingga ditutup kembali oleh karyawan kasir dan pemilik:
 
 ```mermaid
@@ -1214,7 +1217,7 @@ flowchart TD
 ### 4.8. Workflow Modul M.7 — Keamanan, Audit Trail & Hak Akses
 
 #### 4.8.1. Alur Otentikasi Login & Manajemen Session JWT (WF-M7-01)
-*   **Derivasi**: UC-041, Dasar, SRS-F-ADD-02.
+*   **Derivasi**: UC-041, Tambahan, SRS-F-ADD-02, SRS-F-ADD-04.
 
 ```mermaid
 flowchart TD
