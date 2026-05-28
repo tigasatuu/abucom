@@ -1,9 +1,9 @@
 ---
 dokumen    : Changelog
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.0
-tanggal    : 2026-05-27
-status     : Draft
+versi      : 1.1
+tanggal    : 2026-05-28
+status     : Validated
 penyusun   : Senior Configuration Manager & Release Documentation Specialist
 ---
 
@@ -13,6 +13,7 @@ penyusun   : Senior Configuration Manager & Release Documentation Specialist
 
 | Versi | Tanggal    | Deskripsi Perubahan                                                                                              | Oleh                                                            |
 |:---:|:---:|---|---|
+| **1.1** | 2026-05-28 | Validasi menyeluruh v1.1: Penambahan seksi [Unreleased] sesuai standar Keep a Changelog, pembersihan kata hubung asing (and/or) menjadi baku (dan/atau), sinkronisasi 45 kode kebutuhan SRS, pemformatan seksi utama, dan pembaruan metadata front-matter. | Senior Configuration Manager & Release Documentation Specialist |
 | **1.0** | 2026-05-27 | Pembuatan awal dokumen Changelog v1.0 untuk rilis perdana AbuCom v1.0.0 berdasarkan audit 14 dokumen SDLC. | Senior Configuration Manager & Release Documentation Specialist |
 
 ---
@@ -33,7 +34,7 @@ Dalam siklus hidup pengembangan sistem (SDLC) AbuCom, dokumen Changelog diposisi
 |                 Fase 07 — Maintenance                 |
 |                                                       |
 |  Deliverable 1: Maintenance Guide [SELESAI v1.1]      |
-|  Deliverable 2: Changelog [INI — TARGET v1.0]         |
+|  Deliverable 2: Changelog [INI — TARGET v1.1]         |
 +-------------------------------------------------------+
 ```
 
@@ -43,7 +44,7 @@ Dalam siklus hidup pengembangan sistem (SDLC) AbuCom, dokumen Changelog diposisi
 
 ### 1.5. Audiens Target
 *   **Pemilik Usaha AbuCom (Alfatih):** Sebagai acuan transparansi fitur fungsional yang telah diimplementasikan dalam sistem.
-*   **System Administrator / DevOps Support:** Sebagai panduan melacak perubahan konfigurasi database, port, and dependensi.
+*   **System Administrator / DevOps Support:** Sebagai panduan melacak perubahan konfigurasi database, port, dan dependensi.
 *   **Tim Pengembang AI (Support):** Sebagai pedoman menulis entri changelog baru agar tetap konsisten dengan konvensi Git.
 
 ### 1.6. Definisi, Akronim, dan Singkatan
@@ -77,9 +78,9 @@ Changelog AbuCom mengadopsi standar **Semantic Versioning (SemVer)** dengan form
 Perubahan dalam dokumen ini dikelompokkan secara ketat ke dalam kategori standar berikut:
 *   **Ditambahkan (Added):** Untuk fitur baru yang diimplementasikan pada versi berjalan.
 *   **Diubah (Changed):** Untuk perubahan pada fungsionalitas yang sudah ada.
-*   **Diperbaiki (Fixed):** Untuk perbaikan kesalahan (*bug fixes*) or celah keamanan.
-*   **Keamanan (Security):** Untuk pembaruan mekanisme kriptografi, RBAC, and perlindungan UU PDP.
-*   **Infrastruktur (Infrastructure):** Untuk perubahan skema tabel basis data, locked packages, or hardware node.
+*   **Diperbaiki (Fixed):** Untuk perbaikan kesalahan (*bug fixes*) atau celah keamanan.
+*   **Keamanan (Security):** Untuk pembaruan mekanisme kriptografi, RBAC, dan perlindungan UU PDP.
+*   **Infrastruktur (Infrastructure):** Untuk perubahan skema tabel basis data, locked packages, atau hardware node.
 *   **Dokumentasi (Documentation):** Untuk penyusunan dan revisi berkas dokumen formal SDLC.
 *   **Tidak Digunakan Lagi (Deprecated):** Untuk fitur lama yang akan dihapus pada rilis berikutnya.
 *   **Dihapus (Removed):** Untuk fitur yang resmi dieliminasi dari codebase.
@@ -95,7 +96,7 @@ Contoh visual aktual:
 ```
 
 ### 2.4. Kode Referensi Terkait (SRS-F-XXX)
-Ketertelusuran entri changelog dijamin dengan mencantumkan kode kebutuhan fungsional `SRS-F-XXX` or `SRS-F-ADD-XXX` dari dokumen SRS (R-05). Untuk penanganan kesalahan, gunakan kode ID bug `DEF-XXX` dari *Bug Report Template* (R-14).
+Ketertelusuran entri changelog dijamin dengan mencantumkan kode kebutuhan fungsional `SRS-F-XXX` atau `SRS-F-ADD-XXX` dari dokumen SRS (R-05). Untuk penanganan kesalahan, gunakan kode ID bug `DEF-XXX` dari *Bug Report Template* (R-14).
 
 ### 2.5. Penanda Status Entri
 Apabila terdapat parameter data penting yang belum tersedia saat dokumen ini disusun (seperti commit hash tag atau tanggal Go-Live aktual), parameter tersebut ditandai dengan format:
@@ -104,6 +105,17 @@ Apabila terdapat parameter data penting yang belum tersedia saat dokumen ini dis
 ---
 
 ## 3. Changelog — Rilis Terbaru
+
+### [Unreleased]
+
+> [!NOTE]
+> Seksi ini menampung draf perubahan sistem AbuCom yang sedang berjalan (*in-progress*) atau direncanakan tetapi belum dirilis secara formal dalam versi produksi.
+
+#### Ditambahkan (Added)
+*   *Belum ada perubahan.*
+
+#### Keamanan (Security)
+*   *Belum ada perubahan.*
 
 ### [1.0.0] — 2027-05-20 (Estimasi)
 
@@ -116,7 +128,7 @@ Apabila terdapat parameter data penting yang belum tersedia saat dokumen ini dis
 *   **[SRS-F-001]** Ditambahkan pencatatan transaksi penjualan cepat berbasis teks CLI untuk melayani 5 divisi usaha: produk percetakan, retail ATK, e-wallet jasa keuangan, pulsa PPOB, dan jasa perbaikan teknis. *(Modul M.1)*
 *   **[SRS-F-002]** Ditambahkan sistem deteksi skema harga dinamis otomatis (Retail, Grosir, Mitra) berdasarkan jumlah kuantitas pembelian atau status keanggotaan pelanggan. *(Modul M.1)*
 *   **[SRS-F-003]** Ditambahkan pencatatan pembayaran bertahap (Uang Muka/DP minimal Rp 0 dan Pelunasan) untuk transaksi pesanan cetak kustom. *(Modul M.1)*
-*   **[SRS-F-004]** Ditambahkan alur pemrosesan pembatalan transaksi DP 100% dan retur retail ATK rusak, terintegrasi dengan kas laci, log audit, dan wajib menggunakan sandi pemilik fisik. *(Modul M.1)*
+*   **[SRS-F-004]** Ditambahkan alur pemrosesan pembatalan transaksi DP 100% dan retur retail ATK rusak, terintegrasi dengan kas kasir, log audit, dan wajib menggunakan sandi pemilik fisik. *(Modul M.1)*
 *   **[SRS-F-005]** Ditambahkan pelacakan persentase margin keuntungan kotor kualitatif langsung di terminal pemilik berdasarkan formula harga jual dikurangi biaya HPP. *(Modul M.1)*
 *   **[SRS-F-006]** Ditambahkan template nota struk cetak teks format `.txt` lokal di folder `exports/receipts/` dengan text-wrapping otomatis pada lebar kertas 58mm atau 80mm. *(Modul M.1)*
 
@@ -155,7 +167,7 @@ Apabila terdapat parameter data penting yang belum tersedia saat dokumen ini dis
 *   **[SRS-F-028]** Ditambahkan pengelolaan aset tetap, penghitungan depresiasi bulanan garis lurus sebagai OPEX, dan alokasi tabungan virtual mesin baru. *(Modul M.6)*
 *   **[SRS-F-029]** Ditambahkan pencatatan pengeluaran operasional rutin bulanan dan biaya tak terduga, dengan pengetatan otorisasi verifikasi sandi pemilik fisik untuk pengeluaran &ge; Rp 500.000. *(Modul M.6)*
 
-##### M.7 — Keamanan, Audit Trail & Hak Akses
+##### M.7 — Keamanan, Hak Akses & Audit Trail
 *   **[SRS-F-030]** Ditambahkan proteksi otorisasi Role-Based Access Control (RBAC) 8 peran berbasis token JWT HS256. *(Modul M.7)*
 *   **[SRS-F-031]** Ditambahkan audit trail kronologis otomatis dalam format JSON untuk merekam perubahan data sensitif (`timestamp`, `user_id`, aksi, nama tabel, `old_value`, `new_value`). *(Modul M.7)*
 *   **[SRS-F-032]** Ditambahkan log serah terima shift karyawan (*closing shift*) dengan input kas laci fisik dan penguncian baris transaksi shift lama dari modifikasi. *(Modul M.7)*
@@ -193,7 +205,7 @@ Apabila terdapat parameter data penting yang belum tersedia saat dokumen ini dis
 
 #### Infrastruktur (Infrastructure)
 *   **Database Engine:** Database MySQL 8.4 LTS menggunakan engine transaksional InnoDB (28 tabel relasional ACID compliant), isolation level REPEATABLE READ.
-*   **Jaringan LAN Luring:** Topologi jaringan bintang (*star topology*) berbasis Gigabit Switch Hub 8-Port unmanaged (1 Gbps) and Router MikroTik hEX lite (Gateway `192.168.1.1`).
+*   **Jaringan LAN Luring:** Topologi jaringan bintang (*star topology*) berbasis Gigabit Switch Hub 8-Port unmanaged (1 Gbps) dan Router MikroTik hEX lite (Gateway `192.168.1.1`).
 *   **Spesifikasi Node Server:** Mini PC Server Debian 12 (static IP `192.168.1.200`, port 3306), fanless, disangga UPS 600VA stabilizer.
 *   **Spesifikasi Node Klien:** PC Desktop Kasir Windows 11 (IP DHCP Lokal, generic printer driver nota 58mm/80mm USB-Serial COM1), disangga UPS 600VA.
 *   **Runtime Program:** Python runtime versi 3.14.2+ dengan paradigma Functional Programming (FP) murni (logic bebas OOP).
@@ -286,7 +298,7 @@ Pengembang wajib mematuhi template format penulisan berikut:
 
 *   **Untuk Fitur Fungsional Baru (Added/Changed):**
     ```markdown
-    - **[SRS-F-XXX]** [Kata Kerja Lampau] [Deskripsi singkat fungsionalitas dalam Bahasa Indonesia]. *(Modul M.X)*
+    - **[SRS-F-XXX]** Ditambahkan [deskripsi singkat fitur] untuk [tujuan fitur]. *(Modul M.X)*
     ```
     Contoh:
     ```markdown
@@ -334,7 +346,7 @@ Pengembang wajib mematuhi template format penulisan berikut:
 11. **Deprecated (Kategori Perubahan):** Kategori untuk mencatat fitur yang tidak direkomendasikan lagi untuk digunakan dan direncanakan untuk dihapus pada rilis mendatang.
 12. **Removed (Kategori Perubahan):** Kategori untuk mencatat fitur yang telah resmi dihapus sepenuhnya dari perangkat lunak pada versi tersebut.
 13. **Security (Kategori Perubahan):** Kategori untuk mencatat penambahan atau perbaikan mekanisme keamanan data dan otorisasi sistem.
-14. **Infrastructure (Kategori Perubahan):** Kategori untuk mencatat pembaruan terkait arsitektur sistem, skema database, locked dependencies, and konfigurasi deployment.
+14. **Infrastructure (Kategori Perubahan):** Kategori untuk mencatat pembaruan terkait arsitektur sistem, skema database, locked dependencies, dan konfigurasi deployment.
 15. **Documentation (Kategori Perubahan):** Kategori untuk mencatat berkas dokumentasi formal (seperti dokumen SDLC) yang disusun atau direvisi pada rilis tersebut.
 16. **Traceability (Ketertelusuran):** Kemampuan untuk melacak hubungan antara entri perubahan di changelog dengan spesifikasi kebutuhan (SRS) dan commit Git di repositori.
 17. **Unreleased:** Bagian changelog paling atas yang digunakan untuk menampung draf entri perubahan yang belum dipublikasikan dalam versi rilis formal.
@@ -343,22 +355,22 @@ Pengembang wajib mematuhi template format penulisan berikut:
 
 ## 7. Referensi Dokumen
 
-Penyusunan berkas Changelog v1.0 didasarkan secara mutlak pada 14 berkas dokumentasi formal SDLC AbuCom:
+Penyusunan berkas Changelog v1.1 didasarkan secara mutlak pada 14 berkas dokumentasi formal SDLC AbuCom:
 
 | Kode Ref | Nama Dokumen Referensi | Path Relatif Berkas | Versi | Prioritas | Peran / Hubungan dalam Penyusunan |
 |:---:|---|---|:---:|:---:|---|
-| **R-01** | Release Notes v1.1 | `docs/sdlc/06_deployment/03_release_notes.md` | 1.1 | **PRIMER** | Acuan utama seluruh fitur baru M.1 s.d M.10, keamanan, bug fixes, known limitations, known issues, roadmap, and dependencies. |
-| **R-02** | Maintenance Guide v1.1 | `docs/sdlc/07_maintenance/01_maintenance_guide.md` | 1.1 | **PRIMER** | Acuan daftar modul aktif, 28 tabel database InnoDB, locked libraries, and kategori pemeliharaan sistem. |
-| **R-03** | Git Workflow v1.1 | `docs/sdlc/04_implementation/04_git_workflow.md` | 1.1 | **PRIMER** | Acuan standardisasi SemVer, Conventional Commits, tagging, and pembagian tanggung jawab tim campuran. |
+| **R-01** | Release Notes v1.1 | `docs/sdlc/06_deployment/03_release_notes.md` | 1.1 | **PRIMER** | Acuan utama seluruh fitur baru M.1 s.d M.10, keamanan, bug fixes, known limitations, known issues, roadmap, dan dependencies. |
+| **R-02** | Maintenance Guide v1.1 | `docs/sdlc/07_maintenance/01_maintenance_guide.md` | 1.1 | **PRIMER** | Acuan daftar modul aktif, 28 tabel database InnoDB, locked libraries, dan kategori pemeliharaan sistem. |
+| **R-03** | Git Workflow v1.1 | `docs/sdlc/04_implementation/04_git_workflow.md` | 1.1 | **PRIMER** | Acuan standardisasi SemVer, Conventional Commits, tagging, dan pembagian tanggung jawab tim campuran. |
 | **R-04** | Project Charter v1.1 | `docs/sdlc/01_planning/01_project_charter.md` | 1.1 | **SEKUNDER** | Acuan nama proyek, deskripsi, tim pengembang, milestone, dan informasi sponsor. |
 | **R-05** | Software Requirements Spec v1.1 | `docs/sdlc/02_analysis/02_software_requirements.md` | 1.1 | **SEKUNDER** | Acuan pemetaan kode kebutuhan fungsional (SRS-F-001 s.d SRS-F-040) ke entri changelog. |
 | **R-06** | Database Schema v1.1 | `docs/sdlc/03_design/01_database_schema.sql` | 1.1 | **SEKUNDER** | Acuan verifikasi 28 nama tabel InnoDB untuk kategori Infrastruktur. |
-| **R-07** | System Architecture v1.1 | `docs/sdlc/03_design/03_system_architecture.md` | 1.1 | **SEKUNDER** | Acuan diagram deployment, topologi LAN luring, hardware specs, and connection pooling. |
-| **R-08** | Security Design v1.1 | `docs/sdlc/03_design/06_security_design.md` | 1.1 | **SEKUNDER** | Acuan spesifikasi otentikasi bcrypt, sesi JWT, Fernet CRM, AES-256 backup, and audit trail JSON. |
-| **R-09** | Coding Standard v1.1 | `docs/sdlc/04_implementation/01_coding_standard.md` | 1.1 | **TERSIER** | Acuan standardisasi FP murni, type hints, PEP 8/257, and presisi Decimal. |
+| **R-07** | System Architecture v1.1 | `docs/sdlc/03_design/03_system_architecture.md` | 1.1 | **SEKUNDER** | Acuan diagram deployment, topologi LAN luring, hardware specs, dan connection pooling. |
+| **R-08** | Security Design v1.1 | `docs/sdlc/03_design/06_security_design.md` | 1.1 | **SEKUNDER** | Acuan spesifikasi otentikasi bcrypt, sesi JWT, Fernet CRM, AES-256 backup, dan audit trail JSON. |
+| **R-09** | Coding Standard v1.1 | `docs/sdlc/04_implementation/01_coding_standard.md` | 1.1 | **TERSIER** | Acuan standardisasi FP murni, type hints, PEP 8/257, dan presisi Decimal. |
 | **R-10** | Module Structure v1.1 | `docs/sdlc/04_implementation/03_module_structure.md` | 1.1 | **TERSIER** | Acuan pemetaan file-to-module untuk scope referensi changelog. |
 | **R-11** | Test Plan v1.1 | `docs/sdlc/05_testing/01_test_plan.md` | 1.1 | **TERSIER** | Acuan hasil testing, exit criteria, dan QA summary. |
-| **R-12** | Deployment Guide v1.1 | `docs/sdlc/06_deployment/01_deployment_guide.md` | 1.1 | **TERSIER** | Acuan prosedur instalasi offline, setup database, and runbook pemeliharaan harian. |
+| **R-12** | Deployment Guide v1.1 | `docs/sdlc/06_deployment/01_deployment_guide.md` | 1.1 | **TERSIER** | Acuan prosedur instalasi offline, setup database, dan runbook pemeliharaan harian. |
 | **R-13** | Tech Stack Decision v1.1 | `docs/sdlc/01_planning/04_tech_stack_decision.md` | 1.1 | **TERSIER** | Acuan locked packages, batasan platform runtime Python 3.14.2+ & MySQL 8.4. |
 | **R-14** | Bug Report Template v1.1 | `docs/sdlc/05_testing/04_bug_report_template.md` | 1.1 | **TERSIER** | Acuan format bug severity, priority level, dan known issues. |
 
