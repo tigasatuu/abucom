@@ -1,8 +1,8 @@
----
+﻿---
 dokumen    : Use Case Diagram (UCD)
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.1
-tanggal    : 2026-05-23
+versi      : 1.2
+tanggal    : 2026-05-28
 status     : Completed
 penyusun   : Senior Systems Analyst & UML Modeling Specialist
 ---
@@ -13,6 +13,7 @@ penyusun   : Senior Systems Analyst & UML Modeling Specialist
 
 | Versi | Tanggal    | Perubahan | Oleh |
 |---|---|---|---|
+| 1.2   | 2026-05-28 | Validasi menyeluruh komprehensif: Resolusi konflik penomoran UC-031 ke UC-032, pengisian data alur pengecualian dan alternatif yang kosong, pembaruan referensi, dan perbaikan konsistensi bahasa secara penuh (overwrite). | Senior UML Modeling Specialist & Systems Analyst |
 | 1.1   | 2026-05-23 | Validasi kelayakan bahasa (kalimat aktif subjek Aktor/Sistem), pengisian data alur pengecualian (Exception Flow) yang kosong dengan kode error standar RTM SRS, penyesuaian dependensi, dan penambahan daftar pustaka referensi. | Senior Business Analyst & UML Modeling Specialist |
 | 1.0   | 2026-05-23 | Pembuatan awal dokumen Use Case Diagram (UCD) komprehensif, diderivasi dari BRD v1.1 dan SRS v1.1. Mencakup pemodelan 8 aktor internal, 4 aktor eksternal, 44 daftar use case, 11 diagram Mermaid, spesifikasi naratif terstruktur, relasi include/extend, matriks traceability, dan glosarium. | Senior Systems Analyst & UML Modeling Specialist |
 
@@ -259,7 +260,7 @@ graph TB
         UC005("UC-005: Melacak Margin per Produk")
         UC006("UC-006: Mengekspor Struk Thermal")
         
-        UC004 -.->|"<<include>>"| UC031("UC-031: Otorisasi RBAC")
+        UC004 -.->|"<<include>>"| UC032("UC-032: Mengakses Menu via RBAC")
         UC004 -.->|"<<include>>"| UC033("UC-033: Log Audit JSON")
     end
 
@@ -286,7 +287,7 @@ graph TB
         UC015("UC-015: Mengelola Supplier & Utang")
         UC016("UC-016: Backup & Restore DB Manual")
         
-        UC011 -.->|"<<include>>"| UC031("UC-031: Otorisasi RBAC")
+        UC011 -.->|"<<include>>"| UC032("UC-032: Mengakses Menu via RBAC")
         UC011 -.->|"<<include>>"| UC033("UC-033: Log Audit JSON")
     end
 
@@ -323,7 +324,7 @@ graph TB
         UC023("UC-023: Memotong Gaji Kasbon Otomatis")
         
         UC021 -.->|"<<include>>"| UC023
-        UC021 -.->|"<<include>>"| UC031("UC-031: Otorisasi RBAC")
+        UC021 -.->|"<<include>>"| UC032("UC-032: Mengakses Menu via RBAC")
     end
 
     kepala_percetakan((Kepala Percetakan)) --> UC020
@@ -471,7 +472,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Transaksi baru sedang diproses di kasir (UC-001). |
 | **Pemicu (Trigger)** | Aktor menginput barang atau mengubah tipe pelanggan di terminal kasir. |
 | **Alur Utama (Main Flow)** | 1. Sistem menerima input ID Barang dan Kuantitas.<br>2. Sistem melakukan query ke tabel `barang` untuk mengambil harga retail, grosir, mitra, dan batas kuantitas minimum grosir (`min_grosir`).<br>3. Jika tipe pelanggan adalah 'Mitra', sistem menetapkan tarif = `harga_mitra`.<br>4. Jika tipe pelanggan adalah 'Grosir' ATAU kuantitas belanja &ge; `min_grosir`, sistem menetapkan tarif = `harga_grosir`.<br>5. Selain kondisi di atas, sistem menerapkan tarif standar = `harga_retail`.<br>6. Sistem mengembalikan nilai tarif terpilih ke alur transaksi kasir. |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-VAL-002 (Data Harga NULL)**: Jika harga di database bernilai NULL, sistem menampilkan alert error, menolak penambahan barang, dan meminta pemilik mengkonfigurasi harga. |
 | **Pasca-Kondisi (Postcondition)** | Tarif per unit terpilih secara dinamis dan presisi desimal tanpa campur tangan manual kasir. |
 | **Aturan Bisnis Terkait** | Penentuan harga bersifat terenkapsulasi sebagai pure function tanpa efek samping status program. |
@@ -511,7 +512,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Transaksi yang dimaksud sudah terdaftar di database MySQL. |
 | **Pemicu (Trigger)** | Aktor memilih opsi "Pembatalan/Retur Transaksi" di terminal kasir CLI. |
 | **Alur Utama (Main Flow)** | 1. Aktor memasukkan ID Transaksi.<br>2. Sistem menampilkan detail item transaksi di layar.<br>3. Aktor memilih jenis aksi: 'Pembatalan' (DP kembali) atau 'Retur Barang'.<br>4. Sistem meminta otentikasi kata sandi supervisor (`pemilik`).<br>5. Aktor Pemilik memasukkan kata sandi di terminal CLI kasir.<br>6. **Skenario Pembatalan**: Sistem mengubah status transaksi menjadi `'BATAL'`, memotong saldo kas laci aktif sebesar DP transaksi terkait, dan menyimpan rekam modifikasi di log audit JSON (UC-033).<br>7. **Skenario Retur**: Aktor memasukkan ID Barang dan kuantitas retur. Sistem menambahkan stok barang di gudang secara otomatis, memotong saldo kas kasir aktif sebesar harga jual retur, mengubah status transaksi menjadi `'RETUR'`, dan menyimpan log audit. |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-AUTH-011 (Sandi Salah)**: Jika kata sandi pemilik salah, sistem membatalkan proses pembatalan/retur dan mengunci menu.<br>**E2. ERR-CASH-004 (Kas Kurang)**: Jika saldo laci kas kasir aktif tidak mencukupi untuk mengembalikan uang retur, sistem membatalkan proses dan menampilkan alert. |
 | **Pasca-Kondisi (Postcondition)** | Status transaksi terupdate di MySQL, stok gudang bertambah (jika retur), kas kasir berkurang, dan log Audit Trail tersimpan. |
 | **Aturan Bisnis Terkait** | Kasir mutlak dilarang menyetujui pembatalan/retur tanpa otorisasi langsung dari pemilik. |
@@ -551,7 +552,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Transaksi belanja berhasil dicatat di basis data (UC-001). |
 | **Pemicu (Trigger)** | Aktor memilih opsi "Cetak Struk Nota" setelah transaksi selesai. |
 | **Alur Utama (Main Flow)** | 1. Aktor memilih ukuran kertas printer thermal ('58mm' atau '80mm').<br>2. Sistem melakukan query detail transaksi berdasarkan ID Transaksi.<br>3. Sistem menjalankan formatting layout string teks:<br>   - Lebar kertas 32 karakter (58mm) atau 48 karakter (80mm).<br>   - Nama toko, alamat default, kasir di posisi tengah.<br>   - Pembungkusan string nama item belanja jika melebihi batas kolom.<br>   - Penyejajaran nominal subtotal rata kanan.<br>4. Sistem menyimpan output string sebagai file `.txt` di folder lokal `/exports/receipts/`.<br>5. Sistem menampilkan struk visual teks di terminal kasir. |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-SYS-006 (Gagal Tulis Berkas)**: Jika folder tujuan terkunci oleh sistem operasi, sistem menangkap error, menampilkan pesan kegagalan penulisan file, dan mencatat log kejadian. |
 | **Pasca-Kondisi (Postcondition)** | Berkas teks nota thermal berhasil di-generate secara eksternal. |
 | **Aturan Bisnis Terkait** | Format teks plain text (.txt) menggunakan standar encoding UTF-8. |
@@ -571,7 +572,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Data komposisi bahan produk kustom (Bill of Materials) sudah terdaftar di database. |
 | **Pemicu (Trigger)** | Staf produksi memproses status pesanan kustom menjadi selesai di terminal CLI (UC-024). |
 | **Alur Utama (Main Flow)** | 1. Sistem mendeteksi ID Pesanan kustom yang diselesaikan.<br>2. Sistem mengambil data komposisi bahan baku (BOM) produk terkait dari tabel database.<br>3. Sistem mengambil data harga beli bahan baku terbaru dari database master.<br>4. Sistem menghitung biaya komponen bahan: `Biaya Komponen = kuantitas_pemakaian * harga_beli_satuan` (menggunakan presisi `decimal` 4 digit di belakang koma).<br>5. Sistem menjumlahkan seluruh biaya komponen bahan untuk menetapkan HPP dasar.<br>6. Sistem mencatat nilai HPP tersebut ke dalam baris detail transaksi MySQL.<br>7. Sistem mengurangi sisa stok bahan baku desimal di gudang basis data. |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-STOCK-EMPTY (Stok Kurang)**: Jika stok bahan baku kurang dari pemakaian riil desimal, sistem tetap menyelesaikan proses namun mencatatkan log stok minus di database dan menampilkan alert kuning peringatan re-order (UC-012). |
 | **Pasca-Kondisi (Postcondition)** | HPP tersimpan presisi di database transaksional, persediaan bahan baku terpotong pecahan desimal. |
 | **Aturan Bisnis Terkait** | Perhitungan matematika mutlak dilarang memanfaatkan tipe data floating-point standard bawaan komputer guna menghindari selisih pembulatan rupiah. |
@@ -591,7 +592,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Aktor login dengan level `produksi_cetak` dan pesanan kustom aktif. |
 | **Pemicu (Trigger)** | Aktor memilih menu "Pencatatan Limbah Gagal Produksi" di terminal CLI. |
 | **Alur Utama (Main Flow)** | 1. Aktor memasukkan ID Transaksi cetak kustom yang bermasalah.<br>2. Aktor memilih bahan baku yang rusak dari daftar komponen BOM.<br>3. Aktor menginput kuantitas bahan baku yang rusak (ukuran desimal panjang x lebar atau volume).<br>4. Aktor memasukkan alasan kegagalan (misal: "Salah cetak", "Mesin macet").<br>5. Sistem mengambil harga beli satuan bahan baku, menghitung biaya kerugian: `Biaya Kerugian = kuantitas_limbah * harga_beli_satuan`.<br>6. Sistem memotong kuantitas stok bahan baku di tabel persediaan database MySQL.<br>7. Sistem menyimpan log limbah ke tabel `limbah_produksi` dan mencatat biaya kerugian tersebut di tabel pengeluaran operasional. |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-VAL-008 (ID Bahan Tidak Valid)**: Jika ID bahan baku yang dimasukkan tidak cocok dengan komponen BOM pesanan terkait, sistem menolak penyimpanan dan memancarkan peringatan. |
 | **Pasca-Kondisi (Postcondition)** | Catatan limbah tersimpan, sisa stok gudang terpotong akurat, dan nominal kerugian terdebit di laporan keuangan. |
 | **Aturan Bisnis Terkait** | Limbah wajib dicatatkan untuk menjaga sinkronisasi akurasi stok gudang fisik toko. |
@@ -631,7 +632,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Aktor login dengan level `gudang` atau `produksi_cetak`. |
 | **Pemicu (Trigger)** | Aktor memilih menu "Pengambilan ATK Operasional Internal" di terminal CLI. |
 | **Alur Utama (Main Flow)** | 1. Aktor memasukkan ID Barang retail ATK dan kuantitas yang diambil.<br>2. Aktor memasukkan rincian tujuan pemakaian (misal: "1 rim kertas HVS untuk print nota").<br>3. Sistem memeriksa ketersediaan stok barang terkait.<br>4. Sistem memotong kuantitas stok barang retail: `stok_baru = stok_lama - kuantitas_ambil`.<br>5. Sistem mengambil harga beli barang (HPP retail) dari database.<br>6. Sistem membukukan pengeluaran internal: `Biaya Operasional = kuantitas_ambil * HPP_retail`.<br>7. Sistem mencatat transaksi ini di database pengeluaran operasional toko. |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-STOCK-010 (Stok Tidak Cukup)**: Jika kuantitas pengambilan melebihi sisa stok sistem, sistem menampilkan pesan error stok tidak mencukupi, menggagalkan pemotongan, dan kembali ke menu awal. |
 | **Pasca-Kondisi (Postcondition)** | Stok retail ATK berkurang, pengeluaran operasional internal bertambah sesuai nilai modal (HPP) barang. |
 | **Aturan Bisnis Terkait** | Pengambilan internal wajib dinilai berdasarkan modal HPP barang, bukan harga jual retail. |
@@ -671,7 +672,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Aktor login dan terdapat data transaksi konsumsi bahan baku historis di database. |
 | **Pemicu (Trigger)** | Aktor membuka menu "Dashboard Inventaris & Logistik" di CLI. |
 | **Alur Utama (Main Flow)** | 1. Sistem memproses query total pemakaian bahan baku selama 30 hari ke belakang dari data detail transaksi.<br>2. Sistem menghitung rata-rata pemakaian harian: `Rata-rata Harian = Total Pemakaian / 30`.<br>3. Sistem mengestimasi sisa hari ketersediaan: `Sisa Hari = Stok Saat Ini / Rata-rata Harian`.<br>4. Jika `Sisa Hari <= 7`, sistem menandai baris bahan baku tersebut dengan warna kuning (Peringatan Re-Order) atau merah (Kritis) di terminal CLI kasir. |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. NO-HISTORICAL-DATA (Data Kosong)**: Jika database transaksi kosong (toko baru), sistem menangkap kondisi ini, mengabaikan perhitungan prediksi, dan menampilkan status stok saat ini secara aman. |
 | **Pasca-Kondisi (Postcondition)** | Aktor dibimbing notifikasi visual visual tentang daftar barang yang harus dibeli ke supplier. |
 | **Aturan Bisnis Terkait** | Pemicu peringatan re-order berjalan otomatis pada tingkat runtime CLI. |
@@ -691,7 +692,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Aktor login sebagai `gudang` dan master supplier aktif di database (UC-015). |
 | **Pemicu (Trigger)** | Staf gudang mencatatkan transaksi pasokan barang masuk baru dari supplier. |
 | **Alur Utama (Main Flow)** | 1. Aktor menginput ID Barang, ID Supplier, kuantitas, dan harga beli baru.<br>2. Sistem membandingkan harga beli baru dengan harga beli historis di database.<br>3. Sistem menyimpan entri baru ke tabel `riwayat_harga_supplier` (mencakup: `barang_id`, `supplier_id`, `harga_beli_baru`, dan timestamp).<br>4. Sistem memperbarui harga beli standar (HPP) barang di database master.<br>5. Sistem menampilkan grafik tabel tren harga beli barang dari berbagai supplier di layar CLI. |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-VAL-013 (Supplier Tidak Terdaftar)**: Jika ID Supplier yang dimasukkan tidak valid, sistem menolak pencatatan harga, memancarkan error, dan meminta kasir meregistrasi supplier terlebih dahulu. |
 | **Pasca-Kondisi (Postcondition)** | Riwayat harga beli supplier terekam kronologis, memfasilitasi pengambilan keputusan pengadaan paling murah. |
 | **Aturan Bisnis Terkait** | Harga beli baru harus bernilai Rupiah positif &ge; Rp 0. |
@@ -711,7 +712,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Aktor meletakkan berkas `.csv` terformat bersih di direktori lokal toko server. |
 | **Pemicu (Trigger)** | Aktor memicu skrip CLI utilitas import massal. |
 | **Alur Utama (Main Flow)** | 1. Aktor memasukkan path relatif berkas `.csv` (misal: `exports/data_ATK.csv`).<br>2. Sistem membuka file, membaca baris data menggunakan modul bawaan `csv` Python dengan encoding UTF-8.<br>3. Sistem memvalidasi keselarasan struktur kolom dan membersihkan spasi data.<br>4. Sistem mengevaluasi dan mengabaikan baris data duplikat atau kolom kosong.<br>5. Sistem menyisipkan data secara massal (*bulk insert*) ke tabel database MySQL dalam satu transaksi InnoDB.<br>6. Sistem menyajikan ringkasan jumlah baris data yang berhasil dan gagal diimpor di layar CLI. |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-IMPORT-014 (Format Kolom Rusak)**: Jika format kolom CSV tidak sesuai standar skema database, sistem membatalkan seluruh proses import massal (rollback), menampilkan error, dan mencatat baris data yang bermasalah. |
 | **Pasca-Kondisi (Postcondition)** | Database terisi massal dengan data master bersih dalam waktu pemrosesan cepat < 5 detik. |
 | **Aturan Bisnis Terkait** | Fitur hanya dijalankan sekali pada masa inisiasi setup awal sistem baru. |
@@ -751,7 +752,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Aktor login sebagai `pemilik` and akses sistem file server aktif. |
 | **Pemicu (Trigger)** | Pemilik memilih menu "Pencadangan/Pemulihan Database" di terminal CLI. |
 | **Alur Utama (Main Flow)** | 1. Aktor memilih aksi: 'Backup Manual' atau 'Restore Manual'.<br>2. **Skenario Backup**: Sistem Python memanggil perintah subprocess aman `mysqldump` untuk mengekspor database.<br>3. Sistem mengompresi file `.sql` menjadi `.zip`, melakukan enkripsi berkas menggunakan algoritma AES-256 dengan kunci sandi pemilik, dan menyimpannya di `/exports/backups/`.<br>4. **Skenario Restore**: Aktor memasukkan nama berkas cadangan dan menginput kunci sandi enkripsi.<br>5. Sistem menangguhkan sesi login staf kasir aktif sementara (ACID safety).<br>6. Sistem mendekripsi berkas `.zip`, mengekstrak file `.sql`, menimpa database MySQL, menyalakan kembali sesi, dan menyajikan notifikasi sukses pemulihan di layar CLI. |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-FILE-039 (Restore Gagal)**: Jika file backup korup atau sandi salah, sistem membatalkan penimpaan database, melakukan rollback data, menampilkan pesan error restore, dan membuka sesi kasir kembali secara aman. |
 | **Pasca-Kondisi (Postcondition)** | File backup terenkripsi tersimpan di penyimpanan fisik toko, atau database berhasil dipulihkan tanpa merusak konsistensi data transaksi. |
 | **Aturan Bisnis Terkait** | Fitur backup/restore mutlak dibatasi hanya untuk peran pemilik (RBAC). |
@@ -791,7 +792,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Pelanggan datang ingin mengirim/tarik tunai uang elektronik di konter kasir. |
 | **Pemicu (Trigger)** | Kasir memilih menu "Transaksi Transfer Uang / Jasa Keuangan" di terminal CLI. |
 | **Alur Utama (Main Flow)** | 1. Aktor memasukkan nama platform tujuan transfer dan nominal Rupiah uang transfer.<br>2. Sistem melakukan query ke tabel `biaya_admin_bank` yang menyimpan daftar biaya admin tetap dari 6 e-wallet.<br>3. Sistem memproses biaya admin, komisi toko, dan keuntungan kotor secara fungsional.<br>4. Sistem menampilkan tabel komparasi biaya admin di terminal CLI kasir.<br>5. Sistem merekam e-wallet termurah dan menampilkan teks: "Rekomendasi: Gunakan DANA - Biaya Admin Rp 1.000".<br>6. Aktor menyetujui, sistem memproses pengurangan saldo e-wallet terkait, dan menyimpan transaksi kas masuk. |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-DB-001 (Koneksi Database Terputus)**: Jika koneksi MySQL terputus saat mengambil data tarif admin bank/e-wallet, sistem membatalkan query, menampilkan pesan kegagalan koneksi, dan menyarankan kasir menguji koneksi LAN. |
 | **Pasca-Kondisi (Postcondition)** | Kasir memilih akun paling hemat secara real-time, memaksimalkan selisih margin keuntungan jasa transfer untuk toko. |
 | **Aturan Bisnis Terkait** | Komisi keuntungan toko dihitung dari selisih tarif admin pelanggan terhadap admin asli platform. |
@@ -831,7 +832,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Aktor login dengan level minimal `kepala_percetakan` atau `pemilik`. |
 | **Pemicu (Trigger)** | Aktor memilih menu "Manajemen Staf & Absensi" di terminal CLI. |
 | **Alur Utama (Main Flow)** | 1. Aktor mendaftarkan profil karyawan baru (Nama, Peran, Status PKWT/PKWTT).<br>2. **Absensi Harian**: Aktor supervisor membuka menu absensi di CLI, mencatat presensi staf aktif ('Hadir', 'Sakit', 'Alpa'). Sistem menyimpan catatan absensi bulanan.<br>3. **Pencatatan Kasbon**: Aktor supervisor memilih ID Karyawan dan menginput nominal kasbon atas persetujuan Pemilik.<br>4. Sistem memotong saldo kas keluar harian toko, merekam nominal kasbon aktif ke tabel `kasbon_staf` MySQL, dan mencatatkan log audit trail. |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-LIMIT-KASBON (Kasbon Melebihi Batas)**: Jika nominal kasbon yang diajukan melebihi limit Rp 1.000.000 atau &gt; 30% gaji standar bulanan karyawan, sistem menolak transaksi, menampilkan error, and membatalkan pencatatan kasbon.<br>**E2. ERR-VAL-018 (Absensi Ganda)**: Jika kasir menginput data absensi untuk karyawan pada tanggal yang sudah terisi sebelumnya, sistem menolak penyimpanan, menampilkan pesan error absensi ganda, dan kembali ke menu. |
 | **Pasca-Kondisi (Postcondition)** | Database profil staf terupdate, absensi terekam, kasbon aktif terdaftar, and kas keluar tercatat. |
 | **Aturan Bisnis Terkait** | Pengajuan kasbon staf dibatasi limit maksimum Rp 1.000.000 secara sistematis. |
@@ -851,7 +852,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Aktor login sebagai `pemilik` and proses pembukuan laba/rugi bulanan toko sudah dihitung (UC-028). |
 | **Pemicu (Trigger)** | Pemilik memilih menu "Proses Gaji Bulanan (Smart Payroll)" di terminal CLI. |
 | **Alur Utama (Main Flow)** | 1. Aktor memilih bulan operasional penggajian.<br>2. Sistem mengambil data total laba bersih toko bulan terkait dari database keuangan.<br>3. Sistem membandingkan laba bersih terhadap parameter target bulanan (Rp 15.000.000).<br>4. **Skenario A (Laba Bersih &ge; Rp 15 juta)**: Sistem menerapkan skema Gaji Bulanan Tetap penuh untuk setiap karyawan sesuai kontrak kerja.<br>5. **Skenario B (Laba Bersih < Rp 15 juta)**: Sistem menerapkan skema Pembagian Gaji Persentase Laba sebesar 25.0% dari laba bersih bulanan secara proporsional kepada staf aktif, dengan jaminan batas bawah 50.0% UMR daerah (Rp 3.200.000).<br>6. Sistem memproses pemotongan kasbon aktif karyawan (UC-023).<br>7. Sistem menghitung poin insentif bulanan karyawan (UC-022) sebagai bonus tambahan.<br>8. Sistem menyajikan slip gaji detail di terminal CLI, menyimpan data payroll bulanan ke tabel `payroll_gaji` secara ACID, and memotong kas keluar besar. |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-VAL-028 (Laba Bersih Belum Dihitung)**: Jika data pembukuan laba bersih bulanan bernilai kosong atau belum dihitung (UC-028), sistem menolak memproses penggajian, menampilkan pesan kesalahan, dan meminta pemilik memicu perhitungan laba/rugi bulanan terlebih dahulu.<br>**E2. ERR-DB-001 (Koneksi Terputus)**: Jika koneksi basis data terputus saat memproses payroll, sistem melakukan rollback data, menampilkan error, dan mencatat log lokal. |
 | **Pasca-Kondisi (Postcondition)** | Slip gaji terbit otomatis, sisa utang kasbon terpotong, poin insentif ditutup, and kas keluar terdaftar. |
 | **Aturan Bisnis Terkait** | Skema penggajian Smart Payroll mutlak dibatasi hanya untuk level login Pemilik (RBAC). Jaminan UMR daerah setempat default Rp 3.200.000. |
@@ -871,7 +872,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Transaksi penjualan berhasil diselesaikan di kasir (UC-001). |
 | **Pemicu (Trigger)** | Status transaksi pesanan/jasa sukses direkam di database kasir. |
 | **Alur Utama (Main Flow)** | 1. Sistem memeriksa ID Transaksi dan mengidentifikasi item barang/jasa yang dibeli.<br>2. Sistem menetapkan poin insentif berdasarkan tingkat kesulitan:<br>   - Tier 1 (1 Poin - Rp 500)<br>   - Tier 2 (3 Poin - Rp 1.500)<br>   - Tier 3 (5 Poin - Rp 2.500)<br>   - Tier 4 (10 Poin - Rp 5.000)<br>3. Sistem mengidentifikasi ID Karyawan pelaksana (desainer, kasir, atau produksi cetak) dari data transaksi.<br>4. Sistem menyisipkan poin baru ke tabel `poin_insentif_staf` MySQL secara otomatis.<br>5. Pada akhir bulan, sistem menjumlahkan poin: `Bonus Poin = Total Poin * Nilai Rupiah Per Poin` (untuk ditambahkan di payroll UC-021). |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-VAL-013 (Karyawan Tidak Valid)**: Jika ID Karyawan pelaksana transaksi tidak ditemukan di database master, sistem membatalkan akumulasi poin, memancarkan pesan kesalahan, dan memicu peninjauan konfigurasi pengguna. |
 | **Pasca-Kondisi (Postcondition)** | Poin insentif staf terakumulasi dinamis di database MySQL secara transaksional aman. |
 | **Aturan Bisnis Terkait** | Nilai nominal rupiah per poin diatur dinamis di database (default Rp 500/poin). |
@@ -911,7 +912,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Transaksi cetak kustom baru berhasil dicatat di kasir dengan status `BELUM LUNAS` (UC-001). |
 | **Pemicu (Trigger)** | Aktor membuka menu "Dashboard Job Tracking Antrian Pekerjaan" di terminal CLI. |
 | **Alur Utama (Main Flow)** | 1. Sistem menampilkan daftar antrian pekerjaan di layar CLI berdasarkan status pengerjaan.<br>2. **Transaksi Masuk**: Aktor mendaftarkan pesanan, sistem menetapkan status awal `'Antri'`.<br>3. **Tahap Desain**: Aktor desainer memfilter antrian, memilih ID Pesanan, mengubah status menjadi `'Proses Desain'`, melakukan pengerjaan visual mockup, merekam arsip path direktori file desain (UC-025), lalu mengubah status ke `'Produksi'`.<br>4. **Tahap Produksi**: Aktor produksi cetak mengambil antrian `'Produksi'`, mencetak fisik, menginput bahan baku riil desimal presisi (UC-007) dan limbah (UC-008), lalu mengubah status ke `'Selesai'`.<br>5. **Tahap Pengambilan**: Aktor memproses pelunasan kas (UC-003) saat pelanggan datang, sistem memperbarui status ke `'Diambil'`, dan menyimpan log audit. |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-AUTH-030 (Pelanggaran Hak Akses)**: Jika desainer mencoba mengubah status ke `'Diambil'` (menu kasir) atau kasir mencoba mengubah ke `'Produksi'`, sistem menolak perubahan, menampilkan alert hak akses ditolak, and mencatat log audit.<br>**E2. ERR-FLOW-022 (Transisi Status Tidak Valid)**: Jika aktor mencoba melompati tahapan status transisi (misalnya dari 'Antri' langsung ke 'Selesai' atau 'Diambil' tanpa melalui 'Proses Desain' dan 'Produksi'), sistem menolak perubahan status, menampilkan pesan transisi tidak valid, dan mengembalikan antrian ke status semula. |
 | **Pasca-Kondisi (Postcondition)** | Status transisi pesanan kustom terupdate sekuensial dan presisi di basis data. |
 | **Aturan Bisnis Terkait** | Perubahan status dibatasi secara ketat berdasarkan matriks RBAC peran pengguna (M.7). |
@@ -951,7 +952,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Transaksi/servis/pesanan mengalami perubahan status bermakna di sistem. |
 | **Pemicu (Trigger)** | Aktor menekan opsi "Kirim Notifikasi WhatsApp" setelah transaksi selesai. |
 | **Alur Utama (Main Flow)** | 1. Sistem mendeteksi ID Transaksi atau ID Service yang diproses.<br>2. Sistem mengambil data nama pelanggan, nomor telepon, total tagihan, dan sisa pembayaran dari database.<br>3. Sistem meng-generate teks notifikasi terformat dinamis di Python (misal: `"Halo [Nama], pesanan stempel Anda telah SELESAI. Sisa pelunasan Rp [Sisa]. Silakan diambil di toko AbuCom."`).<br>4. Sistem membuat url tautan WhatsApp Web API: `https://wa.me/[Nomor_WA]?text=[Teks_Enkoder]`.<br>5. Sistem menyajikan teks pesan terformat dan link url di terminal kasir.<br>6. Aktor menyalin link secara manual (copy) untuk ditempelkan (paste) ke aplikasi browser WhatsApp Web di PC Toko. |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-VAL-002 (Format Nomor WhatsApp Tidak Valid)**: Jika nomor telepon pelanggan tidak valid (kosong atau mengandung karakter non-numerik yang tidak dapat dibersihkan), sistem menolak pembuatan tautan wa.me, menampilkan pesan error format nomor salah, dan meminta input ulang data pelanggan. |
 | **Pasca-Kondisi (Postcondition)** | Teks template dan tautan wa.me siap digunakan staf kasir secara cepat dan profesional. |
 | **Aturan Bisnis Terkait** | Pembuatan pesan WA tidak memicu integrasi berbayar API pihak ketiga (bebas biaya bulanan). |
@@ -991,7 +992,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Aktor login sebagai `pemilik` (RBAC). Data transaksi penjualan dan pengeluaran aktif. |
 | **Pemicu (Trigger)** | Pemilik memilih menu "Laporan Keuangan Laba/Rugi Instan" di terminal CLI. |
 | **Alur Utama (Main Flow)** | 1. Aktor memasukkan parameter filter rentang waktu (tanggal harian / bulan bulanan / tahun tahunan).<br>2. Sistem memicu fungsi kalkulasi murni Python untuk menghitung:<br>   - Total Pendapatan Kotor (akumulasi dari 5 divisi).<br>   - Total HPP Bahan Baku (dihitung presisi desimal dari komposisi BOM).<br>   - Total Pengeluaran Operasional (rutin, tidak terduga, penyusutan aset).<br>   - Total Kerugian Limbah Produksi (*waste cost*).<br>   - Total Pembayaran Bonus Poin Karyawan.<br>3. Sistem menghitung laba bersih: `Laba Bersih = Pendapatan - HPP - Pengeluaran - Limbah - Bonus`.<br>4. Sistem menyajikan ringkasan profitabilitas laba/rugi tabular per divisi secara instan (< 2 detik) di layar CLI. |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-PERF-026 (Timeout Pemrosesan Laporan)**: Jika agregasi data query database terdeteksi lambat melebihi 5 detik saat memuat laporan tahunan konsolidasi, sistem membatalkan query, menampilkan pesan warning timeout performa, dan mencatat log kejadian. |
 | **Pasca-Kondisi (Postcondition)** | Pemilik mendapatkan laporan profitabilitas yang valid dan bersih dari data Excel manual berserakan. |
 | **Aturan Bisnis Terkait** | Laporan keuangan Laba/Rugi mutlak dibatasi hanya untuk tingkat login Pemilik (RBAC). |
@@ -1011,7 +1012,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Terdapat data pinjaman bank aktif (UC-027) atau utang supplier tempo (UC-015) di database. |
 | **Pemicu (Trigger)** | Pemilik melakukan login otentikasi CLI saat startup aplikasi (UC-041). |
 | **Alur Utama (Main Flow)** | 1. Aktor memasukkan kredensial login dan sistem memvalidasi session JWT.<br>2. Sistem memicu fungsi evaluasi tanggal jatuh tempo di database MySQL.<br>3. Sistem memeriksa apakah selisih tanggal jatuh tempo cicilan bank atau utang supplier terhadap tanggal lokal saat ini adalah &le; 3 hari.<br>4. Jika kondisi terpenuhi, sebelum masuk ke dashboard menu utama, sistem langsung menampilkan panel notifikasi berkedip kuning di CLI: `"PERINGATAN JATUH TEMPO H-3: CICILAN BANK/UTANG SUPPLIER AKAN JATUH TEMPO PADA TANGGAL [TGL]. SEGERA SIAPKAN DANA!"`.<br>5. Aktor menekan tombol enter untuk melanjutkan ke menu utama. |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-DB-003 (Koneksi Server Terputus)**: Jika sistem mengalami kegagalan koneksi permanen ke database MySQL saat mengevaluasi jatuh tempo di startup, sistem mengabaikan alert, menampilkan error konektivitas keras di layar CLI kasir, dan menghentikan pemuatan menu. |
 | **Pasca-Kondisi (Postcondition)** | Pemilik memperoleh proteksi harian dari insiden terlambat bayar utang yang memicu denda bank. |
 | **Aturan Bisnis Terkait** | Alert falls diatur aktif pada parameter waktu H-3 secara dinamis. |
@@ -1031,7 +1032,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Aktor login sebagai `pemilik` (RBAC). |
 | **Pemicu (Trigger)** | Pemilik memilih menu "Manajemen Aset Tetap & Depresiasi" di terminal CLI. |
 | **Alur Utama (Main Flow)** | 1. Aktor mendaftarkan aset baru (Nama Aset, Harga Perolehan awal, Tanggal Beli, Masa Manfaat bulan).<br>2. Sistem menyimpan aset ke tabel `aset_tetap` MySQL.<br>3. **Kalkulasi Depresiasi**: Setiap akhir bulan, sistem memproses penyusutan nilai secara garis lurus: `Depresiasi Bulanan = Harga Perolehan / Masa Manfaat`. Nilai sisa aset berkurang, and tercatat sebagai biaya pengeluaran depresiasi bulanan.<br>4. **Tabungan Aset**: Aktor mengalokasikan persentase laba bulanan untuk disimpan secara virtual ke tabel `tabungan_aset` untuk rencana pengadaan mesin baru di masa depan. Saldo tabungan bertambah. |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-VAL-028 (Alokasi Tabungan Aset Melebihi Laba)**: Jika pemilik mengalokasikan tabungan virtual aset baru yang nominalnya melebihi total laba bersih bulan berjalan di database, sistem menolak penyimpanan alokasi, menampilkan pesan error nominal melebihi batas, dan kembali ke menu awal. |
 | **Pasca-Kondisi (Postcondition)** | Database aset terupdate, nilai buku aset menyusut presisi di MySQL, and saldo tabungan virtual aset bertambah. |
 | **Aturan Bisnis Terkait** | Metode penyusutan dinilai secara akuntansi garis lurus (*straight-line*). Dana tabungan aset dialokasikan dari laba bersih. |
@@ -1051,7 +1052,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Aktor login dan memiliki hak akses menu pengeluaran. |
 | **Pemicu (Trigger)** | Aktor memilih menu "Pencatatan Biaya Pengeluaran Toko" di terminal CLI. |
 | **Alur Utama (Main Flow)** | 1. Aktor menginput jenis pengeluaran, deskripsi pemakaian, nominal Rupiah pengeluaran, and mengunggah timestamp.<br>2. **Evaluasi Otorisasi**: Jika nominal pengeluaran di bawah Rp 500.000, Aktor supervisor (Kepala Percetakan) diizinkan menyimpan data pengeluaran secara langsung.<br>3. Jika nominal pengeluaran &ge; Rp 500.000 atau merupakan biaya tak terduga, sistem menahan data dengan status `'PENDING'` dan meminta otentikasi sandi supervisor (`pemilik`).<br>4. Aktor supervisor (Pemilik) menginput sandi untuk menyetujui.<br>5. Sistem menyimpan pengeluaran ke tabel `pengeluaran` MySQL, memotong saldo kas kasir, and mencatatkan log audit JSON. |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-CASH-004 (Kas Toko Kurang)**: Jika saldo kas di sistem tidak mencukupi untuk membayar pengeluaran fisik, sistem menolak penyimpanan dan menampilkan alert kas laci tidak cukup.<br>**E2. ERR-AUTH-029 (Otorisasi Pemilik Gagal)**: Jika pengeluaran bernilai &ge; Rp 500.000 atau merupakan pengeluaran tak terduga dan otentikasi sandi supervisor (Pemilik) salah/gagal, sistem membatalkan pencatatan pengeluaran dan mencatat insiden percobaan ilegal di log audit. |
 | **Pasca-Kondisi (Postcondition)** | Pengeluaran terdaftar, kas toko berkurang, slip keuangan laba/rugi bulanan terupdate otomatis. |
 | **Aturan Bisnis Terkait** | Pengeluaran besar di atas limit Rp 500.000 mutlak membutuhkan otentikasi login Pemilik (RBAC). |
@@ -1071,7 +1072,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Aktor berhasil login ke sistem dan session JWT memuat informasi role pengguna (UC-041). |
 | **Pemicu (Trigger)** | Aktor memilih/mengetikkan menu perintah di terminal CLI. |
 | **Alur Utama (Main Flow)** | 1. Aktor mengklik/mengetikkan menu perintah di terminal kasir.<br>2. Sistem memicu fungsi middleware otorisasi untuk membaca data peran pengguna (`role`) dari session JWT.<br>3. Sistem mencocokkan menu pilihan terhadap tabel Matriks RBAC di database (BRD v1.1 Bagian 5.3).<br>4. Jika peran pengguna memiliki status `'Akses Penuh'` atau `'Hanya Input'` atau `'Lihat Saja'`, sistem mengizinkan akses menu dan menampilkan layar fungsional terkait. |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-AUTH-030 (Akses Ditolak)**: Jika peran pengguna pada menu terkait bernilai 'Ditolak' (seperti kasir mengakses menu Laba/Rugi), sistem memblokir akses perintah, menyajikan teks merah akses ditolak, dan mencatat insiden percobaan akses ilegal ke log Audit Trail JSON. |
 | **Pasca-Kondisi (Postcondition)** | Menu sensitif terlindungi secara biner, memotong celah bypass otorisasi dari staf baru. |
 | **Aturan Bisnis Terkait** | Matriks hak akses RBAC dikunci rapat di database `rbac_rules` dan dikelola pemilik. |
@@ -1091,7 +1092,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Transaksi modifikasi data sensitif berhasil dipicu oleh aktor di terminal kasir. |
 | **Pemicu (Trigger)** | Aksi modifikasi database (INSERT, UPDATE, DELETE) pada tabel sensitif berhasil dieksekusi. |
 | **Alur Utama (Main Flow)** | 1. Sistem mendeteksi peristiwa modifikasi data.<br>2. Sistem mengidentifikasi: ID User pelaksana, Timestamp lokal, Tipe Aksi, dan Nama Tabel.<br>3. Sistem mengemas data sebelum diubah (`old_value`) dan data sesudah diubah (`new_value`) menjadi objek string JSON terstruktur.<br>4. Sistem menyimpan catatan secara kronologis ke tabel `audit_logs` MySQL secara atomik.<br>5. **Pengauditan**: Aktor Pemilik membuka menu "Audit Trail Laporan Modifikasi" di CLI, sistem menampilkan tabel log audit lengkap dengan data perbandingan JSON secara instan. |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-SYS-006 (Gagal Tulis Log)**: Jika database penuh atau terputus sehingga gagal menulis record ke tabel `audit_logs`, sistem mencatat pesan warning error secara lokal ke berkas file teks cadangan `logs/error_log.txt` di server. |
 | **Pasca-Kondisi (Postcondition)** | Riwayat manipulasi data tersimpan aman secara permanen di database MySQL (InnoDB), siap dijadikan bukti forensik jika terjadi kecurangan staf. |
 | **Aturan Bisnis Terkait** | Log audit trail bersifat read-only 100% (tidak dapat dimodifikasi/dihapus oleh siapa pun). |
@@ -1111,7 +1112,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Kasir aktif selesai bekerja di shift-nya, dan kasir pengganti telah bersiap. |
 | **Pemicu (Trigger)** | Kasir memilih menu "Tutup Shift & Serah Terima Kasir" di terminal CLI. |
 | **Alur Utama (Main Flow)** | 1. Aktor aktif melakukan rekonsiliasi kas laci fisik (UC-035).<br>2. Aktor aktif memasukkan ID Kasir pengganti (staf masuk).<br>3. Sistem menampilkan total uang laci tercatat sistem dan membandingkannya dengan uang fisik yang diinput kasir.<br>4. Aktor supervisor (Kepala Percetakan) melakukan otorisasi verifikasi keselarasan serah terima shift.<br>5. Sistem mencatat log serah terima ke tabel `shift_handover` MySQL.<br>6. Sistem membekukan data transaksi dari kasir aktif (kasir keluar) untuk shift tersebut, menghapus session JWT aktif, dan meminta kasir pengganti melakukan login baru. |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-INPUT-033 (Uang Laci Belum Dihitung)**: Jika kasir aktif belum melakukan input nominal uang fisik laci kasir secara lengkap untuk rekonsiliasi kas (UC-035), sistem menolak proses serah terima shift dan mengunci layar kasir. |
 | **Pasca-Kondisi (Postcondition)** | Sesi kasir lama terkunci aman, data shift terekam, and laci kasir dialihkan ke kasir baru. |
 | **Aturan Bisnis Terkait** | Serah terima shift kasir tidak dapat disimpan jika uang laci belum dihitung. |
@@ -1151,7 +1152,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Terjadi pencatatan transaksi anomali di database (batal berulang > 3 kali, selisih kas > Rp 10.000). |
 | **Pemicu (Trigger)** | Pemilik melakukan login otentikasi CLI saat startup aplikasi (UC-041). |
 | **Alur Utama (Main Flow)** | 1. Aktor Pemilik login ke sistem terminal CLI.<br>2. Sistem memicu fungsi background scanner untuk mengevaluasi data transaksi harian di database MySQL.<br>3. Sistem memeriksa apakah terdapat pembatalan pesanan kustom berulang (> 3 kali dalam 1 shift kasir), retur berturut-turut, atau selisih kas rekonsiliasi > Rp 10.000.<br>4. Jika kondisi terpenuhi, sebelum masuk ke menu utama, sistem langsung menampilkan panel notifikasi berkedip merah.<br>5. Aktor Pemilik menekan enter untuk masuk ke menu peninjauan log audit detail. |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-DB-001 (Koneksi Terputus)**: Jika koneksi MySQL terputus saat background scanner memproses data transaksi harian di startup, sistem mengabaikan peringatan anomali sementara, mencatat error ke log lokal, dan mengizinkan pemilik masuk ke menu utama. |
 | **Pasca-Kondisi (Postcondition)** | Pemilik memperoleh sistem peringatan fraud dini untuk menyelamatkan toko dari kecurangan internal. |
 | **Aturan Bisnis Terkait** | Indikator anomali dibatasi oleh parameter dinamis di runtime config. |
@@ -1171,7 +1172,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Aplikasi CLI pertama kali di-deploy di toko server (clean database). |
 | **Pemicu (Trigger)** | Aktor meluncurkan menu "Setup Deployment & Migrasi Manual" di CLI. |
 | **Alur Utama (Main Flow)** | 1. Aktor memilih kategori data awal: 'Profil Toko/Cabang', 'Data Pinjaman Awal', 'Data Master Supplier', atau 'Data Master Barang'.<br>2. Sistem menampilkan panduan baris demi baris di layar CLI.<br>3. Aktor mengetikkan data manual dari berkas Excel lama milik pemilik usaha.<br>4. Sistem melakukan validasi tipe data dan kelengkapan kolom.<br>5. Sistem menyisipkan data secara aman ke database MySQL.<br>6. Aktor dapat mengulangi langkah 1 s.d 5 secara bertahap hingga seluruh data setup awal terisi. |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-INPUT-009 (Format Input Salah)**: Jika aktor memasukkan nilai string huruf pada kolom nominal Rupiah pinjaman, stok, atau harga, sistem menangkap error parsing, menolak baris data, dan meminta mengetik ulang angka valid.<br>**E2. ERR-SQL-035 (Inkonsistensi Relasi Data)**: Jika data masukan melanggar integritas relasi foreign key di database MySQL, sistem membatalkan penyimpanan (rollback), menampilkan error inkonsistensi data relasi, dan mengembalikan status setup. |
 | **Pasca-Kondisi (Postcondition)** | Database awal terisi rapi, membebaskan pemilik dari ketergantungan berkas Excel berserakan. |
 | **Aturan Bisnis Terkait** | Menu setup hanya diizinkan diakses pada masa inisiasi penerapan sistem. |
@@ -1191,7 +1192,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Aktor login dan transaksi kasir aktif. |
 | **Pemicu (Trigger)** | Aktor memilih menu "Pencarian/Registrasi Pelanggan CRM" di terminal CLI. |
 | **Alur Utama (Main Flow)** | 1. Aktor memasukkan nomor WhatsApp pelanggan konter.<br>2. **lookup Pelanggan**: Sistem mencari nomor WA di tabel `pelanggan` MySQL.<br>3. **Skenario A (Pelanggan Terdaftar)**: Sistem menyajikan profil nama, total transaksi lampau, and direktori path file arsip desain (UC-025) secara instan.<br>4. **Skenario B (Pelanggan Baru)**: Aktor mendaftarkan profil pelanggan baru (nama, telepon). Sistem melakukan enkripsi lokal (kepatuhan UU PDP No. 27/2022) dan meregistrasi baris baru di MySQL.<br>5. Sistem menautkan ID pelanggan dengan nota transaksi penjualan (UC-001). |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-CRM-036 (Nomor WhatsApp Sudah Terdaftar)**: Jika aktor mencoba mendaftarkan pelanggan baru dengan nomor WhatsApp yang sudah terdaftar di database CRM, sistem menolak pendaftaran ganda, menampilkan pesan peringatan beserta nama pelanggan terdaftar, dan menawarkan opsi re-order. |
 | **Pasca-Kondisi (Postcondition)** | Profil pelanggan terdaftar aman, riwayat transaksi terpetakan, and re-order desain berjalan instan. |
 | **Aturan Bisnis Terkait** | Database pelanggan dilindungi enkripsi lokal dengan pembatasan ekspor data (UU PDP). |
@@ -1231,7 +1232,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Aktor login sebagai `pemilik` (RBAC) dan parameter dasar aktif di database. |
 | **Pemicu (Trigger)** | Pemilik memilih menu "Runtime Business Configuration" di terminal CLI. |
 | **Alur Utama (Main Flow)** | 1. Sistem menampilkan daftar parameter bisnis yang tersimpan di tabel `system_configs` MySQL.<br>2. Aktor Pemilik memilih parameter yang ingin diubah: target laba smart payroll bulanan, persentase bagi hasil gaji laba, limit kasbon, threshold deposit saldo kritis PPOB, batas toleransi selisih kas, atau nilai komisi rupiah per poin.<br>3. Aktor Pemilik memasukkan nominal baru di terminal CLI.<br>4. Sistem melakukan validasi numeric, menyimpan perubahan di MySQL, and memperbarui memori runtime CLI.<br>5. Logika komputasi selanjutnya langsung mengadopsi nilai parameter yang baru diubah. |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-VAL-038 (Format Tipe Data Tidak Valid)**: Jika tipe data nilai parameter baru tidak sesuai dengan tipe parameter di database (misal menginput string huruf untuk target laba desimal), sistem menolak input, menampilkan error format tipe data tidak valid, dan kembali ke daftar konfigurasi. |
 | **Pasca-Kondisi (Postcondition)** | Parameter regulasi bisnis terupdate di database, and aplikasi kasir CLI mengadopsi aturan baru tanpa restart. |
 | **Aturan Bisnis Terkait** | Akses pengelolaan parameter runtime mutlak dikunci hanya untuk peran pemilik (RBAC). |
@@ -1271,7 +1272,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Aktor login dan memiliki session JWT aktif (UC-041). |
 | **Pemicu (Trigger)** | Pengguna mengetikkan/memilih menu perintah "Keluar dari Sistem / Logout" di CLI. |
 | **Alur Utama (Main Flow)** | 1. Sistem mengonfirmasi permintaan logout pengguna.<br>2. Aktor mengonfirmasi 'Ya'.<br>3. Sistem menghapus secara permanen token JWT aktif dari memori internal aplikasi Python.<br>4. Sistem mencatat peristiwa logout pengguna di log audit JSON.<br>5. Sistem menampilkan layar pembuka login CLI (UC-041). |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-SESSION-002 (Sesi Tidak Valid)**: Jika session JWT kedaluwarsa atau terhapus sebelum aktor memicu logout, sistem langsung mengarahkan pengguna ke login screen secara otomatis. |
 | **Pasca-Kondisi (Postcondition)** | Sesi JWT terhapus dari memori, and layar terminal terkunci kembali dari akses luar ilegal. |
 | **Aturan Bisnis Terkait** | Logout wajib mengosongkan session state di terminal klien secara biner. |
@@ -1291,7 +1292,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Aktor berhasil login ke sistem CLI (UC-041). |
 | **Pemicu (Trigger)** | Aktor pertama kali dialihkan ke menu utama pasca login atau memilih menu "Dashboard Utama". |
 | **Alur Utama (Main Flow)** | 1. Sistem membaca session JWT pengguna untuk mengidentifikasi level peran (role).<br>2. Sistem memicu query summary data dari MySQL.<br>3. **Skenario A (Pemilik)**: Sistem menyajikan dashboard keuangan penuh (laba bersih hari ini, total kas laci, grafik transaksi 5 divisi, and alert jatuh tempo bank).<br>4. **Skenario B (Kasir)**: Sistem menyajikan dashboard transaksi kasir (saldo laci kasir aktif, sisa saldo virtual PPOB, and jumlah invoice belum lunas).<br>5. **Skenario C (Desainer/Produksi)**: Sistem menyajikan dashboard operasional (jumlah pekerjaan antrian cetak kustom, status job tracking aktif, and alert bahan habis).<br>6. Sistem menampilkan dashboard tabular rapi di layar terminal kasir menggunakan pustaka formatting CLI. |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-DB-003 (Koneksi Database Terputus)**: Jika setelah 5 kali retry koneksi database server terputus secara permanen saat memuat dashboard harian, sistem menghentikan operasi dan menampilkan warning keras di layar CLI kasir. |
 | **Pasca-Kondisi (Postcondition)** | Aktor memperoleh visualisasi ringkasan status operasional harian toko yang relevan terhadap tugasnya secara instan. |
 | **Aturan Bisnis Terkait** | Tampilan data dashboard disaring secara ketat mematuhi batasan RBAC. |
@@ -1311,7 +1312,7 @@ Setiap spesifikasi naratif use case ditulis mengikuti kaidah Dialog Interaktif b
 | **Prakondisi (Precondition)** | Aktor login dan session JWT aktif (UC-041). |
 | **Pemicu (Trigger)** | Pengguna memilih menu "Ubah Kata Sandi Akun" di terminal CLI. |
 | **Alur Utama (Main Flow)** | 1. Sistem menampilkan layar input kata sandi lama, kata sandi baru, and konfirmasi kata sandi baru.<br>2. Aktor menginput kata sandi lama.<br>3. Sistem mengambil sandi terenkripsi (hash) milik pengguna dari database dan mencocokkannya menggunakan fungsi bcrypt.<br>4. Aktor memasukkan kata sandi baru dan mengonfirmasinya.<br>5. Sistem mengenkripsi kata sandi baru menggunakan bcrypt (Cost factor 12) dan memperbarui kolom sandi di tabel `users` MySQL secara atomik.<br>6. Sistem menampilkan notifikasi sukses pemutakhiran sandi dan memaksa pengguna melakukan login ulang (UC-041). |
-| **Alur Alternatif (Alternative Flow)** | - |
+| **Alur Alternatif (Alternative Flow)** | - (Tidak ada skenario alternatif yang berlaku untuk use case ini.) |
 | **Alur Pengecualian (Exception Flow)** | **E1. ERR-PASSWORD-MISMATCH (Sandi Lama Salah)**: Jika kata sandi lama tidak cocok, sistem menolak pembaruan data sandi, menampilkan error, and membatalkan proses.<br>**E2. ERR-WEAK-PASSWORD (Sandi Lemah)**: Jika kata sandi baru yang dimasukkan kurang dari 8 karakter atau tidak mengandung kombinasi angka, sistem menolak update dan meminta sandi kuat. |
 | **Pasca-Kondisi (Postcondition)** | Kata sandi baru terenkripsi bcrypt tersimpan di MySQL database, sandi lama hangus. |
 | **Aturan Bisnis Terkait** | Pergantian sandi wajib diverifikasi sandi lama terlebih dahulu demi keamanan akun staf. |
