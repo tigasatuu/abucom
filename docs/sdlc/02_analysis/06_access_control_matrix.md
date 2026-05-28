@@ -1,10 +1,10 @@
 ---
 dokumen    : Access Control Matrix (ACM)
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.1
-tanggal    : 2026-05-24
+versi      : 1.2
+tanggal    : 2026-05-28
 status     : Review
-penyusun   : Senior Security Analyst & RBAC Specialist
+penyusun   : Senior Security Architect & RBAC Specialist
 ---
 
 # Access Control Matrix (ACM) — AbuCom
@@ -15,6 +15,7 @@ penyusun   : Senior Security Analyst & RBAC Specialist
 |---|---|---|---|
 | 1.0   | 2026-05-24 | Pembuatan dokumen Access Control Matrix (ACM) pertama kali berdasarkan derivasi komprehensif BRD v1.1, SRS v1.1, Use Case Diagram v1.1, Workflow Diagram v1.1, dan Data Dictionary v1.1. Menghasilkan pemetaan granular hak akses 8 peran terhadap 44 use case dan 28 tabel CRUD database MySQL. | Senior Security Analyst & RBAC Specialist |
 | 1.1   | 2026-05-24 | Hasil audit dan perbaikan menyeluruh. Memperbaiki statistik akses Bab 9 agar 100% akurat secara matematis, menyelaraskan string kode error di Bab 6 dengan SRS v1.1, dan mengurutkan secara berurutan tabel traceability Bab 8 berdasarkan ACM Entry ID. | Senior Software Architect & RBAC Security Specialist |
+| 1.2   | 2026-05-28 | Validasi dan audit menyeluruh. Mengatasi missing aset pada tingkat sensitivitas Bab 3.2, mengoreksi error perhitungan statistik akses Bab 9 (Kasir dan Kepala Percetakan), serta menambah regulasi Default Deny, Inheritance, dan Review Berkala di Bab 6. | Senior Security Architect & RBAC Specialist |
 
 ---
 
@@ -208,9 +209,9 @@ Daftar menu terminal CLI yang dibatasi hak aksesnya oleh sistem otorisasi:
   * `MENU-BASE-004` : Mengubah Password Akun Sendiri
 
 ### 3.2. Daftar Tabel Database yang Dilindungi
-Total 28 tabel database MySQL yang dilindungi dikelompokkan berdasarkan tingkat sensitivitas data:
+Total 28 tabel database MySQL yang dilindungi dikelompokkan berdasarkan tingkat sensitivitas data (Semua tabel terpetakan):
 1. **Sangat Sensitif (Pemilik Sahaja — Absolute Lockdown)**:
-   * `pinjaman_bank`, `pinjaman_kerabat`, `payroll`, `system_configs`, `backup_logs`
+   * `pinjaman_bank`, `pinjaman_kerabat`, `payroll`, `system_configs`, `backup_logs`, `aset`
 2. **Sensitif (Akses Terbatas Staf Khusus / Otorisasi Eskalasi)**:
    * `transaksi`, `pengeluaran`, `audit_logs`, `shift_handover`, `utang_supplier`, `limbah_produksi`, `stock_opname`
 3. **Operasional (Akses Terbuka untuk Staf terkait)**:
@@ -401,7 +402,7 @@ Operasi verifikasi harian toko yang memerlukan persetujuan otorisasi digital dar
 | No | Operasi Verifikasi | Pemicu Otorisasi | Peran Pemohon | Peran Penyetuju | Respon Jika Penyetuju Salah (ERR) |
 |---|---|---|---|---|---|
 | 1 | **Persetujuan Stock Opname** | Mengubah status `stock_opname` 'DRAFT' &rarr; 'APPROVED'. | `gudang` | `kepala_percetakan` | `ERR-AUTH-011: Hak akses supervisor dibutuhkan untuk menyetujui Stock Opname!` |
-| 2 | **Serah Terima Shift (Normal)** | Validasi biner kecocokan kas laci fisik vs sistem. | `kasir` | `kepala_percetakan` | `ERR-AUTH-011: Hak akses supervisor dibutuhkan untuk menyetujui Stock Opname!` |
+| 2 | **Serah Terima Shift (Normal)** | Validasi biner kecocokan kas laci fisik vs sistem. | `kasir` | `kepala_percetakan` | `ERR-AUTH-011: Hak akses supervisor dibutuhkan untuk menyetujui Serah Terima Shift!` |
 | 3 | **Serah Terima Shift (Anomali)** | Validasi anomali selisih kas > Rp 10.000. | `kasir` | `kepala_percetakan` (ditambah memo alasan) | `ERR-CASH-001: Selisih Gagal: Selisih Rp [Nominal] melebihi batas Rp 10.000!` |
 
 ### 6.3. Aturan Pembatasan Akses Data Sensitif
@@ -428,6 +429,15 @@ Setiap kali sistem otorisasi RBAC Python CLI mendeteksi dan menggagalkan percoba
    * `target_table` = Nama modul / menu target.
    * `old_value` = JSON string berisi detail argumen input command.
    * `new_value` = `'ILLEGAL_ACCESS_PREVENTED'`.
+
+### 6.7. Default Deny Policy
+Sistem menerapkan **Default Deny Policy** di seluruh tingkatan otorisasi. Artinya, setiap endpoint fungsi, rute modul, maupun interaksi tabel database secara baku akan selalu menolak akses pengguna, kecuali apabila hak akses tersebut dideklarasikan secara eksplisit dalam daftar whitelist matriks izin peran pengguna ini. Jika sebuah peran (role) tidak secara khusus disebutkan memiliki akses `FULL`, `READ`, atau `INPUT` terhadap fungsi tertentu, maka sistem seketika memblokir eksekusi fungsi tersebut secara otomatis.
+
+### 6.8. Inheritance Policy (Kebijakan Pewarisan)
+Dalam arsitektur otorisasi AbuCom, **tidak terdapat** mekanisme pewarisan (inheritance) hak akses ke bawah secara kaskade (cascade downward). Setiap peran memiliki domain otorisasi yang bersifat unik dan terisolasi. Meskipun peran `kepala_percetakan` berada di hierarki Level 2 (Supervisor), peran tersebut tidak secara otomatis mewarisi seluruh hak akses operasional Level 3 (Staf Operasional). Sebagai contoh, `kepala_percetakan` dilarang memproses transaksi kasir atau mendaftarkan pelanggan CRM, guna menjamin integritas *Separation of Duties*.
+
+### 6.9. Kebijakan Review Berkala
+Access Control Matrix (ACM) ini wajib menjalani evaluasi dan *review* secara berkala setiap **6 bulan sekali**, atau setiap kali terjadi rilis mayor perubahan modul bisnis. Evaluasi dilakukan oleh Manajemen Keamanan (atau representasi pemilik) untuk meninjau apakah hak akses yang dimiliki setiap peran masih selaras dengan kondisi operasional terbaru, memangkas *privilege creep* (akumulasi hak akses berlebih), dan memverifikasi kembali status kelayakan akun karyawan yang telah non-aktif atau mutasi.
 
 ---
 
@@ -706,9 +716,9 @@ Berikut adalah statistik kuantitatif penyebaran hak akses fungsi/menu CLI AbuCom
 | No | Peran Pengguna (Role) | Jumlah Fungsi CLI Diakses | Persentase Akses Menu | Jumlah Tabel DB Diakses (CRUD) | Keterangan Batasan Keamanan |
 |---|---|:---:|:---:|:---:|---|
 | 1 | **pemilik** | 44 / 44 | 100.0% | 28 / 28 | Memegang wewenang administratif mutlak biner. |
-| 2 | **kepala_percetakan**| 18 / 44 | 40.9% | 19 / 28 | Pengawas toko (Dilarang akses modul payroll & margin). |
+| 2 | **kepala_percetakan**| 19 / 44 | 43.2% | 19 / 28 | Pengawas toko (Dilarang akses modul payroll & margin). |
 | 3 | **pramuniaga** | 12 / 44 | 27.3% | 11 / 28 | Garda depan (Input order, CRM, servis printer). |
-| 4 | **kasir** | 20 / 44 | 45.5% | 15 / 28 | Laci kas (Pembayaran, retur/batal lewat supervisor). |
+| 4 | **kasir** | 19 / 44 | 43.2% | 16 / 28 | Laci kas (Pembayaran, retur/batal lewat supervisor). |
 | 5 | **desainer** | 7 / 44 | 15.9% | 6 / 28 | Mockup cetak (Melihat antrian desain, input path file). |
 | 6 | **produksi_cetak** | 10 / 44 | 22.7% | 9 / 28 | Cetak fisik (Input BOM riil, limbah cetak). |
 | 7 | **fotocopy_print** | 6 / 44 | 13.6% | 8 / 28 | Retail cepat eceran (Mencatat penjualan cepat). |
@@ -716,7 +726,7 @@ Berikut adalah statistik kuantitatif penyebaran hak akses fungsi/menu CLI AbuCom
 
 * **Total Operasi Bisnis Kritis (Memerlukan Eskalasi sandi Pemilik)**: 4 Operasi.
 * **Total Operasi Verifikasi Harian (Memerlukan wewenang Kepala Toko)**: 3 Operasi.
-* **Tabel Database Eksklusif Pemilik (Absolute Lockdown)**: 5 Tabel (`pinjaman_bank`, `pinjaman_kerabat`, `payroll`, `system_configs`, `backup_logs`).
+* **Tabel Database Eksklusif Pemilik (Absolute Lockdown)**: 6 Tabel (`pinjaman_bank`, `pinjaman_kerabat`, `payroll`, `system_configs`, `backup_logs`, `aset`).
 
 ---
 
