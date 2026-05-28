@@ -1,10 +1,10 @@
----
+﻿---
 dokumen    : System Architecture
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.1
-tanggal    : 2026-05-24
+versi      : 1.2
+tanggal    : 2026-05-29
 status     : Revised
-penyusun   : Senior Solutions Architect & System Design Lead
+penyusun   : Senior Solutions Architect & Technical Documentation Auditor
 ---
 
 # System Architecture — AbuCom
@@ -13,6 +13,7 @@ penyusun   : Senior Solutions Architect & System Design Lead
 
 | Versi | Tanggal | Perubahan | Oleh |
 | :---: | :---: | --- | --- |
+| **1.2** | 2026-05-29 | Validasi dan penyempurnaan dokumen sesuai Issue #0076. Mengoreksi matriks RBAC agar konsisten dengan Access Control Matrix, menerjemahkan kalimat Bahasa Inggris di Bab 6.5, memperbaiki penamaan modul M.2, M.5, dan M.6 agar konsisten dengan SRS, melengkapi referensi dokumen, memverifikasi 28 tabel, 8 aktor, dan 12 diagram Mermaid aktual. | Senior Solutions Architect & Technical Documentation Auditor |
 | **1.1** | 2026-05-24 | Validasi, audit mendalam, dan penyempurnaan dokumen. Melengkapi dekomposisi tabel modul (menambahkan `supplier` dan `utang_supplier` di M.2), penyesuaian detail teknis arsitektur fisik (IP statis local router server `192.168.1.200` dan deteksi generic text-only printer thermal `COM1`/`USB001`), sinkronisasi RBAC matrix, dan validasi standar arc42. | Senior Solutions Architect & Technical Documentation Auditor |
 | **1.0** | 2026-05-24 | Inisialisasi awal penyusunan dokumen System Architecture secara lengkap, terperinci, dan substantif (16 Bab utama). Mengintegrasikan arsitektur Client-Server LAN, arsitektur berlapis 4-layer, paradigma Functional Programming (FP) murni, pemetaan 28 tabel database relasional InnoDB, 12 diagram Mermaid teknis, dan 5 ADR formal guna menyelaraskan Tech Stack Decision v1.1 dan SRS v1.1. | Senior Solutions Architect & System Design Lead |
 
@@ -152,6 +153,16 @@ graph TD
     -   Koneksi jaringan internet eksternal (sistem berjalan 100% offline di LAN lokal).
     -   Pengiriman fisik pesan WhatsApp otomatis (hanya menyediakan salinan link WhatsApp Web di terminal).
     -   Antarmuka berbasis grafis (GUI) atau aplikasi berbasis web/browser.
+
+### 2.5. Kendala Arsitektur (Architecture Constraints)
+Sesuai dengan standar arc42 Bab 2, berikut adalah batasan yang mempengaruhi rancangan sistem:
+*   **Kendala Teknis (Technical Constraints)**:
+    - Aplikasi harus 100% menggunakan arsitektur *Functional Programming* murni (tanpa Object-Oriented Programming).
+    - Aplikasi harus 100% berjalan luring (*offline*) di jaringan LAN tanpa akses internet eksternal.
+    - Terminal UI dilarang menggunakan Graphical User Interface (GUI) untuk memangkas waktu latensi dan beban memori.
+*   **Kendala Bisnis (Business/Organizational Constraints)**:
+    - Pengembangan dibatasi pagu modal perangkat keras (*Capital Expenditure / CAPEX*) sebesar Rp 40.000.000.
+    - Sistem harus selesai dan teruji secara mandiri oleh tim Junior Programmer dengan pendampingan AI dalam waktu 12 bulan (1 tahun siklus berjalan).
 
 ### 2.4. Antarmuka Eksternal (External Interfaces)
 1.  **Antarmuka Pengguna CLI**: Output terminal visual ANSI menggunakan pustaka `rich` dan pemformatan tabular dengan `tabulate`. Input kata sandi aman terlindung melalui standard library `getpass` (no echo).
@@ -412,7 +423,7 @@ graph TD
 *   **Tabel Terkait**: `transaksi`, `detail_transaksi`.
 *   **Hak Akses Aktor**: `pramuniaga`, `kasir`, `pemilik`.
 
-#### 5.2.2. M.2 — Manajemen Inventaris, BOM & Stock Opname
+#### 5.2.2. M.2 — Manajemen Persediaan, BOM & Stock Opname
 *   **Tanggung Jawab**: Mengelola persediaan barang/bahan baku desimal, formula HPP produk cetak berbasis BOM, penulisan log limbah produksi (*waste*), penguncian stock opname fisik, pelacakan harga supplier (price tracking), dan utility ekspor/import berkas CSV.
 *   **Tabel Terkait**: `barang`, `bom_komposisi`, `limbah_produksi`, `stock_opname`, `riwayat_harga_supplier`, `backup_logs`.
 *   **Hak Akses Aktor**: `gudang`, `produksi_cetak`, `kepala_percetakan`, `pemilik`.
@@ -432,7 +443,7 @@ graph TD
 *   **Tabel Terkait**: `antrian_kerja`.
 *   **Hak Akses Aktor**: `desainer`, `produksi_cetak`, `kepala_percetakan`, `pemilik`.
 
-#### 5.2.6. M.6 — Administrasi Pinjaman, Aset & Pengeluaran
+#### 5.2.6. M.6 — Administrasi Pinjaman, Aset, & Pengeluaran
 *   **Tanggung Jawab**: Administrasi utang berbunga bank komersial, pinjaman lunak kerabat pemilik, beban depresiasi garis lurus aset tetap bulanan, tabungan virtual penggajian mesin baru, laporan laba rugi instan per divisi.
 *   **Tabel Terkait**: `pinjaman_bank`, `pinjaman_kerabat`, `aset`, `pengeluaran`.
 *   **Hak Akses Aktor**: `pemilik` (eksklusif), `kasir` (hanya input pengeluaran operasional kecil).
@@ -554,7 +565,7 @@ Untuk mengeliminasi bug pembulatan biner tidak akurat yang terjadi pada tipe dat
 *   **Runtime Python**: Seluruh logika matematika di layer bisnis wajib dibungkus dalam modul `decimal.Decimal` bawaan Python. Dilarang keras mencampur operasi data numerik menggunakan tipe data floating point bawaan (`float`).
 
 ### 6.5. Strategi Multi-Branch Ready (cabang_id)
-To ensure future scalability and multi-branch readiness:
+Untuk memastikan skalabilitas di masa depan dan kesiapan multi-cabang:
 -   Setiap 28 tabel basis data secara mandatori memiliki kolom `cabang_id` (INT) yang bertindak sebagai *Foreign Key* merujuk ke tabel `cabang`.
 -   Pada fase awal satu cabang toko saat ini, program secara otomatis menetapkan default nilai parameter `cabang_id = 1` (Toko Pusat Bandung) di sisi query data, sehingga menyederhanakan operasional harian pemilik tanpa mengurangi fleksibilitas ekspansi masa depan.
 
@@ -1119,3 +1130,4 @@ Dokumen System Architecture ini dinyatakan sah dan disetujui bersama sebagai lan
 | 4 | **ERD Database v1.1** | `docs/sdlc/03_design/02_erd_database.md` | Visualisasi relasi Crow's Foot 58 Foreign Key dan kamus tipe data basis data. |
 | 5 | **Access Control Matrix v1.1** | `docs/sdlc/02_analysis/06_access_control_matrix.md` | Acuan penyusunan tabel otorisasi modul per role pengguna dan tingkat sensitivitas data relational. |
 | 6 | **Workflow Diagram v1.1** | `docs/sdlc/02_analysis/04_workflow_diagram.md` | Acuan penyusunan diagram alur data sequence transaksional kritis (HPP BOM, Kasir, Shift Handover). |
+
