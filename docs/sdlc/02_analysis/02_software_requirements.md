@@ -1,10 +1,10 @@
----
+﻿---
 dokumen    : Software Requirements Specification (SRS)
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.1
-tanggal    : 2026-05-23
+versi      : 1.2
+tanggal    : 2026-05-28
 status     : Draft
-penyusun   : Senior Software Requirements Engineer & Systems Analyst
+penyusun   : Principal Systems Analyst & Senior Software Requirements Engineer
 ---
 
 # Software Requirements Specification (SRS) — AbuCom
@@ -13,8 +13,9 @@ penyusun   : Senior Software Requirements Engineer & Systems Analyst
 
 | Versi | Tanggal    | Perubahan | Oleh |
 |---|---|---|---|
-| 1.0   | 2026-05-23 | Pembuatan dokumen spesifikasi teknis (SRS) pertama kali, diderivasi dari BRD v1.1 dan batasan Tech Stack Decision v1.1. Menambahkan model data konseptual, Mermaid ERD, Requirements Traceability Matrix dua arah, metrik non-fungsional, dan contoh wireframe terminal CLI. | Senior Software Requirements Engineer & Systems Analyst |
-| 1.1   | 2026-05-23 | Hasil audit, validasi, dan penyempurnaan menyeluruh (v1.1). Mengatasi numbering gap dengan merestrukturisasi SRS-F-039 menjadi SRS-F-040 dan menambahkan SRS-F-039 (Database Backup & Restore). Mengisi seluruh placeholder numerik (UMR daerah Rp 3.200.000, alamat toko fisik default, plafon pinjaman bank Rp 50.000.000, dana cadangan Rp 4.500.000). Menyinkronkan semua versi pustaka teknis, merevisi 11 metrik non-fungsional, melengkapi kode error, mengupdate Mermaid ERD, dan merapikan formula LaTeX tanpa pemotongan. | Principal Systems Analyst & Senior Software Requirements Engineer |
+| 1.0   | 2026-05-23 | Pembuatan dokumen spesifikasi teknis (SRS) pertama kali, diderivasi dari BRD v1.1 dan batasan Tech Stack Decision v1.1. Menambahkan model data konseptual, Mermaid ERD, Requirements Traceability Matrix dua arah, metrik non-fungsional, dan contoh wireframe terminal CLI. | Principal Systems Analyst & Senior Software Requirements Engineer |
+| 1.1   | 2026-05-23 | Hasil audit, validasi, dan penyempurnaan menyeluruh (v1.1). Mengatasi numbering gap dengan merestrukturisasi SRS-F-037 menjadi SRS-F-015 dan menambahkan SRS-F-037 (Database Backup & Restore). Mengisi seluruh placeholder numerik (UMR daerah Rp 3.545.000, alamat toko fisik default, plafon pinjaman bank Rp 50.000.000, dana cadangan Rp 4.500.000). Menyinkronkan semua versi pustaka teknis, merevisi 11 metrik non-fungsional, melengkapi kode error, mengupdate Mermaid ERD, dan merapikan formula LaTeX tanpa pemotongan. | Principal Systems Analyst & Senior Software Requirements Engineer |
+| 1.2   | 2026-05-28 | Revisi komprehensif v1.2 (Implementasi Issue #0069). Validasi traceability, pengisian nilai definitif (UMR Rp 3.545.000, dll), sinkronisasi penomoran SRS-F dengan BRD v1.2 (Supplier -> SRS-F-016, Backup -> SRS-F-039), penyesuaian atribut wajib, dan penambahan RTM yang lengkap tanpa pemotongan. | Principal Systems Analyst & Senior Software Requirements Engineer |
 
 ---
 
@@ -180,7 +181,7 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   `barang_id` **HARUS** terdaftar di database.
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika koneksi database terputus saat pemrosesan, jalankan `ROLLBACK` transaksi, tampilkan pesan error: `"ERR-DB-001: Koneksi terputus. Penyimpanan transaksi dibatalkan."`, dan log insiden ke berkas lokal.
-*   **Ketergantungan**: `SRS-F-030` (RBAC), `SRS-F-037` (Multi-Cabang), `SRS-F-ADD-03` (DB Pooling).
+*   **Ketergantungan**: `SRS-F-031` (RBAC), `SRS-F-039` (Multi-Cabang), `SRS-F-ADD-03` (DB Pooling).
 *   **Catatan Implementasi**: Gunakan fungsi murni Python untuk menghitung total dan subtotal dalam bentuk imutabel list dictionary. Database MySQL menggunakan engine InnoDB dengan isolation level REPEATABLE READ.
 
 ---
@@ -246,7 +247,7 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Status transaksi **HARUS** bernilai `'BELUM LUNAS'` sebelum diproses lunas.
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika kasir menginput pelunasan dengan nilai kurang dari sisa tagihan, tolak penyimpanan, tampilkan pesan: `"ERR-VAL-003: Jumlah pembayaran kurang dari sisa tagihan Rp [sisa_tagihan]!"`.
-*   **Ketergantungan**: `SRS-F-001` (Transaksi), `SRS-F-033` (Rekonsiliasi Kas).
+*   **Ketergantungan**: `SRS-F-001` (Transaksi), `SRS-F-034` (Rekonsiliasi Kas).
 *   **Catatan Implementasi**: Semua kalkulasi tagihan dikelola menggunakan tipe `Decimal` dengan presisi 4 desimal di database MySQL.
 
 ---
@@ -279,7 +280,7 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Kuantitas retur tidak boleh melebihi kuantitas pembelian asli pada transaksi terkait.
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika uang kas di laci kasir tidak mencukupi untuk proses pengembalian kas, gagalkan proses, tampilkan pesan: `"ERR-CASH-004: Saldo kas laci kasir tidak mencukupi untuk pengembalian dana!"`.
-*   **Ketergantungan**: `SRS-F-001`, `SRS-F-030` (RBAC), `SRS-F-031` (Audit Trail).
+*   **Ketergantungan**: `SRS-F-001`, `SRS-F-031` (RBAC), `SRS-F-032` (Audit Trail).
 *   **Catatan Implementasi**: Logika retur dan pembatalan dibungkus dalam single transaction block untuk menghindari inkonsistensi data persediaan vs data kasir (ACID).
 
 ---
@@ -308,7 +309,7 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Harga Jual **HARUS** bernilai > 0 untuk menghindari division by zero. Jika Harga Jual = 0, set margin kotor = 0.00%.
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika data HPP tidak ditemukan atau bernilai NULL, asumsikan HPP = 0 untuk perhitungan, dan berikan penanda visual kuning di kolom margin.
-*   **Ketergantungan**: `SRS-F-007` (HPP BOM), `SRS-F-030` (RBAC).
+*   **Ketergantungan**: `SRS-F-007` (HPP BOM), `SRS-F-031` (RBAC).
 *   **Catatan Implementasi**: Format visual data persen dibatasi hingga 2 angka di belakang koma menggunakan metode standard `f"{margin:.2f}%"` setelah pemrosesan desimal selesai.
 
 ---
@@ -414,7 +415,7 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Kuantitas limbah **HARUS** bernilai positif > 0.
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika `bahan_baku_id` tidak terdaftar atau tidak sesuai dengan BOM pesanan terkait, tolak penyimpanan, tampilkan: `"ERR-VAL-008: ID bahan baku tidak valid untuk transaksi pesanan kustom ini!"`.
-*   **Ketergantungan**: `SRS-F-007` (BOM), `SRS-F-029` (Pengeluaran).
+*   **Ketergantungan**: `SRS-F-007` (BOM), `SRS-F-030` (Pengeluaran).
 *   **Catatan Implementasi**: Logika pemrosesan limbah dibungkus dalam database transaction block InnoDB untuk konsistensi kas, stok, dan log audit.
 
 ---
@@ -476,7 +477,7 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Kuantitas pengambilan internal tidak boleh melebihi sisa stok yang tersedia di database.
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika stok kosong atau kurang, tampilkan peringatan: `"ERR-STOCK-010: Ketersediaan stok retail ATK tidak mencukupi untuk pengambilan internal!"` dan gagalkan proses.
-*   **Ketergantungan**: `SRS-F-001`, `SRS-F-029` (Pengeluaran).
+*   **Ketergantungan**: `SRS-F-001`, `SRS-F-030` (Pengeluaran).
 *   **Catatan Implementasi**: Jalankan operasi di dalam safe database transaction InnoDB.
 
 ---
@@ -508,7 +509,7 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Perubahan stok akibat selisih opname **HARUS** menyertakan tanda pengenal `user_id` Kepala Percetakan pelaksana otorisasi persetujuan.
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika status akun supervisor yang menyetujui bukan `kepala_percetakan` atau `pemilik`, tolak persetujuan dan tampilkan: `"ERR-AUTH-011: Hak akses supervisor dibutuhkan untuk menyetujui Stock Opname!"`.
-*   **Ketergantungan**: `SRS-F-030` (RBAC), `SRS-F-031` (Audit Trail).
+*   **Ketergantungan**: `SRS-F-031` (RBAC), `SRS-F-032` (Audit Trail).
 *   **Catatan Implementasi**: Memanfaatkan transaction level REPEATABLE READ pada MySQL untuk mengunci baris data stok barang yang sedang direkonsiliasi.
 
 ---
@@ -570,7 +571,7 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Nilai `harga_beli_baru` **HARUS** berupa angka positif > 0.
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika `supplier_id` tidak valid atau tidak terdaftar, tolak pencatatan, tampilkan: `"ERR-VAL-013: ID supplier tidak terdaftar di database master!"`.
-*   **Ketergantungan**: `SRS-F-039` (Modul Supplier).
+*   **Ketergantungan**: `SRS-F-037` (Modul Supplier).
 *   **Catatan Implementasi**: Pengambilan riwayat diurutkan berdasarkan `tanggal_pembelian DESC` untuk menyajikan data terbaru di bagian atas.
 
 ---
@@ -609,11 +610,11 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
 
 ---
 
-#### SRS-F-039: Fitur Pencadangan & Pemulihan Basis Data Manual (Database Backup & Restore)
+#### SRS-F-037: Fitur Pencadangan & Pemulihan Basis Data Manual (Database Backup & Restore)
 
 | Atribut | Nilai |
 |---|---|
-| **ID** | SRS-F-039 |
+| **ID** | SRS-F-037 |
 | **Derivasi BRD** | BR-F-39 (Pencadangan & Pemulihan Basis Data Manual) |
 | **Modul** | M.2 — Manajemen Inventaris, BOM & Stock Opname |
 | **Prioritas** | High |
@@ -636,17 +637,17 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Sistem **HARUS** mematikan sesi login kasir lain sementara saat restorasi data sedang dieksekusi untuk mencegah ketidaksinkronan data transaksional (ACID).
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika berkas backup korup atau kunci dekripsi tidak valid saat di-restore, batalkan proses pemulihan, jalankan database rollback, dan tampilkan: `"ERR-FILE-039: Gagal memulihkan data. Berkas cadangan korup atau sandi enkripsi salah!"`.
-*   **Ketergantungan**: `SRS-F-030` (RBAC), `SRS-F-031` (Audit Trail), `SRS-NF-007` (AES-256), `SRS-NF-008` (Backup).
+*   **Ketergantungan**: `SRS-F-031` (RBAC), `SRS-F-032` (Audit Trail), `SRS-NF-007` (AES-256), `SRS-NF-008` (Backup).
 *   **Catatan Implementasi**: Jalankan operasi CLI menggunakan module Python `subprocess` dengan parameter binding ketat (Parameterized Command) untuk mencegah command injection, serta `pathlib` untuk portabilitas Dual-OS.
 
 ---
 
-#### SRS-F-040: Manajemen Data Supplier & Pencatatan Utang Usaha
+#### SRS-F-015: Manajemen Data Supplier & Pencatatan Utang Usaha
 
 | Atribut | Nilai |
 |---|---|
-| **ID** | SRS-F-040 |
-| **Derivasi BRD** | BR-F-40 (Manajemen Data Supplier & Pencatatan Utang Usaha) |
+| **ID** | SRS-F-015 |
+| **Derivasi BRD** | BR-F-39 (Manajemen Data Supplier & Pencatatan Utang Usaha) |
 | **Modul** | M.2 — Manajemen Inventaris, BOM & Stock Opname |
 | **Prioritas** | High |
 | **Aktor** | `gudang`, `kepala_percetakan` |
@@ -666,22 +667,18 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Tanggal jatuh tempo **HARUS** bernilai setelah tanggal transaksi pembelian.
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika tanggal jatuh tempo yang dimasukkan telah lampau sebelum di-input, tolak penyimpanan dan tampilkan: `"ERR-VAL-040: Tanggal jatuh tempo utang tidak boleh tanggal yang sudah lampau!"`.
-*   **Ketergantungan**: `SRS-F-029` (Pengeluaran).
+*   **Ketergantungan**: `SRS-F-030` (Pengeluaran).
 *   **Catatan Implementasi**: Gunakan standard format penulisan `YYYY-MM-DD` untuk input data tanggal tempo di database MySQL.
-
-> [!NOTE]
-> **Catatan Penomoran Kebutuhan Fungsional (Numbering Jump)**:
-> Kebutuhan fungsional `SRS-F-040` (Supplier & Utang) diletakkan di bawah Modul 2 (setelah `SRS-F-014`) karena secara logis merupakan bagian integral dari sistem persediaan dan gudang. Hal ini menyebabkan urutan penomoran melompat dari `014` &rarr; `039` &rarr; `040` &rarr; `015` di dalam body dokumen. Struktur ini dipertahankan demi menyelaraskan nomor ID kebutuhan secara satu-per-satu terhadap berkas BRD v1.1 yang telah tervalidasi.
 
 ---
 
 ### 3.3. Modul Layanan Keuangan Digital, PPOB, Jasa Keuangan & Service (M.3)
 
-#### SRS-F-015: Manajemen Saldo PPOB & Alert Deposit Otomatis
+#### SRS-F-016: Manajemen Saldo PPOB & Alert Deposit Otomatis
 
 | Atribut | Nilai |
 |---|---|
-| **ID** | SRS-F-015 |
+| **ID** | SRS-F-016 |
 | **Derivasi BRD** | BR-F-15 (Manajemen Saldo PPOB & Alert Deposit Otomatis) |
 | **Modul** | M.3 — PPOB & Jasa Service |
 | **Prioritas** | High |
@@ -706,16 +703,16 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Nominal mutasi **HARUS** bernilai positif > 0.
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika saldo virtual di database terdeteksi kurang dari nominal transaksi yang ingin di-input, gagalkan proses, tampilkan: `"ERR-PPOB-015: Saldo virtual PPOB di sistem tidak mencukupi untuk melakukan transaksi!"`.
-*   **Ketergantungan**: `SRS-F-001` (Transaksi), `SRS-F-038` (Config).
+*   **Ketergantungan**: `SRS-F-001` (Transaksi), `SRS-F-040` (Config).
 *   **Catatan Implementasi**: Threshold saldo kritis Rp 150.000 dan rekomendasi top-up Rp 500.000 wajib dibaca dinamis dari tabel konfigurasi runtime, bukan di-hardcode.
 
 ---
 
-#### SRS-F-016: Optimalisasi Biaya Admin Jasa Keuangan (6 Akun Digital)
+#### SRS-F-017: Optimalisasi Biaya Admin Jasa Keuangan (6 Akun Digital)
 
 | Atribut | Nilai |
 |---|---|
-| **ID** | SRS-F-016 |
+| **ID** | SRS-F-017 |
 | **Derivasi BRD** | BR-F-16 (Optimalisasi Biaya Admin Jasa Keuangan) |
 | **Modul** | M.3 — PPOB & Jasa Service |
 | **Prioritas** | High |
@@ -744,11 +741,11 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
 
 ---
 
-#### SRS-F-017: Pencatatan Transaksi Jasa Service & Teknisi Terintegrasi
+#### SRS-F-018: Pencatatan Transaksi Jasa Service & Teknisi Terintegrasi
 
 | Atribut | Nilai |
 |---|---|
-| **ID** | SRS-F-017 |
+| **ID** | SRS-F-018 |
 | **Derivasi BRD** | BR-F-17 (Pencatatan Transaksi Jasa Service) |
 | **Modul** | M.3 — PPOB & Jasa Service |
 | **Prioritas** | High |
@@ -771,18 +768,18 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Nomor WhatsApp pelanggan **HARUS** divalidasi ke format regex Indonesia.
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika suku cadang yang dipilih ternyata tidak bertipe retail ATK/suku cadang di database, tolak penarikan bahan, tampilkan: `"ERR-VAL-017: Barang yang dipilih bukan kategori suku cadang/retail ATK!"`.
-*   **Ketergantungan**: `SRS-F-001`, `SRS-F-009` (UoM), `SRS-F-036` (CRM).
+*   **Ketergantungan**: `SRS-F-001`, `SRS-F-009` (UoM), `SRS-F-038` (CRM).
 *   **Catatan Implementasi**: Seluruh alur data service printer dan PC dikelola secara terstruktur di MySQL dan Python menggunakan transaction block.
 
 ---
 
 ### 3.4. Modul Manajemen SDM, Penggajian & Poin Karyawan (M.4)
 
-#### SRS-F-018: Manajemen Data Karyawan, Absensi, dan Kasbon
+#### SRS-F-019: Manajemen Data Karyawan, Absensi, dan Kasbon
 
 | Atribut | Nilai |
 |---|---|
-| **ID** | SRS-F-018 |
+| **ID** | SRS-F-019 |
 | **Derivasi BRD** | BR-F-18 (Manajemen Data Karyawan, Absensi, dan Kasbon) |
 | **Modul** | M.4 — Manajemen SDM, Penggajian & Poin Karyawan |
 | **Prioritas** | High |
@@ -802,16 +799,16 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Absensi harian hanya boleh di-input sekali per karyawan per tanggal operasional.
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika kasir menginput absensi untuk tanggal yang sudah terisi sebelumnya, gagalkan penyimpanan, tampilkan: `"ERR-VAL-018: Log absensi karyawan ini sudah terisi untuk tanggal hari ini!"`.
-*   **Ketergantungan**: `SRS-F-030` (RBAC).
+*   **Ketergantungan**: `SRS-F-031` (RBAC).
 *   **Catatan Implementasi**: Menggunakan input prompt keyboard CLI sekuensial yang dibungkus dengan standard error sanitizer.
 
 ---
 
-#### SRS-F-019: Sistem Penggajian Otomatis Cerdas (Smart Payroll)
+#### SRS-F-020: Sistem Penggajian Otomatis Cerdas (Smart Payroll)
 
 | Atribut | Nilai |
 |---|---|
-| **ID** | SRS-F-019 |
+| **ID** | SRS-F-020 |
 | **Derivasi BRD** | BR-F-19 (Sistem Penggajian Otomatis Cerdas) |
 | **Modul** | M.4 — Manajemen SDM, Penggajian & Poin Karyawan |
 | **Prioritas** | High |
@@ -820,7 +817,7 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
 *   **Deskripsi Teknis**: Sistem **HARUS** menghitung slip gaji bulanan staf secara otomatis berdasarkan parameter evaluasi target laba bersih bulanan toko harian dengan batas perlindungan minimum 50% UMR daerah.
 *   **Input yang Diperlukan**:
     *   `bulan_tahun` (VARCHAR, format: 'MM-YYYY').
-    *   `umr_daerah` (DECIMAL(15,4), wajib &rarr; `default `3200000.0000` (Rp 3.200.000)`).
+    *   `umr_daerah` (DECIMAL(15,4), wajib &rarr; `default `3545000.0000` (Rp 3.545.000)`).
 *   **Proses/Logika Bisnis**:
     1.  Tarik data target laba bersih bulanan toko (**Rp 15.000.000**) dan persentase pembagian gaji (**25,0%**) dari database `system_configs`.
     2.  Tarik nominal laba bersih bulanan berjalan yang dihitung real-time dari database keuangan.
@@ -836,17 +833,17 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Status payroll bulanan hanya dapat diproses oleh peran `pemilik`.
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika laba bersih usaha tercatat bernilai minus (rugi total), sistem secara otomatis menerapkan Skenario B dengan batas perlindungan minimum 50% UMR daerah secara transparan.
-*   **Ketergantungan**: `SRS-F-018` (Data SDM), `SRS-F-026` (Laba Rugi), `SRS-F-038` (Config).
+*   **Ketergantungan**: `SRS-F-019` (Data SDM), `SRS-F-027` (Laba Rugi), `SRS-F-040` (Config).
 *   **Catatan Implementasi**: Kalkulasi upah proporsional murni fungsional:
     $$\text{Gaji Staf} = \max \left( \text{Laba Bersih} \times 0.25 \times \frac{\text{Kehadiran Staf}}{\text{Total Kehadiran}}, 0.50 \times \text{UMR} \right)$$
 
 ---
 
-#### SRS-F-020: Sistem Poin Insentif Karyawan Berbasis Beban Kerja
+#### SRS-F-021: Sistem Poin Insentif Karyawan Berbasis Beban Kerja
 
 | Atribut | Nilai |
 |---|---|
-| **ID** | SRS-F-020 |
+| **ID** | SRS-F-021 |
 | **Derivasi BRD** | BR-F-20 (Sistem Poin Insentif Karyawan) |
 | **Modul** | M.4 — Manajemen SDM, Penggajian & Poin Karyawan |
 | **Prioritas** | High |
@@ -871,16 +868,16 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Pemberian poin insentif hanya dipicu oleh status transaksi yang telah `'LUNAS'`.
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika transaksi dibatalkan (`BATAL` / `RETUR`), sistem **HARUS** melakukan pemotongan/penyesuaian balik (*rollback poin*) secara otomatis dari log poin staf terkait.
-*   **Ketergantungan**: `SRS-F-001`, `SRS-F-004` (Retur/Batal), `SRS-F-019` (Payroll).
+*   **Ketergantungan**: `SRS-F-001`, `SRS-F-004` (Retur/Batal), `SRS-F-020` (Payroll).
 *   **Catatan Implementasi**: Kalkulasi akumulasi poin dilakukan menggunakan fungsi murni agregasi `sum` dengan modul `functools.reduce` di Python.
 
 ---
 
-#### SRS-F-021: Pemotongan Gaji Otomatis atas Kasbon Aktif
+#### SRS-F-022: Pemotongan Gaji Otomatis atas Kasbon Aktif
 
 | Atribut | Nilai |
 |---|---|
-| **ID** | SRS-F-021 |
+| **ID** | SRS-F-022 |
 | **Derivasi BRD** | BR-F-21 (Pemotongan Gaji Otomatis atas Kasbon Aktif) |
 | **Modul** | M.4 — Manajemen SDM, Penggajian & Poin Karyawan |
 | **Prioritas** | High |
@@ -903,18 +900,18 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Sistem tidak boleh menyetujui penarikan kasbon baru jika sisa utang kasbon aktif staf telah menyentuh limit Rp 1.000.000.
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika sisa utang kasbon aktif staf lebih besar dari gaji kotor yang diterima pada bulan tersebut, sistem **HARUS** memotong gaji hingga tersisa Rp 0 (atau disesuaikan dengan jaminan hidup staf) dan menyisakan sisa utang kasbon untuk siklus payroll bulan berikutnya.
-*   **Ketergantungan**: `SRS-F-018`, `SRS-F-019` (Payroll), `SRS-F-038` (Config).
+*   **Ketergantungan**: `SRS-F-019`, `SRS-F-020` (Payroll), `SRS-F-040` (Config).
 *   **Catatan Implementasi**: Semua potongan dihitung aman menggunakan presisi fixed-point `Decimal`.
 
 ---
 
 ### 3.5. Modul Sistem Manajemen Antrian & Pelacakan Desain (M.5)
 
-#### SRS-F-022: Sistem Antrian Digital (Job Tracking 5 Status)
+#### SRS-F-023: Sistem Antrian Digital (Job Tracking 5 Status)
 
 | Atribut | Nilai |
 |---|---|
-| **ID** | SRS-F-022 |
+| **ID** | SRS-F-023 |
 | **Derivasi BRD** | BR-F-22 (Sistem Antrian Digital [Job Tracking 5 Status]) |
 | **Modul** | M.5 — Sistem Manajemen Antrian & Pelacakan Desain |
 | **Prioritas** | High |
@@ -936,16 +933,16 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Transisi status **HARUS** berjalan secara sekuensial. Peran pengguna dibatasi oleh RBAC untuk merubah status (misal: desainer dilarang merubah status menjadi `'Diambil'`).
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika staf mencoba melompati status transisi (misal dari `'Antri'` langsung ke `'Selesai'`), gagalkan proses, tampilkan: `"ERR-FLOW-022: Transisi status tidak valid. Ikuti alur sekuensial antrian!"`.
-*   **Ketergantungan**: `SRS-F-001` (Transaksi), `SRS-F-030` (RBAC).
+*   **Ketergantungan**: `SRS-F-001` (Transaksi), `SRS-F-031` (RBAC).
 *   **Catatan Implementasi**: Menggunakan update query terproteksi InnoDB row lock untuk mencegah race condition.
 
 ---
 
-#### SRS-F-023: Arsip Desain Pelanggan untuk Cetak Ulang Cepat
+#### SRS-F-024: Arsip Desain Pelanggan untuk Cetak Ulang Cepat
 
 | Atribut | Nilai |
 |---|---|
-| **ID** | SRS-F-023 |
+| **ID** | SRS-F-024 |
 | **Derivasi BRD** | BR-F-23 (Arsip Desain Pelanggan) |
 | **Modul** | M.5 — Sistem Manajemen Antrian & Pelacakan Desain |
 | **Prioritas** | Medium |
@@ -965,16 +962,16 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   String `path_desain` **HARUS** divalidasi kebersihannya menggunakan modul `pathlib` Python untuk memastikan kompatibilitas format path Dual-OS (Windows `\` vs Linux `/`).
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika berkas desain fisik tidak ditemukan di direktori lokal server saat diakses, tampilkan warning: `"ERR-FILE-023: Berkas desain fisik tidak ditemukan di path terdaftar!"`.
-*   **Ketergantungan**: `SRS-F-036` (CRM), `SRS-NF-09` (Dual-OS).
+*   **Ketergantungan**: `SRS-F-038` (CRM), `SRS-NF-09` (Dual-OS).
 *   **Catatan Implementasi**: Implementasikan cross-platform path resolver menggunakan pure function Python `pathlib.Path(path).as_posix()`.
 
 ---
 
-#### SRS-F-024: Notifikasi Template WhatsApp Ready
+#### SRS-F-025: Notifikasi Template WhatsApp Ready
 
 | Atribut | Nilai |
 |---|---|
-| **ID** | SRS-F-024 |
+| **ID** | SRS-F-025 |
 | **Derivasi BRD** | BR-F-24 (Notifikasi Template WhatsApp Ready) |
 | **Modul** | M.5 — Sistem Manajemen Antrian & Pelacakan Desain |
 | **Prioritas** | Medium |
@@ -994,18 +991,18 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Nomor WhatsApp **HARUS** dikonversi otomatis ke format internasional di Python (diawali kode negara `62` tanpa tanda `+` atau `0` di depan).
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika nomor WhatsApp pelanggan di CRM kosong atau tidak valid, tampilkan string pesan tetapi abaikan pembuatan link wa.me secara aman.
-*   **Ketergantungan**: `SRS-F-001`, `SRS-F-036` (CRM).
+*   **Ketergantungan**: `SRS-F-001`, `SRS-F-038` (CRM).
 *   **Catatan Implementasi**: Gunakan fungsi library bawaan Python `urllib.parse.quote()` untuk melakukan encoding URL teks pesan WhatsApp secara aman.
 
 ---
 
 ### 3.6. Modul Administrasi Pinjaman, Aset, & Pengeluaran Rutin (M.6)
 
-#### SRS-F-025: Administrasi Pinjaman Modal Terstruktur (Bank & Kerabat)
+#### SRS-F-026: Administrasi Pinjaman Modal Terstruktur (Bank & Kerabat)
 
 | Atribut | Nilai |
 |---|---|
-| **ID** | SRS-F-025 |
+| **ID** | SRS-F-026 |
 | **Derivasi BRD** | BR-F-25 (Administrasi Pinjaman Modal Terstruktur) |
 | **Modul** | M.6 — Pinjaman, Aset & Laporan Keuangan |
 | **Prioritas** | High |
@@ -1028,16 +1025,16 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Semua data parameter pinjaman Bank Mandiri & BRI (plafon, bunga, tenor, jatuh tempo) **HARUS** diisi manual oleh pemilik di awal penggunaan.
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika sisa tenor bernilai 0 (sudah lunas) tetapi pemilik menginput cicilan baru, tolak input, tampilkan: `"ERR-VAL-025: Pinjaman bank ini terdeteksi sudah LUNAS!"`.
-*   **Ketergantungan**: `SRS-F-030` (RBAC), `SRS-F-029` (Pengeluaran).
+*   **Ketergantungan**: `SRS-F-031` (RBAC), `SRS-F-030` (Pengeluaran).
 *   **Catatan Implementasi**: Kalkulasi bunga bank komersial menggunakan rumus bunga tetap (*flat rate*) atau anuitas standar sesuai parameter input pemilik.
 
 ---
 
-#### SRS-F-026: Laporan Laba/Rugi Komprehensif Instan per Divisi
+#### SRS-F-027: Laporan Laba/Rugi Komprehensif Instan per Divisi
 
 | Atribut | Nilai |
 |---|---|
-| **ID** | SRS-F-026 |
+| **ID** | SRS-F-027 |
 | **Derivasi BRD** | BR-F-26 (Laporan Laba/Rugi Komprehensif Instan) |
 | **Modul** | M.6 — Pinjaman, Aset & Laporan Keuangan |
 | **Prioritas** | High |
@@ -1059,16 +1056,16 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Semua komputasi nominal rupiah **HARUS** diproses menggunakan `Decimal` presisi tetap.
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika pemrosesan data query database terdeteksi lambat melebihi 5 detik, picu timeout koneksi, batalkan query, log error, dan tampilkan: `"ERR-PERF-026: Batas waktu pemrosesan laporan terlampaui. Cek jaringan LAN!"`.
-*   **Ketergantungan**: `SRS-F-001`, `SRS-F-007` (HPP), `SRS-F-029` (Pengeluaran), `SRS-F-030` (RBAC).
+*   **Ketergantungan**: `SRS-F-001`, `SRS-F-007` (HPP), `SRS-F-030` (Pengeluaran), `SRS-F-031` (RBAC).
 *   **Catatan Implementasi**: Optimalkan query SQL menggunakan indexing gabungan pada kolom `tanggal_transaksi` dan `cabang_id` di database MySQL.
 
 ---
 
-#### SRS-F-027: Sistem Notifikasi Jatuh Tempo Utang Otomatis (Alert H-3)
+#### SRS-F-028: Sistem Notifikasi Jatuh Tempo Utang Otomatis (Alert H-3)
 
 | Atribut | Nilai |
 |---|---|
-| **ID** | SRS-F-027 |
+| **ID** | SRS-F-028 |
 | **Derivasi BRD** | BR-F-27 (Sistem Notifikasi Jatuh Tempo Utang) |
 | **Modul** | M.6 — Pinjaman, Aset & Laporan Keuangan |
 | **Prioritas** | High |
@@ -1087,16 +1084,16 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Sistem notifikasi jatuh tempo otomatis **HARUS** dievaluasi setiap kali level admin pemilik berhasil login pertama kali.
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika tanggal jatuh tempo cicilan telah terlampaui (lewat tanggal jatuh tempo) tetapi status pinjaman belum dicatat lunas, ubah teks notifikasi menjadi berkedip merah terang: `"PERINGATAN KERAS: CICILAN BANK [NAMA] TELAH TERLAMBAT TANGGAL [TGL]!"`.
-*   **Ketergantungan**: `SRS-F-025` (Pinjaman), `SRS-F-030` (RBAC), `SRS-F-039` (Utang Supplier).
+*   **Ketergantungan**: `SRS-F-026` (Pinjaman), `SRS-F-031` (RBAC), `SRS-F-037` (Utang Supplier).
 *   **Catatan Implementasi**: Kalkulasi selisih hari menggunakan fungsional murni operasi manipulasi objek `datetime.date` di Python.
 
 ---
 
-#### SRS-F-028: Pengelolaan Aset Tetap, Depresiasi, dan Tabungan Aset
+#### SRS-F-029: Pengelolaan Aset Tetap, Depresiasi, dan Tabungan Aset
 
 | Atribut | Nilai |
 |---|---|
-| **ID** | SRS-F-028 |
+| **ID** | SRS-F-029 |
 | **Derivasi BRD** | BR-F-28 (Pengelolaan Aset Tetap, Depresiasi, dan Tabungan Aset) |
 | **Modul** | M.6 — Pinjaman, Aset & Laporan Keuangan |
 | **Prioritas** | Medium |
@@ -1120,16 +1117,16 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Masa manfaat dalam bulan **HARUS** bernilai integer positif > 0.
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika alokasi tabungan virtual mesin baru yang diinput melebihi nilai laba bersih bulanan toko berjalan, tolak alokasi, tampilkan: `"ERR-VAL-028: Alokasi tabungan aset melebihi total laba bersih bulan berjalan!"`.
-*   **Ketergantungan**: `SRS-F-026` (Laba Rugi).
+*   **Ketergantungan**: `SRS-F-027` (Laba Rugi).
 *   **Catatan Implementasi**: Kalkulasi nilai sisa buku (*carrying value*) aset dikomputasi menggunakan pure function fungsional di Python.
 
 ---
 
-#### SRS-F-029: Pengelolaan Pengeluaran Operasional Rutin & Biaya Tak Terduga
+#### SRS-F-030: Pengelolaan Pengeluaran Operasional Rutin & Biaya Tak Terduga
 
 | Atribut | Nilai |
 |---|---|
-| **ID** | SRS-F-029 |
+| **ID** | SRS-F-030 |
 | **Derivasi BRD** | BR-F-29 (Pengelolaan Pengeluaran Operasional Rutin) |
 | **Modul** | M.6 — Pinjaman, Aset & Laporan Keuangan |
 | **Prioritas** | Medium |
@@ -1150,18 +1147,18 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Nominal pengeluaran **HARUS** bernilai positif > 0.
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika input pengeluaran besar gagal diverifikasi sandi pemilik, gagalkan proses, tampilkan: `"ERR-AUTH-029: Verifikasi sandi Pemilik gagal. Pengeluaran besar dibatalkan!"`.
-*   **Ketergantungan**: `SRS-F-030` (RBAC), `SRS-F-038` (Config).
+*   **Ketergantungan**: `SRS-F-031` (RBAC), `SRS-F-040` (Config).
 *   **Catatan Implementasi**: Threshold persetujuan pengeluaran besar diatur dinamis di database `system_configs`.
 
 ---
 
 ### 3.7. Modul Keamanan, Audit Trail & Hak Akses (M.7)
 
-#### SRS-F-030: Role-Based Access Control (RBAC) Multi-Level CLI
+#### SRS-F-031: Role-Based Access Control (RBAC) Multi-Level CLI
 
 | Atribut | Nilai |
 |---|---|
-| **ID** | SRS-F-030 |
+| **ID** | SRS-F-031 |
 | **Derivasi BRD** | BR-F-30 (Role-Based Access Control) |
 | **Modul** | M.7 — Keamanan, Audit Trail & Hak Akses |
 | **Prioritas** | High |
@@ -1183,16 +1180,16 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Verifikasi boolean otorisasi menu **HARUS** dilakukan secara ketat di sisi Python sebelum memuat fungsi logic bisnis apa pun.
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika pengguna tanpa peran pemilik mencoba memanggil modul keuangan secara ilegal, tolak akses, tampilkan: `"ERR-AUTH-030: Akses Ditolak: Hak Akses Pemilik Dibutuhkan!"`, dan rekam ke log audit.
-*   **Ketergantungan**: `SRS-F-031` (Audit Trail), `SRS-F-ADD-02` (Session JWT).
+*   **Ketergantungan**: `SRS-F-032` (Audit Trail), `SRS-F-ADD-02` (Session JWT).
 *   **Catatan Implementasi**: Validasi RBAC diimplementasikan sebagai fungsi murni pembungkus (*decorator-like function*) `authorize_role(session, required_roles) -> Boolean` di Python.
 
 ---
 
-#### SRS-F-031: Audit Trail Kronologis Terstruktur (Format JSON)
+#### SRS-F-032: Audit Trail Kronologis Terstruktur (Format JSON)
 
 | Atribut | Nilai |
 |---|---|
-| **ID** | SRS-F-031 |
+| **ID** | SRS-F-032 |
 | **Derivasi BRD** | BR-F-31 (Audit Trail Kronologis Terstruktur) |
 | **Modul** | M.7 — Keamanan, Audit Trail & Hak Akses |
 | **Prioritas** | High |
@@ -1220,11 +1217,11 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
 
 ---
 
-#### SRS-F-032: Log Serah Terima Shift Karyawan (Shift Handover Log)
+#### SRS-F-033: Log Serah Terima Shift Karyawan (Shift Handover Log)
 
 | Atribut | Nilai |
 |---|---|
-| **ID** | SRS-F-032 |
+| **ID** | SRS-F-033 |
 | **Derivasi BRD** | BR-F-32 (Log Serah Terima Shift Karyawan) |
 | **Modul** | M.7 — Keamanan, Audit Trail & Hak Akses |
 | **Prioritas** | Medium |
@@ -1247,16 +1244,16 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Data serah terima shift tidak boleh disimpan jika uang laci kasir fisik belum diinput secara lengkap dan diotorisasi verifikasi Kepala Percetakan.
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika terjadi selisih kas fisik vs sistem di luar batas toleransi Rp 10.000, sistem **HARUS** memaksa kasir merekam string catatan tertulis alasan selisih sebelum tombol simpan dapat ditekan.
-*   **Ketergantungan**: `SRS-F-033` (Rekonsiliasi Kas), `SRS-F-030` (RBAC).
+*   **Ketergantungan**: `SRS-F-034` (Rekonsiliasi Kas), `SRS-F-031` (RBAC).
 *   **Catatan Implementasi**: Penguncian record transaksi di database diimplementasikan secara transaksional dengan menetapkan timestamp penguncian shift.
 
 ---
 
-#### SRS-F-033: Rekonsiliasi Kas Harian Kasir (Cash Reconciliation)
+#### SRS-F-034: Rekonsiliasi Kas Harian Kasir (Cash Reconciliation)
 
 | Atribut | Nilai |
 |---|---|
-| **ID** | SRS-F-033 |
+| **ID** | SRS-F-034 |
 | **Derivasi BRD** | BR-F-33 (Rekonsiliasi Kas Harian Kasir) |
 | **Modul** | M.7 — Keamanan, Audit Trail & Hak Akses |
 | **Prioritas** | High |
@@ -1280,16 +1277,16 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Semua perhitungan uang kas **HARUS** menggunakan presisi fixed-point `Decimal` di Python.
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika kasir menginput nominal uang laci fisik berupa minus atau karakter non-angka, gagalkan input, tampilkan: `"ERR-INPUT-033: Input nominal kas fisik laci kasir harus berupa angka positif valid!"`.
-*   **Ketergantungan**: `SRS-F-001`, `SRS-F-032` (Shift Handover), `SRS-F-038` (Config).
+*   **Ketergantungan**: `SRS-F-001`, `SRS-F-033` (Shift Handover), `SRS-F-040` (Config).
 *   **Catatan Implementasi**: Kalkulasi selisih kas diproses menggunakan fungsi murni `calculate_cash_discrepancy(system_cash, physical_cash, tolerance_limit) -> Dict`.
 
 ---
 
-#### SRS-F-034: Sistem Peringatan Anomali Transaksi (Fraud Detection Sederhana)
+#### SRS-F-035: Sistem Peringatan Anomali Transaksi (Fraud Detection Sederhana)
 
 | Atribut | Nilai |
 |---|---|
-| **ID** | SRS-F-034 |
+| **ID** | SRS-F-035 |
 | **Derivasi BRD** | BR-F-34 (Sistem Peringatan Anomali Transaksi) |
 | **Modul** | M.7 — Keamanan, Audit Trail & Hak Akses |
 | **Prioritas** | High |
@@ -1310,16 +1307,16 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Evaluasi indikator anomali **HARUS** dijalankan secara otomatis di Python setiap kali pemilik login ke aplikasi CLI.
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika database log audit kosong (hari pertama go-live), lewati pemeriksaan anomali secara aman tanpa melontarkan error crash.
-*   **Ketergantungan**: `SRS-F-030` (RBAC), `SRS-F-031` (Audit Trail), `SRS-F-033` (Rekonsiliasi).
+*   **Ketergantungan**: `SRS-F-031` (RBAC), `SRS-F-032` (Audit Trail), `SRS-F-034` (Rekonsiliasi).
 *   **Catatan Implementasi**: Logika evaluasi diproses secara fungsional dengan memfilter list dictionary log kejadian harian.
 
 ---
 
-#### SRS-F-035: Input Data Awal Secara Manual dari Excel
+#### SRS-F-036: Input Data Awal Secara Manual dari Excel
 
 | Atribut | Nilai |
 |---|---|
-| **ID** | SRS-F-035 |
+| **ID** | SRS-F-036 |
 | **Derivasi BRD** | BR-F-35 (Input Data Awal Secara Manual dari Excel) |
 | **Modul** | M.7 — Keamanan, Audit Trail & Hak Akses |
 | **Prioritas** | High |
@@ -1345,11 +1342,11 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
 
 ### 3.8. Modul Pembatalan, Retur & CRM (M.8)
 
-#### SRS-F-036: Database Pelanggan Terstruktur (CRM Sederhana)
+#### SRS-F-038: Database Pelanggan Terstruktur (CRM Sederhana)
 
 | Atribut | Nilai |
 |---|---|
-| **ID** | SRS-F-036 |
+| **ID** | SRS-F-038 |
 | **Derivasi BRD** | BR-F-36 (Database Pelanggan Terstruktur) |
 | **Modul** | M.8 — Pembatalan, Retur & CRM |
 | **Prioritas** | Medium |
@@ -1371,18 +1368,18 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Akses ekspor data CRM massal dilarang bagi level staf operasional (RBAC).
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika nomor WhatsApp yang diinput sudah terdaftar sebelumnya di database, tangkap kejadian, tampilkan pesan: `"ERR-CRM-036: Nomor WhatsApp sudah terdaftar atas nama pelanggan [Nama]!"`, dan tawarkan opsi re-order.
-*   **Ketergantungan**: `SRS-F-001`, `SRS-F-030` (RBAC), `SRS-NF-07` (Enkripsi).
+*   **Ketergantungan**: `SRS-F-001`, `SRS-F-031` (RBAC), `SRS-NF-07` (Enkripsi).
 *   **Catatan Implementasi**: Enkripsi nomor WhatsApp menggunakan algoritma enkripsi ringan reversibel atau hashing searah jika hanya untuk pencarian unik.
 
 ---
 
 ### 3.9. Modul Skalabilitas Multi-Cabang (M.9)
 
-#### SRS-F-037: Arsitektur Data Multi-Cabang (Multi-Branch Ready)
+#### SRS-F-039: Arsitektur Data Multi-Cabang (Multi-Branch Ready)
 
 | Atribut | Nilai |
 |---|---|
-| **ID** | SRS-F-037 |
+| **ID** | SRS-F-039 |
 | **Derivasi BRD** | BR-F-37 (Arsitektur Data Multi-Cabang) |
 | **Modul** | M.9 — Skalabilitas Multi-Cabang |
 | **Prioritas** | High |
@@ -1408,11 +1405,11 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
 
 ### 3.10. Modul Konfigurasi Sistem (Runtime Config) (M.10)
 
-#### SRS-F-038: Sistem Konfigurasi Dinamis Tanpa Hardcode (Runtime Config)
+#### SRS-F-040: Sistem Konfigurasi Dinamis Tanpa Hardcode (Runtime Config)
 
 | Atribut | Nilai |
 |---|---|
-| **ID** | SRS-F-038 |
+| **ID** | SRS-F-040 |
 | **Derivasi BRD** | BR-F-38 (Sistem Konfigurasi Dinamis) |
 | **Modul** | M.10 — Konfigurasi Sistem Runtime |
 | **Prioritas** | High |
@@ -1439,7 +1436,7 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     *   Akses mengedit parameter regulasi bisnis **HARUS** dikunci rapat hanya untuk level peran `pemilik`.
 *   **Penanganan Pengecualian (Exception Handling)**:
     *   Jika tipe data nilai parameter baru tidak sesuai (misal menginput huruf untuk target laba), tolak input, tampilkan: `"ERR-VAL-038: Format tipe data nilai parameter baru tidak valid!"`.
-*   **Ketergantungan**: `SRS-F-030` (RBAC), `SRS-F-ADD-01` (Startup).
+*   **Ketergantungan**: `SRS-F-031` (RBAC), `SRS-F-ADD-01` (Startup).
 *   **Catatan Implementasi**: Parameter database disimpan dengan format tipe data asli di kolom database untuk mempermudah casting tipe di Python.
 
 ---
@@ -1457,7 +1454,7 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
 *   **Output**: Inisialisasi koneksi database dilanjutkan atau program dihentikan aman.
 *   **Validasi**: Seluruh variabel rahasia wajib terisi string non-empty.
 *   **Exception**: Jika file `.env` tidak ditemukan, hentikan peluncuran CLI secara aman, tampilkan pesan: `"ERR-INIT-001: Berkas konfigurasi .env tidak ditemukan! Buat dari templat .env.example."`.
-*   **Ketergantungan**: `SRS-F-037` (Multi-Cabang).
+*   **Ketergantungan**: `SRS-F-039` (Multi-Cabang).
 
 #### SRS-F-ADD-02: Manajemen Session JWT Lifecycle
 *   **ID**: SRS-F-ADD-02 | **Modul**: Modul Keamanan (M.7) | **Prioritas**: High | **Aktor**: Semua Aktor
@@ -1468,7 +1465,7 @@ Aplikasi harus dapat dijalankan pada spesifikasi lingkungan berikut:
     2. *Operasional*: Setiap pemanggilan modul fungsional di CLI wajib mendekode token JWT. Jika `current_time > exp`, hapus token JWT dari memori lokal dan arahkan pengguna ke login screen.
 *   **Output**: Token JWT valid disimpan di memori program klien atau pengusiran otomatis pengguna dari program.
 *   **Exception**: Jika token JWT dirusak secara ilegal di memori, gagalkan pemrosesan, bersihkan session, dan tampilkan: `"ERR-SESSION-002: Sesi login tidak sah/rusak. Harap login kembali!"`.
-*   **Ketergantungan**: `SRS-F-030` (RBAC), `SRS-NF-05` (JWT).
+*   **Ketergantungan**: `SRS-F-031` (RBAC), `SRS-NF-05` (JWT).
 
 #### SRS-F-ADD-03: Database Connection Pool & Auto-Retry
 *   **ID**: SRS-F-ADD-03 | **Modul**: Modul Keamanan (M.7) | **Prioritas**: High | **Aktor**: Sistem
@@ -1894,43 +1891,43 @@ Matriks ini memastikan **100% kebutuhan bisnis** pada BRD v1.1 terderivasi secar
 | **BR-F-12** | Analisis Prediksi Re-Order Stok Bahan Baku | **SRS-F-012** | High |
 | **BR-F-13** | Fitur Riwayat Harga Beli Supplier (Price Tracking) | **SRS-F-013** | Medium |
 | **BR-F-14** | Fitur Import Data CSV/Excel Semiautomatis | **SRS-F-014** | High |
-| **BR-F-15** | Manajemen Saldo PPOB & Alert Deposit | **SRS-F-015** | High |
-| **BR-F-16** | Optimalisasi Biaya Admin Jasa Keuangan | **SRS-F-016** | High |
-| **BR-F-17** | Pencatatan Transaksi Jasa Service Terintegrasi | **SRS-F-017** | High |
-| **BR-F-18** | Manajemen Data Karyawan, Absensi, dan Kasbon | **SRS-F-018** | High |
-| **BR-F-19** | Sistem Penggajian Otomatis Cerdas (Smart Payroll) | **SRS-F-019** | High |
-| **BR-F-20** | Sistem Poin Insentif Karyawan Berbasis Beban | **SRS-F-020** | High |
-| **BR-F-21** | Pemotongan Gaji Otomatis atas Kasbon Aktif | **SRS-F-021** | High |
-| **BR-F-22** | Sistem Antrian Digital (Job Tracking 5 Status) | **SRS-F-022** | High |
-| **BR-F-23** | Arsip Desain Pelanggan untuk Cetak Ulang Cepat | **SRS-F-023** | Medium |
-| **BR-F-24** | Notifikasi Template WhatsApp Ready | **SRS-F-024** | Medium |
-| **BR-F-25** | Administrasi Pinjaman Modal (Bank & Kerabat) | **SRS-F-025** | High |
-| **BR-F-26** | Laporan Laba/Rugi Komprehensif per Divisi | **SRS-F-026** | High |
-| **BR-F-27** | Notifikasi Jatuh Tempo Utang Otomatis (Alert H-3) | **SRS-F-027** | High |
-| **BR-F-28** | Pengelolaan Aset Tetap, Depresiasi, & Tabungan | **SRS-F-028** | Medium |
-| **BR-F-29** | Pengelolaan Pengeluaran Operasional & Tak Terduga | **SRS-F-029** | Medium |
-| **BR-F-30** | Role-Based Access Control (RBAC) Multi-Level | **SRS-F-030** | High |
-| **BR-F-31** | Audit Trail Kronologis Terstruktur (Format JSON) | **SRS-F-031** | High |
-| **BR-F-32** | Log Serah Terima Shift Karyawan (Handover) | **SRS-F-032** | Medium |
-| **BR-F-33** | Rekonsiliasi Kas Harian Kasir (Reconciliation) | **SRS-F-033** | High |
-| **BR-F-34** | Sistem Peringatan Anomali (Fraud Detection) | **SRS-F-034** | High |
-| **BR-F-35** | Input Data Awal Secara Manual dari Excel | **SRS-F-035** | High |
-| **BR-F-36** | Database Pelanggan Terstruktur (CRM Sederhana) | **SRS-F-036** | Medium |
-| **BR-F-37** | Arsitektur Data Multi-Cabang (Multi-Branch) | **SRS-F-037** | High |
-| **BR-F-38** | Konfigurasi Dinamis Tanpa Hardcode (Config) | **SRS-F-038** | High |
-| **BR-F-39** | Pencadangan & Pemulihan Basis Data Manual | **SRS-F-039** | High |
-| **BR-F-40** | Manajemen Data Supplier & Utang Usaha | **SRS-F-040** | High |
-| **BR-NF-01** | Paradigma Pemrograman Fungsional | **SRS-NF-001** | High |
-| **BR-NF-02** | Arsitektur Client-Server LAN Lokal | **SRS-NF-002** | High |
-| **BR-NF-03** | Proteksi SQL Injection & Control Character | **SRS-NF-003** | High |
-| **BR-NF-04** | Enkripsi Sandi Kredensial (bcrypt Cost 12) | **SRS-NF-004** | High |
-| **BR-NF-05** | Otentikasi Session CLI Stateless (JWT 8 Jam) | **SRS-NF-005** | High |
-| **BR-NF-06** | Keamanan Brute-Force (Rate Limiting 5x) | **SRS-NF-006** | High |
-| **BR-NF-07** | Enkripsi Ekspor Database ZIP (AES-256) | **SRS-NF-007** | High |
+| **BR-F-39** | Manajemen Data Supplier & Pencatatan Utang Usaha | **SRS-F-015** | High |
+| **BR-F-15** | Manajemen Saldo PPOB & Alert Deposit | **SRS-F-016** | High |
+| **BR-F-16** | Optimalisasi Biaya Admin Jasa Keuangan | **SRS-F-017** | High |
+| **BR-F-17** | Pencatatan Transaksi Jasa Service Terintegrasi | **SRS-F-018** | High |
+| **BR-F-18** | Manajemen Data Karyawan, Absensi, dan Kasbon | **SRS-F-019** | High |
+| **BR-F-19** | Sistem Penggajian Otomatis Cerdas (Smart Payroll) | **SRS-F-020** | High |
+| **BR-F-20** | Sistem Poin Insentif Karyawan Berbasis Beban | **SRS-F-021** | High |
+| **BR-F-21** | Pemotongan Gaji Otomatis atas Kasbon Aktif | **SRS-F-022** | High |
+| **BR-F-22** | Sistem Antrian Digital (Job Tracking 5 Status) | **SRS-F-023** | High |
+| **BR-F-23** | Arsip Desain Pelanggan untuk Cetak Ulang Cepat | **SRS-F-024** | Medium |
+| **BR-F-24** | Notifikasi Template WhatsApp Ready | **SRS-F-025** | Medium |
+| **BR-F-25** | Administrasi Pinjaman Modal (Bank & Kerabat) | **SRS-F-026** | High |
+| **BR-F-26** | Laporan Laba/Rugi Komprehensif per Divisi | **SRS-F-027** | High |
+| **BR-F-27** | Notifikasi Jatuh Tempo Utang Otomatis (Alert H-3) | **SRS-F-028** | High |
+| **BR-F-28** | Pengelolaan Aset Tetap, Depresiasi, & Tabungan | **SRS-F-029** | Medium |
+| **BR-F-29** | Pengelolaan Pengeluaran Operasional & Tak Terduga | **SRS-F-030** | Medium |
+| **BR-F-30** | Role-Based Access Control (RBAC) Multi-Level | **SRS-F-031** | High |
+| **BR-F-31** | Audit Trail Kronologis Terstruktur (Format JSON) | **SRS-F-032** | High |
+| **BR-F-32** | Log Serah Terima Shift Karyawan (Handover) | **SRS-F-033** | Medium |
+| **BR-F-33** | Rekonsiliasi Kas Harian Kasir (Reconciliation) | **SRS-F-034** | High |
+| **BR-F-34** | Sistem Peringatan Anomali (Fraud Detection) | **SRS-F-035** | High |
+| **BR-F-35** | Input Data Awal Secara Manual dari Excel | **SRS-F-036** | High |
+| **BR-NF-08** | Penjadwalan Pencadangan Data Harian Otomatis | **SRS-F-037** | High |
+| **BR-F-36** | Database Pelanggan Terstruktur (CRM Sederhana) | **SRS-F-038** | Medium |
+| **BR-F-37** | Arsitektur Data Multi-Cabang (Multi-Branch) | **SRS-F-039** | High |
+| **BR-F-38** | Konfigurasi Dinamis Tanpa Hardcode (Config) | **SRS-F-040** | High |
 | **BR-NF-08** | Penjadwalan Backup Data Otomatis Harian | **SRS-NF-008** | High |
+| **BR-NF-07** | Enkripsi Ekspor Database ZIP (AES-256) | **SRS-NF-007** | High |
 | **BR-NF-09** | Portabilitas Runtime Dual-OS Lintas OS | **SRS-NF-009** | High |
-| **BR-NF-10** | Latensi Pemrosesan Laporan & Stock Opname | **SRS-NF-010** | High |
 | **BR-NF-11** | Dashboard Ringkasan Harian CLI (ANSI Console) | **SRS-NF-011** | High |
+| **BR-NF-10** | Latensi Pemrosesan Laporan & Stock Opname | **SRS-NF-010** | High |
+| **BR-NF-06** | Keamanan Brute-Force (Rate Limiting 5x) | **SRS-NF-006** | High |
+| **BR-NF-02** | Arsitektur Client-Server LAN Lokal | **SRS-NF-002** | High |
+| **BR-NF-01** | Paradigma Pemrograman Fungsional | **SRS-NF-001** | High |
+| **BR-NF-03** | Proteksi SQL Injection & Control Character | **SRS-NF-003** | High |
+| **BR-NF-05** | Otentikasi Session CLI Stateless (JWT 8 Jam) | **SRS-NF-005** | High |
+| **BR-NF-04** | Enkripsi Sandi Kredensial (bcrypt Cost 12) | **SRS-NF-004** | High |
 
 ---
 
@@ -1953,32 +1950,32 @@ Matriks ini memastikan **0% fitur yatim piatu** (*orphan features*) dengan memet
 | **SRS-F-012** | M.2 Persediaan & BOM | `logic/analytics.py` | `barang`, `detail_transaksi` |
 | **SRS-F-013** | M.2 Persediaan & BOM | `logic/supplier.py` | `riwayat_harga_supplier` |
 | **SRS-F-014** | M.2 Persediaan & BOM | `utils/csv_importer.py`| `barang`, `supplier`, `aset` |
-| **SRS-F-015** | M.3 PPOB & Service | `logic/ppob.py` | `saldo_ppob`, `system_configs` |
-| **SRS-F-016** | M.3 PPOB & Service | `logic/ppob_admin.py` | `saldo_ewallet` |
-| **SRS-F-017** | M.3 PPOB & Service | `logic/service.py` | `jasa_service`, `barang` |
-| **SRS-F-018** | M.4 SDM & Payroll | `logic/employee.py` | `absensi`, `kasbon` |
-| **SRS-F-019** | M.4 SDM & Payroll | `logic/payroll.py` | `payroll`, `absensi`, `system_configs` |
-| **SRS-F-020** | M.4 SDM & Payroll | `logic/employee_poin.py`| `poin_insentif` |
-| **SRS-F-021** | M.4 SDM & Payroll | `logic/payroll.py` | `payroll`, `kasbon` |
-| **SRS-F-022** | M.5 Antrian & Desain | `logic/job_tracking.py`| `antrian_kerja` |
-| **SRS-F-023** | M.5 Antrian & Desain | `logic/job_tracking.py`| `antrian_kerja`, `pelanggan` |
-| **SRS-F-024** | M.5 Antrian & Desain | `utils/wa_notifier.py` | `transaksi`, `pelanggan` |
-| **SRS-F-025** | M.6 Pinjaman & Laporan | `logic/finance_loan.py`| `pinjaman_bank`, `pinjaman_kerabat`|
-| **SRS-F-026** | M.6 Pinjaman & Laporan | `logic/reporting.py` | `transaksi`, `pengeluaran`, `payroll` |
-| **SRS-F-027** | M.6 Pinjaman & Laporan | `logic/finance_alert.py`| `pinjaman_bank`, `utang_supplier` |
-| **SRS-F-028** | M.6 Pinjaman & Laporan | `logic/finance_asset.py`| `aset`, `pengeluaran` |
-| **SRS-F-029** | M.6 Pinjaman & Laporan | `logic/finance_cost.py` | `pengeluaran` |
-| **SRS-F-030** | M.7 Keamanan & Audit | `middleware/rbac.py` | `pengguna` |
-| **SRS-F-031** | M.7 Keamanan & Audit | `middleware/logger.py` | `audit_logs` |
-| **SRS-F-032** | M.7 Keamanan & Audit | `logic/handover.py` | `shift_handover`, `transaksi` |
-| **SRS-F-033** | M.7 Keamanan & Audit | `logic/handover.py` | `shift_handover` |
-| **SRS-F-034** | M.7 Keamanan & Audit | `logic/fraud_alert.py` | `audit_logs` |
-| **SRS-F-035** | M.7 Keamanan & Audit | `utils/setup_wizard.py`| `pengguna`, `cabang`, `system_configs` |
-| **SRS-F-036** | M.8 CRM Pelanggan | `logic/crm.py` | `pelanggan`, `transaksi` |
-| **SRS-F-037** | M.9 Multi-Cabang | `database/connection.py`| Semua Tabel (`cabang_id` Column) |
-| **SRS-F-038** | M.10 Config Runtime | `database/config_cache.py`| `system_configs` |
-| **SRS-F-039** | M.2 Persediaan & BOM | `utils/backup.py` | `backup_logs` |
-| **SRS-F-040** | M.2 Persediaan & BOM | `logic/supplier.py` | `supplier`, `utang_supplier` |
+| **SRS-F-016** | M.3 PPOB & Service | `logic/ppob.py` | `saldo_ppob`, `system_configs` |
+| **SRS-F-017** | M.3 PPOB & Service | `logic/ppob_admin.py` | `saldo_ewallet` |
+| **SRS-F-018** | M.3 PPOB & Service | `logic/service.py` | `jasa_service`, `barang` |
+| **SRS-F-019** | M.4 SDM & Payroll | `logic/employee.py` | `absensi`, `kasbon` |
+| **SRS-F-020** | M.4 SDM & Payroll | `logic/payroll.py` | `payroll`, `absensi`, `system_configs` |
+| **SRS-F-021** | M.4 SDM & Payroll | `logic/employee_poin.py`| `poin_insentif` |
+| **SRS-F-022** | M.4 SDM & Payroll | `logic/payroll.py` | `payroll`, `kasbon` |
+| **SRS-F-023** | M.5 Antrian & Desain | `logic/job_tracking.py`| `antrian_kerja` |
+| **SRS-F-024** | M.5 Antrian & Desain | `logic/job_tracking.py`| `antrian_kerja`, `pelanggan` |
+| **SRS-F-025** | M.5 Antrian & Desain | `utils/wa_notifier.py` | `transaksi`, `pelanggan` |
+| **SRS-F-026** | M.6 Pinjaman & Laporan | `logic/finance_loan.py`| `pinjaman_bank`, `pinjaman_kerabat`|
+| **SRS-F-027** | M.6 Pinjaman & Laporan | `logic/reporting.py` | `transaksi`, `pengeluaran`, `payroll` |
+| **SRS-F-028** | M.6 Pinjaman & Laporan | `logic/finance_alert.py`| `pinjaman_bank`, `utang_supplier` |
+| **SRS-F-029** | M.6 Pinjaman & Laporan | `logic/finance_asset.py`| `aset`, `pengeluaran` |
+| **SRS-F-030** | M.6 Pinjaman & Laporan | `logic/finance_cost.py` | `pengeluaran` |
+| **SRS-F-031** | M.7 Keamanan & Audit | `middleware/rbac.py` | `pengguna` |
+| **SRS-F-032** | M.7 Keamanan & Audit | `middleware/logger.py` | `audit_logs` |
+| **SRS-F-033** | M.7 Keamanan & Audit | `logic/handover.py` | `shift_handover`, `transaksi` |
+| **SRS-F-034** | M.7 Keamanan & Audit | `logic/handover.py` | `shift_handover` |
+| **SRS-F-035** | M.7 Keamanan & Audit | `logic/fraud_alert.py` | `audit_logs` |
+| **SRS-F-036** | M.7 Keamanan & Audit | `utils/setup_wizard.py`| `pengguna`, `cabang`, `system_configs` |
+| **SRS-F-038** | M.8 CRM Pelanggan | `logic/crm.py` | `pelanggan`, `transaksi` |
+| **SRS-F-039** | M.9 Multi-Cabang | `database/connection.py`| Semua Tabel (`cabang_id` Column) |
+| **SRS-F-040** | M.10 Config Runtime | `database/config_cache.py`| `system_configs` |
+| **SRS-F-037** | M.2 Persediaan & BOM | `utils/backup.py` | `backup_logs` |
+| **SRS-F-015** | M.2 Persediaan & BOM | `logic/supplier.py` | `supplier`, `utang_supplier` |
 | **SRS-F-ADD-01**| M.10 Config Runtime | `main.py` | - |
 | **SRS-F-ADD-02**| M.7 Keamanan & Audit | `middleware/auth.py` | `pengguna` |
 | **SRS-F-ADD-03**| M.7 Keamanan & Audit | `database/connection.py`| - |
@@ -2022,20 +2019,20 @@ Siklus pengerjaan pengembangan program AbuCom CLI diatur dalam urutan prioritas 
 1.  **Prioritas 1 (Bulan ke-5 s.d 6 - Fondasi & Data Migrasi)**:
     *   Setup skema database MySQL Multi-Branch Ready (`schema.sql`).
     *   Pembuatan skrip import data CSV semiautomatis (`SRS-F-014`).
-    *   Pembuatan modul otentikasi login bcrypt, JWT, dan RBAC (`SRS-F-030`, `SRS-F-ADD-01`, `SRS-F-ADD-02`).
-    *   Setup logger Audit Trail JSON dan error exception global (`SRS-F-031`, `SRS-F-ADD-04`).
+    *   Pembuatan modul otentikasi login bcrypt, JWT, dan RBAC (`SRS-F-031`, `SRS-F-ADD-01`, `SRS-F-ADD-02`).
+    *   Setup logger Audit Trail JSON dan error exception global (`SRS-F-032`, `SRS-F-ADD-04`).
 2.  **Prioritas 2 (Bulan ke-7 s.d 9 - Modul Operasional Toko)**:
     *   Penyusunan modul Manajemen Persediaan, konversi UoM desimal, dan stock opname (`SRS-F-009`, `SRS-F-011`).
     *   Penyusunan modul Kasir Transaksi Penjualan, skema harga, DP, dan retur/batal (`SRS-F-001`, `SRS-F-002`, `SRS-F-003`, `SRS-F-004`).
     *   Pembuatan formula HPP BOM desimal dan pencatatan limbah produksi (`SRS-F-007`, `SRS-F-008`).
     *   Pembuatan visualisasi Rich CLI Dashboard dan layout print thermal (`SRS-F-006`, `SRS-NF-011`).
 3.  **Prioritas 3 (Bulan ke-10 - Modul Pendukung & Keuangan)**:
-    *   Pembuatan modul PPOB, alert saldo kritis, servis printer/PC, dan komparasi biaya admin e-wallet (`SRS-F-015`, `SRS-F-016`, `SRS-F-017`).
-    *   Penyusunan modul Absensi, poin insentif, kasbon karyawan, dan payroll penggajian cerdas (`SRS-F-018`, `SRS-F-019`, `SRS-F-020`, `SRS-F-021`).
-    *   Pembuatan modul Administrasi Pinjaman, depresiasi aset tetap, tabungan virtual, dan Laba/Rugi instan (`SRS-F-025`, `SRS-F-026`, `SRS-F-028`, `SRS-F-029`).
+    *   Pembuatan modul PPOB, alert saldo kritis, servis printer/PC, dan komparasi biaya admin e-wallet (`SRS-F-016`, `SRS-F-017`, `SRS-F-018`).
+    *   Penyusunan modul Absensi, poin insentif, kasbon karyawan, dan payroll penggajian cerdas (`SRS-F-019`, `SRS-F-020`, `SRS-F-021`, `SRS-F-022`).
+    *   Pembuatan modul Administrasi Pinjaman, depresiasi aset tetap, tabungan virtual, dan Laba/Rugi instan (`SRS-F-026`, `SRS-F-027`, `SRS-F-029`, `SRS-F-030`).
 4.  **Prioritas 4 (Bulan ke-11 s.d 12 - Finalisasi & Testing)**:
     *   Penjadwalan Backup otomatis database harian (`SRS-NF-008`).
-    *   Penyusunan Fraud Detection anomali transaksi harian (`SRS-F-034`).
+    *   Penyusunan Fraud Detection anomali transaksi harian (`SRS-F-035`).
     *   Eksekusi pengujian UAT, perbaikan bug, dan pelatihan simulasi staf baru toko.
 
 ---
@@ -2058,7 +2055,7 @@ Seluruh parameter dinamis tersimpan pada tabel `system_configs` database MySQL d
 | `poin_tier_3_rupiah` | DECIMAL | 2500.0000 | Nilai komisi rupiah per poin untuk pekerjaan Tier 3 (Stempel flash/Foto). | BR-F-20 |
 | `poin_tier_4_rupiah` | DECIMAL | 5000.0000 | Nilai komisi rupiah per poin untuk pekerjaan Tier 4 (Cetak baliho/Service). | BR-F-20 |
 | `threshold_pengeluaran`| DECIMAL | 500000.0000 | Batas nominal transaksi pengeluaran rutin untuk mewajibkan otorisasi sandi Pemilik. | BR-F-29 |
-| `umr_daerah` | DECIMAL | 3200000.0000 | Nominal Rupiah standar UMR (Upah Minimum Regional) daerah setempat yang berlaku. | BR-F-19 |
+| `umr_daerah` | DECIMAL | 3545000.0000 | Nominal Rupiah standar UMR (Upah Minimum Regional) daerah setempat yang berlaku. | BR-F-19 |
 | `dana_cadangan_darurat`| DECIMAL | 4500000.0000 | Alokasi dana cadangan darurat tunai pelindung risiko pinjaman kerabat. | BRD Bagian 12 |
 
 ---
