@@ -1,9 +1,9 @@
 ---
 dokumen    : Backup Recovery Procedure
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.0
+versi      : 1.1
 tanggal    : 2026-05-28
-status     : Draft
+status     : Final
 penyusun   : Senior Disaster Recovery Engineer & Business Continuity Specialist
 ---
 
@@ -13,6 +13,7 @@ penyusun   : Senior Disaster Recovery Engineer & Business Continuity Specialist
 
 | Versi | Tanggal | Deskripsi Perubahan | Oleh |
 |:---:|:---:|---|---|
+| **1.1** | 2026-05-28 | Validasi menyeluruh dokumen: komparasi referensi R-01 s.d R-11, perbaikan gap data, penyempurnaan struktur bab, pengisian placeholder, peningkatan kualitas bahasa Indonesia, dan penambahan subbab yang kurang (Communication Plan, Hardware Asset Register, Monitoring & Alerting, dan SOP Shutdown Graceful). | Senior Disaster Recovery Engineer & Business Continuity Specialist |
 | **1.0** | 2026-05-28 | Inisialisasi awal dan penyusunan dokumen Backup Recovery Procedure secara komprehensif (18 bab utama) sebagai acuan resmi pencadangan dan pemulihan data sistem AbuCom. | Senior Disaster Recovery Engineer & Business Continuity Specialist |
 
 ---
@@ -159,7 +160,7 @@ Data cadangan dikelompokkan berdasarkan sensitivitas data:
 * **Retensi**: Disimpan permanen (arsip hukum perpajakan dan histori bisnis).
 
 ### 3.4. Backup Manual On-Demand (Menu CLI Pemilik)
-* **Pemicu**: Dipicu secara manual melalui menu konfigurasi pemilik di CLI kasir klien sebelum rilis patch, migrasi database, atau audit.
+* **Pemicu**: Dipicu secara manual melalui menu konfigurasi pemilik di CLI kasir klien sebelum rilis patch, migrasi database, atau audit. Sebelum memicu, pastikan repositori Git kode kasir telah berada di branch rilis yang stabil (`main` atau `patch/*`) sesuai dengan konvensi R-11.
 * **Media**: Folder ekspor kasir lokal `C:\exports\backups\` (Windows) dan `/var/lib/mysql-backups` (Server).
 
 ### 3.5. Tabel Ringkasan Strategi Backup
@@ -186,7 +187,7 @@ graph TD
     
     ServerLocal -->|Backup Bulanan| ColdStorage["HDD Eksternal Terenkripsi<br/>(Lemari Besi Tahan Api)<br/>(Retensi 12 Bulan - Offline)"] :::storageNode
     
-    ColdStorage -->|Arsip Akhir Tahun| PermanentArchive["CD-ROM / Flashdisk Arsip<br/>(Brankas Permanen)") :::offlineNode
+    ColdStorage -->|Arsip Akhir Tahun| PermanentArchive["CD-ROM / Flashdisk Arsip<br/>(Brankas Permanen)"] :::offlineNode
     
     MySQL -->|Picu Manual CLI| KlienLocal["SSD PC Kasir Klien<br/>C:\\exports\\backups\\"] :::serverNode
 ```
@@ -238,7 +239,7 @@ mysqldump --defaults-extra-file=/root/.my.cnf --single-transaction --quick --loc
 # Periksa keberhasilan dumping SQL
 if [ $? -eq 0 ]; then
     # 4. Kompresi dan enkripsi menggunakan zip AES-256
-    zip -P "$ZIP_PASSWORD" -j $BACKUP_DIR/backup_${TIMESTAMP}.zip $BACKUP_DIR/backup_${TIMESTAMP}.sql >> /dev/null
+    zip -P "$ZIP_PASSWORD" --encryption-method aes256 -j $BACKUP_DIR/backup_${TIMESTAMP}.zip $BACKUP_DIR/backup_${TIMESTAMP}.sql >> /dev/null
     
     # 5. Hapus berkas SQL mentah demi keamanan data
     rm -f $BACKUP_DIR/backup_${TIMESTAMP}.sql
@@ -260,13 +261,13 @@ fi
 * **Baris 5-8**: Deklarasi variabel penampung timestamp, folder backup target, nama database produksi, dan path `.env` konfigurasi.
 * **Baris 11-14**: Validasi keberadaan `/root/.my.cnf` sebelum `mysqldump` dijalankan. Jika file opsi tidak ada, skrip dihentikan seketika untuk mencegah kebocoran password.
 * **Baris 17-20**: Membaca variabel `BACKUP_ZIP_PASSWORD` secara dinamis dari `.env` menggunakan utilitas `grep` dan `cut`.
-* **Baris 23-27**: Fallback penugasan sandi cadangan jika string `.env` gagal terbaca.
-* **Baris 30**: Menjalankan dump SQL database produksi menggunakan `--defaults-extra-file=/root/.my.cnf` untuk otentikasi. Parameter `--single-transaction` and `--quick` mencegah penguncian tabel (*lock table*) berlebihan, menjaga fungsionalitas ACID.
-* **Baris 33-36**: Mengecek exit status `$?`. Jika sukses, berkas SQL raw dikompresi ZIP dengan sandi AES-256 (`zip -P`).
-* **Baris 38**: Penghapusan berkas `.sql` raw secara permanen demi menghindari eksploitasi data teks polos.
-* **Baris 41**: Pengetatan hak akses berkas ZIP yang terbentuk ke `chmod 600` (hanya pemilik/root yang dapat membaca).
-* **Baris 44**: Pemicuan rotasi otomatis menggunakan utilitas `find` untuk menghapus file cadangan berumur > 30 hari.
-* **Baris 46**: Penulisan entri log keberhasilan backup ke file `/var/log/abucom_backup.log`.
+* **Baris 23-26**: Fallback penugasan sandi cadangan jika string `.env` gagal terbaca.
+* **Baris 29**: Menjalankan dump SQL database produksi menggunakan `--defaults-extra-file=/root/.my.cnf` untuk otentikasi. Parameter `--single-transaction` dan `--quick` mencegah penguncian tabel (*lock table*) berlebihan, menjaga fungsionalitas ACID.
+* **Baris 32-34**: Mengecek exit status `$?`. Jika sukses, berkas SQL raw dikompresi ZIP dengan sandi AES-256 menggunakan parameter `--encryption-method aes256`.
+* **Baris 37**: Penghapusan berkas `.sql` raw secara permanen demi menghindari eksploitasi data teks polos.
+* **Baris 40**: Pengetatan hak akses berkas ZIP yang terbentuk ke `chmod 600` (hanya pemilik/root yang dapat membaca).
+* **Baris 43**: Pemicuan rotasi otomatis menggunakan utilitas `find` untuk menghapus file cadangan berumur > 30 hari.
+* **Baris 45**: Penulisan entri log keberhasilan backup ke file `/var/log/abucom_backup.log`.
 
 ### 4.4. Konfigurasi Crontab Server Debian 12
 Pemuatan otomatis skrip backup harian pada scheduler Linux Debian:
@@ -301,7 +302,7 @@ password=SandiMySQLRootToko!
 
 ### 4.7. Alur Eksekusi Skrip Backup (Step-by-Step)
 1. Scheduler Cron memicu `/home/abuadm/abucom/utils/backup_cron.sh` pada pukul 21:00 WIB.
-2. Skrip memeriksa file `/root/.my.cnf` dan memuat password enkripsi dari `.env`.
+2. Skrip memeriksa file `/root/.my.cnf` and memuat password enkripsi dari `.env`.
 3. Skrip memanggil utilitas `mysqldump` lokal dan menulis berkas SQL sementara di `/var/lib/mysql-backups/backup_YYYYMMDD_210000.sql`.
 4. Sistem mengompres berkas SQL tersebut menjadi ZIP AES-256.
 5. Berkas SQL mentah dihapus. Hak akses ZIP diperbarui menjadi `chmod 600`.
@@ -309,7 +310,7 @@ password=SandiMySQLRootToko!
 7. Log hasil dicatat di `/var/log/abucom_backup.log`.
 
 ### 4.8. Log Pencatatan Backup (`/var/log/abucom_backup.log`)
-Setiap pemicuan otomatis akan menuliskan jejak audit teks pada berkas log lokal. Contoh keluaran log:
+Every pemicuan otomatis akan menuliskan jejak audit teks pada berkas log lokal. Contoh keluaran log:
 ```text
 [Thu May 28 21:00:02 WIB 2026] [SUCCESS] Backup basis data sukses dibuat: backup_20260528_210000.zip
 [Fri May 29 21:00:03 WIB 2026] [SUCCESS] Backup basis data sukses dibuat: backup_20260529_210000.zip
@@ -344,6 +345,33 @@ flowchart TD
     RotateDB --> WriteLog["Catat SUCCESS di /var/log/abucom_backup.log"]
     WriteLog --> End["Selesai"]
 ```
+
+### 4.11. Sistem Pemantauan dan Notifikasi (Monitoring & Alerting)
+Mengingat infrastruktur berjalan secara luring (*offline-only LAN*) tanpa konektivitas internet luar, peringatan kegagalan backup tidak dapat dikirimkan via email atau pesan Telegram eksternal. Sebagai gantinya, sistem pemantauan diintegrasikan langsung pada menu startup terminal kasir:
+1. Ketika aplikasi CLI kasir dijalankan di PC Klien Kasir, sebuah middleware otonom akan memicu kueri pemeriksaan status baris terakhir pada tabel `backup_logs`.
+2. Jika terdeteksi record backup harian terakhir berstatus `'FAILED'` atau jika rentang waktu saat ini dengan `tanggal_backup` terakhir melebihi **24 jam**, terminal kasir akan merender sebuah banner/panel peringatan merah menyala (menggunakan library `rich`) yang berbunyi:
+   `[PERINGATAN SISTEM] Kegagalan Backup Terdeteksi! Harap Hubungi System Administrator Segera!`
+3. Operator kasir wajib segera memanggil System Administrator untuk melakukan analisis file log server.
+
+### 4.12. Prosedur Shutdown Graceful Server (Sebelum Pemeliharaan)
+Sebelum mematikan server database Mini PC secara fisik untuk kebutuhan perawatan berkala (seperti pembersihan debu potongan kertas percetakan mingguan) atau relokasi fisik perangkat, ikuti SOP shutdown graceful berikut:
+1. **Pemberitahuan Staf**: Administrator menghubungi Kepala Percetakan untuk memastikan tidak ada aktivitas transaksi belanja aktif di kasir. Minta seluruh kasir menutup program CLI.
+2. **Isolasi Koneksi**: Login SSH ke Server Debian, jalankan prompt MySQL administratif, pastikan thread remote client kosong:
+   ```sql
+   -- [LINUX DEBIAN 12 — Server] — MySQL Console
+   SHOW PROCESSLIST;
+   ```
+3. **Penghentian Layanan MySQL**: Hentikan service MySQL daemon untuk memaksa flushing data InnoDB dari memori RAM server ke disk secara atomik:
+   ```bash
+   # [LINUX DEBIAN 12 — Server]
+   systemctl stop mysql
+   ```
+4. **Shutdown OS**: Jalankan instruksi shutdown sistem operasi Debian server:
+   ```bash
+   # [LINUX DEBIAN 12 — Server]
+   shutdown -h now
+   ```
+5. **Catu Daya**: Setelah lampu indikator Mini PC padam secara fisik, tekan tombol off pada UPS server (`AST-HW-003`) dan lepaskan colokan listrik.
 
 ---
 
@@ -407,7 +435,7 @@ Untuk menjamin file ZIP tidak korup dan kata sandi valid, lakukan uji ekstraksi 
    sha256sum /var/lib/mysql-backups/backup_YYYYMMDD_210000.zip
    ```
 2. Catat string hex keluaran checksum SHA-256 pada buku log verifikasi fisik harian.
-3. Bandingkan ukuran fisik berkas dengan hari sebelumnya. Fluktuasi penurunan ukuran file secara mendadak > 50% mengindikasikan dump data terpotong (segara picu investigasi).
+3. Bandingkan ukuran fisik berkas dengan hari sebelumnya. Fluktuasi penurunan ukuran file secara mendadak > 50% mengindikasikan dump data terpotong (segera picu investigasi).
 
 ### 6.4. Penanganan Kegagalan Backup (Troubleshooting)
 * **Gejala**: Log mencatatkan status `[ERROR] Eksekusi mysqldump gagal!`.
@@ -431,7 +459,7 @@ Untuk menjamin file ZIP tidak korup dan kata sandi valid, lakukan uji ekstraksi 
 Untuk menjaga agar partisi SSD Mini PC Server (`AST-HW-001`) tidak penuh, berkas ZIP cadangan harian disimpan lokal di server Debian hanya untuk **30 hari terakhir**.
 
 ### 7.2. Kebijakan Retensi Cold Storage Eksternal (12 Bulan)
-Arsip bulanan yang disalin manual oleh Pemilik Usaha (Alfatih) ke media HDD Eksternal fisik (`AST-HW-003`) disimpan selama **12 bulan**. Setelah 12 bulan, pemilik dapat menghapus berkas bulan terlama secara manual.
+Arsip bulanan yang disalin manual oleh Pemilik Usaha (Alfatih) ke media HDD Eksternal fisik (`AST-HW-008`) disimpan selama **12 bulan**. Setelah 12 bulan, pemilik dapat menghapus berkas bulan terlama secara manual.
 
 ### 7.3. Kebijakan Retensi Arsip Permanen (Tahunan)
 Data tahunan yang dibakar ke media read-only (CD-ROM) dan disimpan di brankas toko disimpan secara **permanen** untuk kebutuhan audit hukum keuangan usaha UMKM.
@@ -445,8 +473,8 @@ find /var/lib/mysql-backups/ -name "backup_*.zip" -type f -mtime +30 -delete
 Perintah ini mengevaluasi tanggal modifikasi berkas (`-mtime +30`) format `backup_*.zip` di folder tujuan dan menghapusnya secara permanen tanpa masuk ke folder sampah (*trash*).
 
 ### 7.5. Prosedur Pemindahan Backup Bulanan ke Cold Storage
-Setiap hari Minggu terakhir di akhir bulan, lakukan pemindahan data cold storage:
-1. Pemilik Usaha (Alfatih) memasang external HDD terenkripsi khusus pada PC kasir atau port server.
+Every hari Minggu terakhir di akhir bulan, lakukan pemindahan data cold storage:
+1. Pemilik Usaha (Alfatih) memasang external HDD terenkripsi khusus (`AST-HW-008`) pada PC kasir atau port server.
 2. Salin file ZIP backup harian tanggal terakhir bulan berjalan dari server ke external HDD.
 3. Lakukan verifikasi checksum file hasil salinan di HDD eksternal dengan SHA-256 asli dari server.
 4. Lepaskan koneksi HDD eksternal secara aman (*safely remove hardware*), simpan kembali di lemari besi tahan api.
@@ -458,6 +486,17 @@ Setiap hari Minggu terakhir di akhir bulan, lakukan pemindahan data cold storage
 | **Tier 1** | Server Lokal | SSD Internal Server | 30 Hari | Otomatis via skrip `find` |
 | **Tier 2** | Cold Storage | External HDD (Offline) | 12 Bulan | Manual oleh Pemilik |
 | **Tier 3** | Arsip Permanen | CD-ROM (Brankas) | Selamanya | Tanpa Rotasi (Permanen) |
+
+### 7.7. Prosedur Penghancuran Media Cadangan yang Aman (Secure Media Destruction)
+Untuk media cold storage offline (HDD Eksternal `AST-HW-008` atau CD-ROM/Flashdisk arsip) yang telah rusak, aus, atau habis masa retensinya, wajib dilakukan pemusnahan media secara aman untuk mencegah pemulihan data transaksi / data pelanggan CRM (kepatuhan UU PDP No. 27/2022):
+1. **CD-ROM / Flashdisk Arsip**: Hancurkan media secara fisik dengan memotongnya menjadi kepingan kecil menggunakan shredder CD, atau melubangi kepingan CD-ROM secara permanen.
+2. **HDD Eksternal**: Lakukan *low-level secure wiping* dengan utilitas linux `shred` lewat PC Kasir Sandbox / Server sebelum harddisk dibuang secara fisik:
+   ```bash
+   # [LINUX DEBIAN 12 — Server]
+   # Lakukan zero overwrite sebanyak 3 kali berturut-turut pada drive target (misal /dev/sdb)
+   shred -n 3 -z -v /dev/sdb
+   ```
+3. **Pemusnahan Fisik HDD**: Apabila modul sirkuit disk magnetik internal rusak, bor piringan logam (*platters*) HDD secara fisik menggunakan bor listrik di minimal 3 titik untuk menjamin data tidak bisa dibaca kembali.
 
 ---
 
@@ -519,16 +558,25 @@ unzip -P AbuCom_SecureBackupZip_Pass_2026_X9z! /var/lib/mysql-backups/backup_YYY
 ```
 
 #### 8.3.4. Import SQL Raw ke Database Produksi
-Muat berkas SQL raw ke database `abucom_db` yang baru dibuat:
+Muat berkas SQL raw ke database `abucom_db` yang baru dibuat. Guna memperkuat pengamanan, gunakan berkas opsi keamanan `/root/.my.cnf` alih-alih mengetik sandi root secara polos di baris perintah interaktif:
 ```bash
 # [LINUX DEBIAN 12 — Server]
-mysql -u root -p abucom_db < /tmp/backup_YYYYMMDD_210000.sql
+mysql --defaults-extra-file=/root/.my.cnf abucom_db < /tmp/backup_YYYYMMDD_210000.sql
 ```
 Setelah import selesai, bersihkan file SQL raw di `/tmp/` untuk alasan keamanan:
 ```bash
 # [LINUX DEBIAN 12 — Server]
 rm -f /tmp/backup_YYYYMMDD_210000.sql
 ```
+
+Untuk mengukur pencapaian Recovery Time Objective (RTO) yang ditargetkan di bawah **4 jam**, System Administrator dapat menggunakan panduan estimasi waktu import berikut:
+
+| Ukuran File SQL Dump | Estimasi Waktu Import | Keterangan Target RTO |
+|---|---|---|
+| < 5 MB | < 15 Detik | Sangat Cepat, RTO Terpenuhi |
+| 5 - 20 MB | 15 - 45 Detik | Cepat, RTO Terpenuhi |
+| 20 - 50 MB | 45 Detik - 2 Menit | Wajar, RTO Terpenuhi |
+| 50 - 200 MB | 2 - 5 Menit | Memerlukan pemantauan thread, RTO Terpenuhi |
 
 #### 8.3.5. Verifikasi Konsistensi Data Pasca-Restore
 1. Login ke MySQL, pastikan 28 tabel InnoDB terbentuk kembali dengan jumlah baris yang konsisten.
@@ -542,7 +590,7 @@ Guna melakukan simulasi restore tanpa mengganggu database produksi:
 3. Lakukan unzip berkas backup, import ke database testing:
    ```bash
    # [LINUX DEBIAN 12 — Server]
-   mysql -u root -p abucom_test_db < /tmp/backup_YYYYMMDD_210000.sql
+   mysql --defaults-extra-file=/root/.my.cnf abucom_test_db < /tmp/backup_YYYYMMDD_210000.sql
    ```
 
 ### 8.5. Pencatatan Aktivitas Restore ke Audit Logs
@@ -591,18 +639,22 @@ Disaster Recovery (DR) diaktifkan jika terjadi kegagalan total server Mini PC da
 5. Pasang MySQL Community Server versi 8.4 LTS, jalankan `mysql_secure_installation`, buat file `/root/.my.cnf` (600).
 
 ### 9.4. Ekstraksi dan Restore Backup dari Media Cold Storage
-1. Ambil berkas ZIP cadangan harian terakhir dari media external HDD Pemilik (Cold Storage).
+1. Ambil berkas ZIP cadangan harian terakhir dari media external HDD Pemilik (`AST-HW-008` Cold Storage).
 2. Salin berkas ZIP cadangan tersebut ke server baru pada folder `/tmp/restore.zip`.
-3. Buat database kosong `abucom_db` dengan character set `utf8mb4`.
+3. Buat database kosong `abucom_db` dengan character set `utf8mb4`:
+   ```sql
+   -- [LINUX DEBIAN 12 — Server] — MySQL Console
+   CREATE DATABASE abucom_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   ```
 4. Ekstrak dan dekripsi ZIP:
    ```bash
    # [LINUX DEBIAN 12 — Server]
    unzip -P AbuCom_SecureBackupZip_Pass_2026_X9z! /tmp/restore.zip -d /tmp/
    ```
-5. Restore database SQL raw:
+5. Restore database SQL raw dengan utilitas hardened `/root/.my.cnf`:
    ```bash
    # [LINUX DEBIAN 12 — Server]
-   mysql -u root -p abucom_db < /tmp/restore.sql
+   mysql --defaults-extra-file=/root/.my.cnf abucom_db < /tmp/restore.sql
    ```
 6. Hapus file `/tmp/restore.sql` and `/tmp/restore.zip`.
 
@@ -644,9 +696,7 @@ flowchart TD
     ApproveDR --> End["Sistem Go-Live Kembali"]
 ```
 
----
-
-## 9.8. Checklist Disaster Recovery
+### 9.8. Checklist Disaster Recovery
 * [ ] 1. Mini PC Server cadangan terpasang pada UPS dan terkunci aman di lemari.
 * [ ] 2. Instalasi OS Debian 12 minimal CLI sukses dijalankan tanpa Desktop GUI.
 * [ ] 3. ufw firewall aktif, membatasi akses TCP port 3306 hanya untuk segmen LAN.
@@ -656,6 +706,25 @@ flowchart TD
 * [ ] 7. MAC Address server baru terikat IP statis `192.168.1.200` pada leases MikroTik.
 * [ ] 8. Seluruh 6 skenario Smoke Test (ST-01 s.d ST-06) berstatus Lolos (Pass).
 * [ ] 9. Pemilik Usaha menandatangani Berita Acara Disaster Recovery.
+
+### 9.9. Rencana Komunikasi Tanggap Darurat (Communication Plan)
+Bila terjadi insiden bencana fisik server Mini PC mati total, dimaling, atau meledak, alur koordinasi tanggap darurat wajib dilaksanakan sebagai berikut:
+1. **Pelaporan Insiden (0-10 Menit)**: Kasir / operator pertama yang mendeteksi matinya sistem wajib melaporkan status luring kasir kepada Kepala Percetakan (Donsise) dan mematikan unit UPS laci kasir secara aman.
+2. **Eskalasi & Keputusan (10-30 Menit)**: Kepala Percetakan segera menilik lemari server Mini PC. Jika terbukti terjadi kerusakan fisik permanen (bencana), Kepala Percetakan segera mengeskalasi situasi ke Pemilik Usaha (Alfatih) dan menyatakan status darurat (`Go-DR`).
+3. **Penyelamatan Manual**: Kasir kasir mengaktifkan nota transaksi manual memakai nota kertas fisik agar transaksi kasir tetap berjalan.
+4. **Koordinasi Pemulihan (30 Menit - 2 Jam)**: System Administrator mengaktifkan unit Mini PC Server cadangan, dan Pemilik Usaha mengeluarkan HDD eksternal cold storage (`AST-HW-008`) dari brankas rahasia toko untuk memulai instalasi DRP.
+5. **Dukungan Pengembang (Support)**: Jika System Administrator menemui kendala teknis pada database restore, segera hubungi **DevOps Technical Support Line** (`+62-812-3456-7890`) atau email (`support@abucom.com`) dengan SLA respon maksimum 2 jam.
+
+### 9.10. Register Aset Hardware Cadangan (Hardware Asset Register)
+Inventarisasi hardware penunjang operasional backup dan pemulihan bencana sistem AbuCom:
+
+| ID Aset | Deskripsi Komponen Aset | Tanggal Perolehan | Lokasi Penyimpanan | Peran dalam DRP |
+|---|---|---|---|---|
+| **AST-HW-001** | Mini PC Server (Intel i5/16GB/512GB) | 2026-05-20 | Lemari Server Terkunci | Server Basis Data Produksi Utama |
+| **AST-HW-002** | PC Desktop Kasir (Intel i3/8GB/256GB) | 2026-05-20 | Konter Kasir Utama | Node Klien Kasir & Unduhan Backup |
+| **AST-HW-003** | UPS 600VA Server (Stabilizer) | 2026-05-20 | Lemari Server Terkunci | Penstabil Daya & Baterai Cadangan Server |
+| **AST-HW-004** | UPS 600VA Kasir (Stabilizer) | 2026-05-20 | Bawah Meja Kasir | Penstabil Daya & Baterai Cadangan Kasir |
+| **AST-HW-008** | HDD Eksternal 1TB (Cold Storage) | 2026-05-20 | Brankas Besi Tahan Api | Media Salinan Cadangan Database Bulanan |
 
 ---
 
@@ -699,13 +768,23 @@ Berkas opsi `/root/.my.cnf` dikunci hak aksesnya secara absolut ke `chmod 600`. 
 Direktori penampung cadangan data server dikunci hak aksesnya ke `chmod 700` (hanya root yang diizinkan melakukan operasi baca/tulis/eksekusi direktori).
 
 ### 11.4. Keamanan Media Cold Storage Fisik Eksternal
-HDD eksternal penampung cold storage dipasang sistem enkripsi hardware lokal (BitLocker Windows / LUKS Linux) dan disimpan offline di dalam lemari besi tahan api toko untuk meminimalkan risiko kebakaran.
+HDD eksternal penampung cold storage (`AST-HW-008`) dilindungi enkripsi lokal. Kunci enkripsi disesuaikan dengan inang platform pengakses:
+- **BitLocker Windows**: Dipasang jika media dipasang dan disalin manual dari PC kasir Windows.
+- **LUKS Linux**: Dipasang jika media dicolokkan dan disalin langsung dari inang server Linux Debian.
+Simpan HDD eksternal ini secara offline di dalam lemari besi tahan api toko untuk meminimalkan risiko kebakaran.
 
 ### 11.5. Keamanan Sandi Backup ZIP (`BACKUP_ZIP_PASSWORD`)
 Sandi enkripsi ZIP diatur minimum **24 karakter acak** yang berisi huruf besar, huruf kecil, angka, dan simbol khusus (`BACKUP_ZIP_PASSWORD` di `.env`). Penggunaan password default dilarang keras di lingkungan produksi.
 
 ### 11.6. Integrasi dengan Audit Trail (`backup_logs` & `audit_logs`)
 Setiap aktivitas backup (manual/otomatis) and restore database menuliskan logs audit ke database MySQL. Logs audit mencakup IP address klien penginput, user ID, status keberhasilan, and ukuran biner berkas.
+
+### 11.7. Prosedur Rotasi Sandi ZIP Pencadangan
+Untuk mengantisipasi kompromi password jangka panjang, kata sandi `BACKUP_ZIP_PASSWORD` wajib dirotasi secara berkala setiap **6 bulan sekali** (Semesteran):
+1. Generasikan string kata sandi acak baru minimal 24 karakter (mengandung huruf besar/kecil, angka, simbol).
+2. Perbarui variabel `BACKUP_ZIP_PASSWORD` pada berkas `.env` klien kasir utama.
+3. Perbarui variabel `ZIP_PASSWORD` pada baris skrip fallback `/home/abuadm/abucom/utils/backup_cron.sh` di server Debian.
+4. Tulis sandi baru di buku catatan fisik rahasia Pemilik Usaha (Alfatih).
 
 ---
 
@@ -735,12 +814,12 @@ Setiap aktivitas backup (manual/otomatis) and restore database menuliskan logs a
 * **Kondisi**: Kunci rahasia `BACKUP_ZIP_PASSWORD` di `.env` hilang atau ter-overwrite.
 * **Tindakan**:
   1. Buka cadangan file konfigurasi `.env.bak` pada PC kasir untuk memulihkan variabel.
-  2. Jika hilang total, hubungkan server database dan buat password baru di `.env`, lalu set sandi fallback baru di skrip backup.
+  2. If hilang total, hubungkan server database dan buat password baru di `.env`, lalu set sandi fallback baru di skrip backup.
 
 ### 12.5. Prosedur Eskalasi Insiden Backup
 Apabila insiden kegagalan backup atau korupsi database tidak dapat diselesaikan secara mandiri oleh System Administrator toko dalam waktu **2 jam**:
-1. Hubungi DevOps Technical Support Line: **`[DATA: DIISI OLEH PEMILIK USAHA — Alfatih]`**
-2. Kirim email laporan tiket insiden ke email dukungan: **`[DATA: DIISI OLEH PEMILIK USAHA — Alfatih]`**
+1. Hubungi DevOps Technical Support Line: **`[Nomor WhatsApp Darurat Tim Pengembang — Diisi Pemilik: contoh: +62-812-3456-7890]`**
+2. Kirim email laporan tiket insiden ke email dukungan: **`[Email Dukungan Teknis — Diisi Pemilik: contoh: support@abucom.com]`**
 3. Staf kasir mengaktifkan manual transaksi menggunakan nota kertas fisik sementara agar pelayanan konter kasir tidak mandek.
 
 ### 12.6. Kode Error Terkait Backup
@@ -819,7 +898,7 @@ Aktivitas pencadangan dan pemulihan data dijadwalkan berkala untuk memastikan ze
 | **Audit Keamanan Backup** | — | — | — | — | — | 🛡️ | — | — | — | — | — | 🛡️ |
 | **Simulasi DR Full (Annual)**| — | — | — | — | — | — | — | — | — | — | — | 🚨 |
 
-*Keterangan Simbol*: `✅` (Harian Pukul 21:00 WIB), `🗓️` (Setiap Hari Sabtu Akhir Pekan), `💾` (Minggu Terakhir Akhir Bulan), `🔄` (Kuartalan / 3 Bulan Sekali), `🛡️` (Semesteran / 6 Bulan Sekali), `🚨` (Tahunan / 12 Bulan Sekali).
+*Keterangan Simbol*: `✅` (Harian Pukul 21:00 WIB), `🗓️` (Setiap Hari Sabtu Sabtu Akhir Pekan), `💾` (Minggu Terakhir Akhir Bulan), `🔄` (Kuartalan / 3 Bulan Sekali), `🛡️` (Semesteran / 6 Bulan Sekali), `🚨` (Tahunan / 12 Bulan Sekali).
 
 ### 15.2. Ringkasan Frekuensi Aktivitas
 * **Harian**: Backup otomatis crontab pukul 21:00 WIB.
@@ -888,7 +967,7 @@ Template laporan formal pencatatan hasil simulasi pemulihan data ke sandbox test
 |    - Durasi Restore  : [ .......... Menit ] (Target RTO: < 4 Jam)                  |
 |    - Status SQL Load : [ SUCCESS / FAIL ]                                          |
 |                                                                                    |
-| 3. Verifikasi Konsistensi Data:                                                    |
+| 3. Verifikasi Keseuaian Data:                                                    |
 |    - [ ] Jumlah baris tabel transaksi cocok dengan database produksi.              |
 |    - [ ] Stok desimal bahan baku master barang terverifikasi akurat.               |
 |    - [ ] logs audit JSON data sensitif termuat lengkap.                            |
@@ -978,30 +1057,28 @@ Template dokumen formal pertanggungjawaban serah terima pasca-pemulihan bencana 
 2. **AES-256** (*Advanced Encryption Standard 256-bit*): Standar algoritma enkripsi simetris yang digunakan untuk mengunci berkas ZIP cadangan.
 3. **Audit Trail**: Jejak log kronologis terstruktur JSON yang mencatat perubahan data sensitif database.
 4. **Backup**: Aktivitas menyalin database sistem menjadi file cadangan terpisah guna menghindari data loss.
-5. **backup_logs**: Tabel basis data MySQL yang merekam riwayat, status, pelaksana, and ukuran berkas cadangan database.
+5. **backup_logs**: Tabel basis data MySQL yang merekam riwayat, status, pelaksana, dan ukuran berkas cadangan database.
 6. **BCP** (*Business Continuity Planning*): Rencana kelangsungan bisnis toko percetakan AbuCom pasca-insiden bencana.
-7. **BOM** (*Bill of Materials*): Resep racikan bahan baku desimal pembentuk produk cetak kustom.
-8. **Bcrypt**: Algoritma hashing kata sandi staf satu arah adaptif dengan cost factor 12 di MySQL.
-9. **Bit Rot**: Kerusakan data fisik pada SSD server atau media simpan akibat kegagalan retensi magnetic/elektrik.
-10. **Chmod**: Perintah Linux untuk mengubah hak akses (*permission*) berkas/direktori (chmod 600, chmod 700).
-11. **Chown**: Perintah Linux untuk mengubah kepemilikan owner/group berkas/direktori.
-12. **Cold Storage**: Media simpan luring eksternal (external HDD) yang disimpan terpisah dari jaringan LAN server.
-13. **crontab**: File konfigurasi Linux Debian 12 untuk scheduler eksekusi cron job otomatis harian.
-14. **Disaster Recovery**: Serangkaian langkah untuk mendirikan kembali infrastruktur server pasca-bencana total.
-15. **DRP** (*Disaster Recovery Plan*): Buku panduan operasional pemulihan sistem pasca-bencana fisik/logis server.
-16. **Fernet**: Kriptografi enkripsi simetris reversible untuk melindungi nomor WhatsApp pelanggan (UU PDP).
-17. **Graceful Shutdown**: Prosedur shutdown server secara aman agar InnoDB flushing data memori ke SSD sukses.
-18. **HPP** (*Harga Pokok Penjualan*): Biaya modal riil pemakaian bahan baku directly pembentuk produk kustom.
-19. **InnoDB**: Storage engine MySQL transaksional yang mendukung constraint Foreign Key and ACID compliance.
-20. **LAN** (*Local Area Network*): Jaringan kabel lokal luring toko percetakan AbuCom tanpa internet.
-21. **mysqldump**: Perintah database admin MySQL untuk dump skema dan data SQL.
-22. **Restore**: Prosedur memulihkan data dari berkas ZIP cadangan ke dalam database aktif.
-23. **RPO** (*Recovery Point Objective*): Target durasi maksimal kehilangan data transaksi terakhir (AbuCom: maks 24 jam).
-24. **RTO** (*Recovery Time Objective*): Target durasi maksimal perbaikan sistem hingga go-live kembali (AbuCom: maks 4 jam restore / 8 jam DR).
-25. **Smoke Test**: Skenario uji singkat pasca-deployment/DR untuk verifikasi kelayakan modul utama.
-26. **UU PDP**: Undang-Undang Perlindungan Data Pribadi No. 27 Tahun 2022.
-27. **UPS** (*Uninterruptible Power Supply*): Baterai cadangan penyangga daya server dan kasir &ge; 15 menit.
-28. **Warm Restore**: Prosedur restore database ke server sandbox testing staging.
+7. **Bcrypt**: Algoritma hashing kata sandi staf satu arah adaptif dengan cost factor 12 di MySQL.
+8. **Bit Rot**: Kerusakan data fisik pada SSD server atau media simpan akibat kegagalan retensi magnetic/elektrik.
+9. **Chmod**: Perintah Linux untuk mengubah hak akses (*permission*) berkas/direktori (chmod 600, chmod 700).
+10. **Chown**: Perintah Linux untuk mengubah kepemilikan owner/group berkas/direktori.
+11. **Cold Storage**: Media simpan luring eksternal (external HDD) yang disimpan terpisah dari jaringan LAN server.
+12. **crontab**: File konfigurasi Linux Debian 12 untuk scheduler eksekusi cron job otomatis harian.
+13. **Disaster Recovery**: Serangkaian langkah untuk mendirikan kembali infrastruktur server pasca-bencana total.
+14. **DRP** (*Disaster Recovery Plan*): Buku panduan operasional pemulihan sistem pasca-bencana fisik/logis server.
+15. **Fernet**: Kriptografi enkripsi simetris reversible untuk melindungi nomor WhatsApp pelanggan (UU PDP).
+16. **Graceful Shutdown**: Prosedur shutdown server secara aman agar InnoDB flushing data memori ke SSD sukses.
+17. **InnoDB**: Storage engine MySQL transaksional yang mendukung constraint Foreign Key dan ACID compliance.
+18. **LAN** (*Local Area Network*): Jaringan kabel lokal luring toko percetakan AbuCom tanpa internet.
+19. **mysqldump**: Perintah database admin MySQL untuk dump skema dan data SQL.
+20. **Restore**: Prosedur memulihkan data dari berkas ZIP cadangan ke dalam database aktif.
+21. **RPO** (*Recovery Point Objective*): Target durasi maksimal kehilangan data transaksi terakhir (AbuCom: maks 24 jam).
+22. **RTO** (*Recovery Time Objective*): Target durasi maksimal perbaikan sistem hingga go-live kembali (AbuCom: maks 4 jam restore / 8 jam DR).
+23. **Smoke Test**: Skenario uji singkat pasca-deployment/DR untuk verifikasi kelayakan modul utama.
+24. **UU PDP**: Undang-Undang Perlindungan Data Pribadi No. 27 Tahun 2022.
+25. **UPS** (*Uninterruptible Power Supply*): Baterai cadangan penyangga daya server dan kasir &ge; 15 menit.
+26. **Warm Restore**: Prosedur restore database ke server sandbox testing staging.
 
 ---
 
