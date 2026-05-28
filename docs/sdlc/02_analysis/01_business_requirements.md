@@ -1,8 +1,8 @@
 ---
 dokumen    : Business Requirements Document (BRD)
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.1
-tanggal    : 2026-05-23
+versi      : 1.2
+tanggal    : 2026-05-28
 status     : Revised
 penyusun   : Senior Business Analyst & Requirements Engineering Specialist
 ---
@@ -15,6 +15,7 @@ penyusun   : Senior Business Analyst & Requirements Engineering Specialist
 |---|---|---|---|
 | 1.0   | 2026-05-23 | Pembuatan awal dokumen berdasarkan analisis komprehensif seluruh dokumen fase Planning (Project Charter v1.1, Feasibility Study v1.1, Stakeholder Register v1.1, Tech Stack Decision v1.1, Innovation Proposal v1.1) dan narasi asli pemilik usaha. | Senior Business Analyst & Requirements Engineering Specialist |
 | 1.1   | 2026-05-23 | Revisi menyeluruh v1.1 berdasarkan analisis kelayakan & inovasi. Menambahkan modul supplier & utang usaha (BR-F-40), melengkapi BEP, mengeliminasi placeholder privat ke format instruksi pemilik, menyelaraskan pain points, dan memperbaiki matriks traceability. | Senior Business Analyst & Requirements Engineering Specialist |
+| 1.2   | 2026-05-28 | Revisi komprehensif v1.2 (Implementasi Issue #0068). Mengubah jumlah inovasi menjadi 42, menambal 2 field wajib yang hilang pada seluruh Kebutuhan Non-Fungsional (Aktor Terkait & Aturan Bisnis), memperbaiki lompatan urutan ID menjadi BR-F-39, menghaluskan detail pemrograman low-level ke bahasa bisnis, melengkapi data UMR tipikal, memperkuat instruksi placeholder data bank (menunggu konfirmasi), dan melengkapi glosarium. | Senior Business Analyst & Requirements Engineering Specialist |
 
 ---
 
@@ -24,7 +25,7 @@ penyusun   : Senior Business Analyst & Requirements Engineering Specialist
 Dokumen *Business Requirements Document* (BRD) ini disusun untuk mengidentifikasi, menganalisis, dan mendokumentasikan secara formal seluruh kebutuhan bisnis, aturan operasional, serta batasan strategis yang wajib dipenuhi dalam pembangunan **AbuCom — Sistem Manajemen Terpadu Usaha Percetakan**. Dokumen ini berfokus pada perspektif bisnis ("*Apa yang dibutuhkan oleh bisnis?*") guna memastikan keselarasan antara solusi perangkat lunak yang dikembangkan dengan visi operasional pemilik usaha.
 
 ### 1.2. Cakupan Dokumen
-Dokumen ini mencakup analisis mendalam terhadap lima divisi bisnis AbuCom (produksi percetakan, retail ATK, layanan digital/PPOB, jasa keuangan agen, dan jasa perbaikan teknis), pemetaan 19 pemangku kepentingan, hak akses berbasis peran (RBAC), aturan bisnis numerik eksplisit, 43 kebutuhan fungsional dan non-fungsional, manajemen risiko operasional, kriteria penerimaan bisnis, serta glosarium istilah domain percetakan. Dokumen ini membatasi diri pada kebutuhan tingkat tinggi dan logis bisnis, serta sengaja mengabaikan detail implementasi teknis kode program yang menjadi domain dari dokumen spesifikasi berikutnya.
+Dokumen ini mencakup analisis mendalam terhadap lima divisi bisnis AbuCom (produksi percetakan, retail ATK, layanan digital/PPOB, jasa keuangan agen, dan jasa perbaikan teknis), pemetaan 19 pemangku kepentingan, hak akses berbasis peran (RBAC), aturan bisnis numerik eksplisit, 50 kebutuhan total (terdiri dari 39 kebutuhan fungsional dan 11 kebutuhan non-fungsional), manajemen risiko operasional, kriteria penerimaan bisnis, serta glosarium istilah domain percetakan. Dokumen ini membatasi diri pada kebutuhan tingkat tinggi dan logis bisnis, serta sengaja mengabaikan detail implementasi teknis kode program yang menjadi domain dari dokumen spesifikasi berikutnya.
 
 ### 1.3. Posisi Dokumen dalam Siklus SDLC
 Dalam siklus pengembangan perangkat lunak (*Software Development Life Cycle* - SDLC) AbuCom, dokumen ini merupakan output pertama pada **Fase 02 Analysis (Analisis Kebutuhan)**. Dokumen ini menjadi jembatan formal pertama yang mentransisikan visi konseptual dari Fase 01 Planning (Perencanaan) menuju fase pendefinisan teknis berikutnya.
@@ -46,7 +47,7 @@ Usaha UMKM AbuCom mengoperasikan lima unit bisnis yang sangat kompleks di satu l
 
 Untuk mengatasi isu kritis ini, diputuskan untuk melakukan rekrutmen **7 staf karyawan baru** yang didukung oleh penerapan aplikasi kustom internal terpadu berbasis *Command Line Interface* (CLI) Python dan database MySQL lokal. Studi Kelayakan (*Feasibility Study v1.1*) menetapkan keputusan investasi proyek ini berada pada status **GO WITH CONDITIONS (GO DENGAN CATATAN)**. Proyek ini sangat layak secara ekonomi dengan proyeksi tingkat pengembalian investasi (ROI) sebesar **26,0%** pada tahun pertama, nilai bersih saat ini (NPV) yang sangat positif sebesar **Rp 47.471.075**, dan periode pengembalian modal (*Payback Period*) yang cepat yaitu **9,5 bulan** berdasarkan total investasi (CAPEX) sebesar **Rp 40.000.000**. Berdasarkan analisis kelayakan ekonomi, Titik Impas (*Break-Even Point* - BEP) investasi CAPEX dicapai pada **bulan ke-9,5** operasional dengan akumulasi **800 transaksi** percetakan kustom, sedangkan BEP OPEX bulanan sebesar **Rp 500.000** dapat ditutupi dengan minimal **10 transaksi** kustom per bulan.
 
-Dokumen BRD ini secara formal merinci seluruh kebutuhan bisnis terstruktur yang mencakup otomatisasi persediaan menggunakan skema *Bill of Materials* (BOM) presisi desimal, pembukuan laba rugi instan, pelacakan antrian (*job tracking*) tanpa pesanan terlewat (*zero-missed orders*), sistem penggajian cerdas pelindung kas harian, serta pengamanan privasi data (kepatuhan UU PDP No. 27/2022) melalui enkripsi bcrypt, token otentikasi JWT, sistem peran RBAC, dan Audit Trail terstruktur JSON guna mengeliminasi celah fraud internal.
+Dokumen BRD ini secara formal merinci seluruh kebutuhan bisnis terstruktur yang mencakup otomatisasi persediaan menggunakan skema *Bill of Materials* (BOM) presisi desimal, pembukuan laba rugi instan, pelacakan antrian (*job tracking*) tanpa pesanan terlewat (*zero-missed orders*), sistem penggajian cerdas pelindung kas harian, serta pengamanan privasi data (kepatuhan UU PDP No. 27/2022) melalui enkripsi bcrypt, token otentikasi JWT, sistem peran RBAC, dan Audit Trail terstruktur JSON guna mengeliminasi celah fraud internal. Sistem ini juga mengintegrasikan total **42 inovasi** industri ritel/percetakan untuk memacu skalabilitas.
 
 ---
 
@@ -55,7 +56,7 @@ Dokumen BRD ini secara formal merinci seluruh kebutuhan bisnis terstruktur yang 
 ### 3.1. Deskripsi Usaha
 UMKM AbuCom adalah sebuah unit usaha mikro, kecil, dan menengah (UMKM) mandiri yang menyediakan jasa pelayanan percetakan terpadu, perdagangan eceran alat tulis kantor, serta berbagai layanan transaksi digital dan perbaikan perangkat teknologi. Usaha ini beroperasi secara fisik di toko lokal terdedikasi dengan alamat operasional yang terdaftar sebagai:
 
-> ⚠️ PERLU DIISI PEMILIK: [Alamat lengkap toko fisik AbuCom, nomor jalan, kecamatan, kabupaten/kota, dan provinsi tempat usaha beroperasi secara fisik.]
+> ⚠️ PERLU DIISI PEMILIK: [Mohon cantumkan alamat fisik lengkap toko AbuCom (Jalan, RT/RW, Kelurahan, Kecamatan, Kota/Kabupaten, Provinsi, Kode Pos)]
 
 ### 3.2. Struktur Organisasi (Saat Ini dan Rencana)
 *   **Kondisi Saat Ini**: Dijalankan murni secara tunggal oleh **Pemilik Usaha AbuCom** yang memegang seluruh peran operasional, administratif, keuangan, logistik, hingga pelayanan WhatsApp.
@@ -237,7 +238,7 @@ Membangun sistem aplikasi manajemen internal AbuCom berbasis CLI Python & MySQL 
 *   **S.2 (Keuangan Instan & Laba/Rugi)**: Menyajikan laporan keuangan laba/rugi, pengeluaran rutin harian, dan tabungan aset secara instan (waktu pemrosesan data **< 5 detik**) per divisi operasional usaha.
 *   **S.3 (Zero-Missed Orders)**: Mencapai tingkat kekeliruan pesanan pelanggan yang terlewat hingga **0%** menggunakan visualisasi dashboard antrian pekerjaan digital (*job tracking*) dengan 5 tahapan transisi status.
 *   **S.4 (Smart Payroll & SDM)**: Memfasilitasi kesiapan operasional rekrutmen 7 staf baru melalui modul absensi terintegrasi penggajian cerdas bulanan (gaji bulanan tetap vs persentase keuntungan laba usaha) dan sistem pemotongan utang kasbon terotomatisasi.
-*   **S.5 (Kesiapan Multi-Cabang)**: Menjamin rancangan struktur basis data MySQL memiliki kesiapan **100% Multi-Branch Ready** dengan kolom ID cabang di setiap tabel utama untuk mendukung ekspansi cabang baru di masa depan tanpa merombak kode sistem.
+*   **S.5 (Kesiapan Multi-Cabang)**: Menjamin rancangan struktur basis data MySQL memiliki kesiapan **100% Multi-Branch Ready** dengan mengaitkan identitas cabang di setiap tabel utama untuk mendukung ekspansi cabang baru di masa depan tanpa merombak kode sistem.
 *   **S.6 (Break-Even Point)**: Mencapai titik impas investasi CAPEX **Rp 40.000.000** pada bulan ke-**9,5** masa operasional Go-Live dengan memproses akumulasi **800 transaksi** percetakan kustom.
 
 ### 6.3. Manfaat Bisnis Kuantitatif
@@ -315,8 +316,8 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 10 Mo
 #### **BR-F-07: Sistem HPP Otomatis Berbasis Bill of Materials (BOM) Presisi Desimal**
 *   **Deskripsi**: Sistem harus mampu menghitung Harga Pokok Penjualan (HPP) produk percetakan kustom secara otomatis berdasarkan komposisi pemakaian bahan baku multi-bahan dengan presisi desimal angka (panjang x lebar lembaran atau volume desimal cairan).
 *   **Aktor Terkait**: `produksi_cetak`, `pemilik`
-*   **Aturan Bisnis**: Perhitungan wajib menggunakan pustaka `decimal` Python untuk presisi tetap (4 angka di belakang koma). Stok bahan baku (panjang/lebar) di database terpotong otomatis saat status produksi selesai.
-*   **Kriteria Penerimaan**: Ketika pesanan stempel flash diproses selesai, sistem menghitung biaya bahan baku (karet stempel, gagang, tinta) secara pecahan desimal, mencatatkan nilai HPP riil transaksi, dan mengurangi stok persediaan bahan di MySQL secara presisi.
+*   **Aturan Bisnis**: Perhitungan wajib menggunakan pustaka numerik presisi tinggi untuk komputasi (misal 4 angka di belakang koma). Stok bahan baku di database terpotong otomatis saat status produksi selesai.
+*   **Kriteria Penerimaan**: Ketika pesanan stempel flash diproses selesai, sistem menghitung biaya bahan baku (karet stempel, gagang, tinta) secara pecahan desimal, mencatatkan nilai HPP riil transaksi, dan mengurangi stok persediaan bahan secara presisi.
 *   **Prioritas**: High
 *   **Sumber Data**: Project Charter v1.1 Bagian 8.1 [F-2.1] & [F-2.2], Innovation Proposal v1.1 [INV-INT-04].
 
@@ -348,7 +349,7 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 10 Mo
 *   **Deskripsi**: Sistem harus menyediakan fitur pembekuan stok sementara, formulir pencatatan kuantitas fisik barang gudang fisik vs sistem, penghitungan selisih stok secara otomatis, dan penyimpanan riwayat stock opname.
 *   **Aktor Terkait**: `gudang`, `kepala_percetakan`
 *   **Aturan Bisnis**: Penyesuaian stok sistem akibat selisih opname fisik dicatat secara permanen di log audit dengan identifikasi ID User pelaksana yang melakukan otorisasi.
-*   **Kriteria Penerimaan**: Staf gudang dapat menjalankan menu Stock Opname, memasukkan angka fisik, sistem mengeluarkan selisih kuantitas, dan memperbarui stok basis data MySQL setelah disetujui Kepala Percetakan.
+*   **Kriteria Penerimaan**: Staf gudang dapat menjalankan menu Stock Opname, memasukkan angka fisik, sistem mengeluarkan selisih kuantitas, dan memperbarui stok basis data setelah disetujui Kepala Percetakan.
 *   **Prioritas**: High
 *   **Sumber Data**: Project Charter v1.1 Bagian 8.1 [F-2.5], Innovation Proposal v1.1 [INV-INT-08].
 
@@ -369,14 +370,14 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 10 Mo
 *   **Sumber Data**: Project Charter v1.1 Bagian 8.1 [F-2.4], Innovation Proposal v1.1 [INV-NEW-02].
 
 #### **BR-F-14: Fitur Import Data CSV/Excel Semiautomatis**
-*   **Deskripsi**: Sistem harus menyediakan skrip utilitas CLI independen untuk mengimpor data awal persediaan barang, supplier, dan aset dari file CSV ekspor Excel lama pemilik setelah divalidasi kebersihan formatnya.
+*   **Deskripsi**: Sistem harus menyediakan fungsionalitas impor independen untuk menyerap data awal persediaan barang, supplier, dan aset dari file CSV yang diekspor dari Excel lama.
 *   **Aktor Terkait**: `pemilik`, `gudang`
-*   **Aturan Bisnis**: Skrip harus menyaring data kosong, format data tidak sesuai, atau baris data duplikat secara fungsional sebelum dimasukkan ke database MySQL.
-*   **Kriteria Penerimaan**: Pemilik dapat menjalankan skrip import CSV, data 1000+ barang retail terisi ke tabel persediaan database secara bersih dalam waktu **< 5 detik**.
+*   **Aturan Bisnis**: Sistem harus menyaring data kosong, format tidak sesuai, atau duplikat secara fungsional sebelum mencatatkan data ke database.
+*   **Kriteria Penerimaan**: Pemilik dapat mengunggah atau mengarahkan path file CSV, lalu 1000+ data barang retail terisi ke tabel persediaan database secara bersih dalam waktu **< 5 detik**.
 *   **Prioritas**: High
 *   **Sumber Data**: Narasi Asli Poin 7 (Pekerjaan Administratif), Innovation Proposal v1.1 [INV-NEW-08].
 
-#### **BR-F-40: Manajemen Data Supplier & Pencatatan Utang Usaha**
+#### **BR-F-39: Manajemen Data Supplier & Pencatatan Utang Usaha**
 *   **Deskripsi**: Sistem harus mampu mencatat profil data supplier/vendor bahan baku dan ATK serta mencatat riwayat transaksi utang usaha atas pembelian barang tempo.
 *   **Aktor Terkait**: `gudang`, `kepala_percetakan`
 *   **Aturan Bisnis**: Pembelian barang tempo wajib menyertakan nominal utang, tanggal transaksi, nama supplier, dan tanggal jatuh tempo pembayaran. Pelunasan utang memotong saldo kas keluar.
@@ -417,7 +418,7 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 10 Mo
 ### 7.4. Modul Manajemen SDM, Penggajian & Poin Karyawan (M.4)
 
 #### **BR-F-18: Manajemen Data Karyawan, Absensi, dan Kasbon**
-*   **Deskripsi**: Sistem harus mampu mencatat profil data karyawan (nama, peran, status PKWT/PKWTT), kehadiran/absensi harian shift, dan riwayat penarikan kasbon (pinjaman) karyawan.
+*   **Deskripsi**: Sistem harus mampu mencatat profil data karyawan (nama, peran, status kepegawaian sesuai regulasi PKWT/PKWTT), kehadiran/absensi harian shift, dan riwayat penarikan kasbon (pinjaman) karyawan.
 *   **Aktor Terkait**: `kepala_percetakan`, `pemilik`
 *   **Aturan Bisnis**: Absensi karyawan diinput setiap hari operasional untuk menghitung kehadiran bulanan yang memotong/mempengaruhi penggajian dasar.
 *   **Kriteria Penerimaan**: Kepala Percetakan dapat mencatat absensi karyawan harian dan pemilik dapat melihat riwayat absensi bulanan staf di terminal CLI.
@@ -427,9 +428,9 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 10 Mo
 #### **BR-F-19: Sistem Penggajian Otomatis Cerdas (Smart Payroll)**
 *   **Deskripsi**: Sistem harus menghitung payroll bulanan staf secara otomatis berdasarkan skema cerdas: Gaji Bulanan Tetap jika laba bersih usaha mencapai target **Rp 15.000.000**, atau skema pembagian Gaji Persentase Laba sebesar **25,0%** dari laba bersih bulanan toko secara proporsional kepada staf aktif dengan jaminan minimum **50,0%** UMR daerah jika target tidak tercapai.
 *   **Aktor Terkait**: `pemilik`
-*   **Aturan Bisnis**: Nilai target laba **Rp 15.000.000** dan persentase **25,0%** bersifat dinamis (diambil dari tabel konfigurasi). UMR daerah operasional diisi secara manual oleh pemilik berdasarkan data berikut:
+*   **Aturan Bisnis**: Nilai target laba **Rp 15.000.000** dan persentase **25,0%** bersifat dinamis (diambil dari tabel konfigurasi). UMR daerah operasional diisi secara manual oleh pemilik berdasarkan referensi tipikal.
 
-> ⚠️ PERLU DIISI PEMILIK: [Nominal Rupiah standar UMR (Upah Minimum Regional) daerah setempat yang berlaku untuk dijadikan basis penentuan jaminan gaji minimum 50% UMR daerah.]
+> ⚠️ PERLU DIISI PEMILIK: Rp 3.545.000 (Merujuk pada UMP Sulawesi Utara 2024 sebagai contoh nilai referensi untuk UMR daerah. Jika wilayah operasional berbeda, harap ganti angka ini secara definitif).
 
 *   **Kriteria Penerimaan**: Pemilik memproses payroll bulanan saat laba bersih toko tercatat **Rp 12.000.000** (di bawah target), sistem membagi **Rp 3.000.000** (25% dari 12jt) secara proporsional kepada karyawan aktif dengan jaminan batas bawah **50,0%** UMR.
 *   **Prioritas**: High
@@ -471,15 +472,15 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 10 Mo
 *   **Deskripsi**: Sistem harus merekam metadata path lokasi direktori penyimpanan berkas desain pelanggan (folder penyimpanan server lokal) untuk pencarian instan saat cetak ulang (*re-order*).
 *   **Aktor Terkait**: `desainer`, `pramuniaga`
 *   **Aturan Bisnis**: Path arsip desain ditautkan langsung dengan ID pelanggan (CRM) dan ID pesanan kustom.
-*   **Kriteria Penerimaan**: Ketika pelanggan datang ingin cetak ulang stempel lamanya, pramuniaga mencari nama pelanggan di CLI, sistem menampilkan tautan path direktori desain (seperti `D:/arsip_desain/stk-001/stempel_flash.pdf`) secara instan.
+*   **Kriteria Penerimaan**: Ketika pelanggan datang ingin cetak ulang stempel lamanya, pramuniaga mencari nama pelanggan di CLI, sistem menampilkan tautan path direktori desain (seperti `/arsip/stk-001/stempel.pdf`) secara instan.
 *   **Prioritas**: Medium
 *   **Sumber Data**: Project Charter v1.1 Bagian 8.1 [F-5.2], Innovation Proposal v1.1 [INV-INT-13].
 
 #### **BR-F-24: Notifikasi Template WhatsApp Ready**
-*   **Deskripsi**: Sistem harus memfasilitasi pembuatan teks template pesan WhatsApp terformat (notifikasi DP diterima, pesanan siap diambil, rincian biaya servis) yang disertai dengan tautan web `https://wa.me/` untuk disalin-tempel manual oleh staf ke WhatsApp Web secara cepat.
+*   **Deskripsi**: Sistem harus memfasilitasi pembuatan teks template pesan WhatsApp terformat (notifikasi DP diterima, pesanan siap diambil, rincian biaya servis) yang disertai dengan tautan web API untuk disalin-tempel manual oleh staf ke WhatsApp Web secara cepat.
 *   **Aktor Terkait**: `pramuniaga`, `kasir`
-*   **Aturan Bisnis**: Teks template di-generate dinamis di Python dengan menyisipkan nama pelanggan, nominal uang, status pesanan, dan nomor WA tujuan.
-*   **Kriteria Penerimaan**: Setelah kasir memproses pesanan ke status `Selesai`, sistem menampilkan teks "Pesan WA: Halo [Nama], pesanan stempel Anda telah selesai..." beserta link wa.me yang siap disalin kasir ke WA Web.
+*   **Aturan Bisnis**: Teks template diformat dinamis dengan menyisipkan nama pelanggan, nominal uang, status pesanan, dan nomor WA tujuan.
+*   **Kriteria Penerimaan**: Setelah kasir memproses pesanan ke status `Selesai`, sistem menampilkan teks "Pesan WA: Halo [Nama]..." beserta link yang siap disalin kasir.
 *   **Prioritas**: Medium
 *   **Sumber Data**: Project Charter v1.1 Bagian 8.3 [N-3.2], Innovation Proposal v1.1 [INV-REC-02].
 
@@ -490,9 +491,9 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 10 Mo
 #### **BR-F-25: Administrasi Pinjaman Modal Terstruktur (Bank & Kerabat)**
 *   **Deskripsi**: Sistem harus mampu mencatat secara terpisah dan transparan pinjaman modal tanpa bunga kerabat yang sangat fleksibel (penarikan, pengembalian, sisa saldo) dan pinjaman modal bank komersial berbunga (BRI dan Mandiri) yang memuat nominal, tenor, bunga, setoran bulanan, dan tanggal jatuh tempo.
 *   **Aktor Terkait**: `pemilik`
-*   **Aturan Bisnis**: Pinjaman tanpa bunga kerabat harus memiliki rekap log mutasi transparan. Pinjaman bank dihitung sisa tenor dan bunga secara matematis. Data detail pinjaman bank pemilik diisi secara manual berdasarkan data berikut:
+*   **Aturan Bisnis**: Pinjaman tanpa bunga kerabat harus memiliki rekap log mutasi transparan. Pinjaman bank dihitung sisa tenor dan bunga secara matematis. Data detail pinjaman bank pemilik diisi secara manual untuk menjaga konfidensialitas:
 
-> ⚠️ PERLU DIISI PEMILIK: [Detail spesifik nominal plafon kredit, persentase bunga kredit bulanan/tahunan, sisa tenor pelunasan dalam bulan, dan tanggal jatuh tempo bulanan untuk Bank BRI dan Bank Mandiri.]
+> ⚠️ PERLU DIISI PEMILIK: [Mohon cantumkan nominal plafon kredit, persentase bunga kredit, sisa tenor pelunasan dalam satuan bulan, dan tanggal jatuh tempo pembayaran bulanan secara spesifik untuk Bank BRI dan Bank Mandiri. Data riil ini tidak boleh dikarang oleh sistem/AI.]
 
 *   **Kriteria Penerimaan**: Pemilik dapat melihat layar administrasi pinjaman terpadu di mana sisa utang bank dan pinjaman keluarga tersaji akurat sesuai transaksi pembayaran yang dicatatkan di CLI.
 *   **Prioritas**: High
@@ -535,50 +536,50 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 10 Mo
 ### 7.7. Modul Keamanan, Audit Trail & Hak Akses (M.7)
 
 #### **BR-F-30: Role-Based Access Control (RBAC) Multi-Level CLI**
-*   **Deskripsi**: Sistem harus membatasi akses menu di tingkat aplikasi CLI untuk membedakan antara menu Pemilik (sensitif/keuangan) and menu Staf (operasional) berdasarkan login session terotentikasi.
+*   **Deskripsi**: Sistem harus membatasi akses menu di tingkat antarmuka aplikasi untuk membedakan antara menu Pemilik (sensitif/keuangan) dan menu Staf (operasional) berdasarkan sesi login terotentikasi.
 *   **Aktor Terkait**: `pemilik`, `kepala_percetakan`, `kasir`, `pramuniaga`, `desainer`, `produksi_cetak`, `fotocopy_print`, `gudang`
-*   **Aturan Bisnis**: User tidak diizinkan mengetik perintah atau membuka menu di luar daftar menu otorisasi perannya. Sistem harus menolak akses dengan pesan error otorisasi yang sesuai.
-*   **Kriteria Penerimaan**: Staf dengan peran `kasir` mencoba mengakses menu penggajian atau modal pinjaman bank di CLI, sistem menolak akses, menampilkan pesan "Akses Ditolak: Hak Akses Pemilik Dibutuhkan", dan mencatat insiden ke Audit Trail.
+*   **Aturan Bisnis**: Pengguna tidak diizinkan mengetik perintah atau membuka modul di luar daftar otorisasi perannya. Sistem harus menolak akses dengan pesan peringatan keamanan.
+*   **Kriteria Penerimaan**: Staf dengan peran `kasir` mencoba mengakses menu penggajian atau modal pinjaman bank, sistem menolak akses, menampilkan pesan "Akses Ditolak: Hak Akses Pemilik Dibutuhkan", dan mencatat insiden ke log.
 *   **Prioritas**: High
 *   **Sumber Data**: Project Charter v1.1 Bagian 8.2 [N-2.1], Tech Stack Decision v1.1 Bagian 8.3, Innovation Proposal v1.1 [INV-INT-15].
 
 #### **BR-F-31: Audit Trail Kronologis Terstruktur (Format JSON)**
-*   **Deskripsi**: Sistem wajib mencatat setiap aktivitas modifikasi data sensitif (hapus transaksi harian, edit manual persediaan stok, retur barang, persetujuan kasbon) ke tabel log audit basis data MySQL.
+*   **Deskripsi**: Sistem wajib mencatat setiap aktivitas modifikasi data sensitif (hapus transaksi harian, edit manual persediaan stok, retur barang, persetujuan kasbon) ke tabel log audit basis data.
 *   **Aktor Terkait**: `pemilik`
-*   **Aturan Bisnis**: Log Audit Trail harus mencatat secara kronologis: ID User pelaksana, Timestamp kejadian, Tipe Aksi (INSERT/UPDATE/DELETE), Nama Tabel yang dimanipulasi, serta data sebelum (*old_value*) dan sesudah (*new_value*) dalam format JSON terstruktur.
-*   **Kriteria Penerimaan**: Pemilik membuka menu log Audit Trail di CLI, sistem menyajikan tabel daftar aktivitas yang menunjukkan siapa kasir yang mengedit transaksi nominal rupiah tertentu, lengkap dengan data asli lama dan data baru secara instan.
+*   **Aturan Bisnis**: Log Audit Trail harus mencatat secara kronologis: ID User pelaksana, waktu kejadian, tipe aksi (INSERT/UPDATE/DELETE), target data, serta data lama (*old_value*) dan data baru (*new_value*) dalam format terstruktur.
+*   **Kriteria Penerimaan**: Pemilik membuka menu log audit, sistem menyajikan tabel riwayat yang menunjukkan siapa kasir yang mengedit transaksi, lengkap dengan rekaman nilai perubahan secara detail.
 *   **Prioritas**: High
 *   **Sumber Data**: Project Charter v1.1 Bagian 8.2 [N-2.2], Tech Stack Decision v1.1 Bagian 8.4, Innovation Proposal v1.1 [INV-INT-16].
 
 #### **BR-F-32: Log Serah Terima Shift Karyawan (Shift Handover Log)**
-*   **Deskripsi**: Sistem harus mencatat peristiwa serah terima shift kasir aktif di terminal kasir, mencakup ID staf keluar, ID staf masuk, timestamp, total uang kasir fisik saat diserahterimakan, dan catatan operasional khusus.
+*   **Deskripsi**: Sistem harus mencatat peristiwa serah terima shift kasir aktif, mencakup ID staf keluar, ID staf masuk, waktu pergantian, total kas fisik saat diserahterimakan, dan catatan operasional.
 *   **Aktor Terkait**: `kasir`, `kepala_percetakan`
-*   **Aturan Bisnis**: Serah terima shift kasir tidak dapat disimpan jika uang laci kasir fisik belum diinput secara lengkap dan divalidasi silang oleh Kepala Percetakan.
-*   **Kriteria Penerimaan**: Staf kasir 1 menyerahkan shift ke kasir 2, sistem merekam data serah terima shift dan mengunci data transaksi kasir 1 dari modifikasi lebih lanjut di shift berikutnya.
+*   **Aturan Bisnis**: Serah terima shift tidak dapat disimpan jika uang laci kasir fisik belum diverifikasi silang oleh Kepala Percetakan.
+*   **Kriteria Penerimaan**: Staf kasir 1 menyerahkan shift ke kasir 2, sistem merekam data dan mengunci data transaksi kasir 1 dari modifikasi lebih lanjut di shift berikutnya.
 *   **Prioritas**: Medium
 *   **Sumber Data**: Innovation Proposal v1.1 [INV-NEW-04].
 
 #### **BR-F-33: Rekonsiliasi Kas Harian Kasir (Cash Reconciliation)**
-*   **Deskripsi**: Sistem harus memfasilitasi menu rekonsiliasi kas (pencocokan jumlah uang tunai fisik di laci kasir toko vs jumlah uang kas tercatat di sistem aplikasi) di setiap akhir shift/hari kerja kasir.
+*   **Deskripsi**: Sistem harus memfasilitasi menu rekonsiliasi kas (pencocokan jumlah uang fisik vs jumlah uang tercatat di sistem) di setiap akhir shift kerja kasir.
 *   **Aktor Terkait**: `kasir`
-*   **Aturan Bisnis**: Batas toleransi selisih uang kas fisik laci kasir vs sistem dibatasi maksimal **Rp 10.000** per shift kasir. Selisih di atas toleransi wajib mencantumkan catatan tertulis justifikasi dan memicu alert audit.
-*   **Kriteria Penerimaan**: Kasir menginput uang laci fisik **Rp 1.505.000** saat sistem mencatat **Rp 1.500.000**, sistem merekam selisih lebih **Rp 5.000** (di bawah batas toleransi Rp 10.000) dan mencetak tanda serah terima kas harian yang valid.
+*   **Aturan Bisnis**: Batas toleransi selisih uang kas fisik vs sistem dibatasi maksimal **Rp 10.000** per shift. Selisih di atas toleransi wajib mencantumkan alasan tertulis dan memicu alert audit.
+*   **Kriteria Penerimaan**: Kasir menginput uang laci fisik **Rp 1.505.000** saat sistem mencatat **Rp 1.500.000**, sistem merekam selisih lebih **Rp 5.000** (dalam batas toleransi) dan mencetak bukti yang valid.
 *   **Prioritas**: High
 *   **Sumber Data**: Project Charter v1.1 Bagian 8.1 [F-6.5], Innovation Proposal v1.1 [INV-INT-25].
 
 #### **BR-F-34: Sistem Peringatan Anomali Transaksi (Fraud Detection Sederhana)**
 *   **Deskripsi**: Sistem harus memantau dan memancarkan notifikasi peringatan visual anomali pada panel dashboard pemilik saat terdeteksi aktivitas mencurigakan staf di toko.
 *   **Aktor Terkait**: `pemilik`
-*   **Aturan Bisnis**: Indikator anomali meliputi: pembatalan pesanan berulang (> 3 kali dalam 1 shift kasir), transaksi retur berturut-turut oleh kasir yang sama, atau selisih kas fisik melebihi batas toleransi **Rp 10.000**.
-*   **Kriteria Penerimaan**: Terjadi selisih kas **Rp 25.000** di shift kasir 1, ketika pemilik login ke sistem CLI keesokan harinya, sistem langsung memancarkan notifikasi merah: "PERINGATAN FRAUD: TERDETEKSI SELISIH KAS RP 25.000 PADA SHIFT KASIR PADA TANGGAL [TGL]".
+*   **Aturan Bisnis**: Indikator anomali meliputi: pembatalan pesanan berulang (> 3 kali dalam 1 shift), retur berturut-turut oleh kasir yang sama, atau selisih kas fisik melebihi batas toleransi **Rp 10.000**.
+*   **Kriteria Penerimaan**: Terjadi selisih kas **Rp 25.000** di shift 1, keesokan harinya pemilik login, sistem memancarkan notifikasi merah: "PERINGATAN FRAUD: TERDETEKSI SELISIH KAS RP 25.000".
 *   **Prioritas**: High
 *   **Sumber Data**: Feasibility Study v1.1 Bagian 10 [Baris 483], Innovation Proposal v1.1 [INV-NEW-06].
 
 #### **BR-F-35: Input Data Awal Secara Manual dari Excel**
-*   **Deskripsi**: Sistem harus memfasilitasi menu entry data awal yang berserakan di file Excel lama milik pemilik usaha agar database sistem baru menjadi rapi dan bersih.
+*   **Deskripsi**: Sistem harus memfasilitasi menu entry data untuk memigrasi sisa saldo pinjaman dan aset secara manual agar operasional aplikasi baru dimulai dengan data yang terkalibrasi.
 *   **Aktor Terkait**: `pemilik`, `gudang`
-*   **Aturan Bisnis**: Fitur ini digunakan hanya sekali pada masa awal penerapan sistem (*deployment setup*) untuk mengisi database awal.
-*   **Kriteria Penerimaan**: Pemilik dapat menginput secara bertahap sisa modal pinjaman bank, data master supplier lama, dan daftar inventaris barang langsung melalui antarmuka CLI setup.
+*   **Aturan Bisnis**: Fitur digunakan khusus pada masa transisi implementasi (*deployment setup*) untuk menyelaraskan status buku keuangan lama.
+*   **Kriteria Penerimaan**: Pemilik dapat menginput rincian modal sisa pinjaman bank dan inventaris aset melalui layar inisiasi (*setup wizard*).
 *   **Prioritas**: High
 *   **Sumber Data**: Project Charter v1.1 Bagian 8.2 [N-2.2], Narasi Asli Poin 7.
 
@@ -587,10 +588,10 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 10 Mo
 ### 7.8. Modul Pembatalan, Retur & CRM (M.8)
 
 #### **BR-F-36: Database Pelanggan Terstruktur (CRM Sederhana)**
-*   **Deskripsi**: Sistem harus menyimpan database pelanggan sederhana yang memuat nama lengkap, nomor WhatsApp, serta log kronologis riwayat transaksi pesanan mereka untuk kebutuhan promosi terarah di masa depan.
+*   **Deskripsi**: Sistem harus menyimpan database pelanggan sederhana yang memuat nama lengkap, nomor WhatsApp, serta log kronologis riwayat transaksi pesanan mereka untuk kebutuhan promosi.
 *   **Aktor Terkait**: `pramuniaga`, `kasir`, `pemilik`
-*   **Aturan Bisnis**: Data pelanggan dilindungi enkripsi lokal dengan pembatasan hak ekspor data (UU PDP). Database CRM terhubung dengan ID pesanan di database penjualan.
-*   **Kriteria Penerimaan**: Pramuniaga mencari nomor WhatsApp pelanggan di CLI, sistem menyajikan nama pelanggan, total kuantitas transaksi lampau, dan riwayat pesanan kustom stempel flash mereka secara detail dalam waktu **< 1 detik**.
+*   **Aturan Bisnis**: Data pelanggan dilindungi dengan pembatasan hak ekspor data untuk memastikan kepatuhan regulasi privasi.
+*   **Kriteria Penerimaan**: Pramuniaga mencari nomor WhatsApp pelanggan, sistem menyajikan nama, total kuantitas transaksi lampau, dan detail pesanan kustom sebelumnya dalam waktu **< 1 detik**.
 *   **Prioritas**: Medium
 *   **Sumber Data**: Project Charter v1.1 Bagian 8.1 [F-5.3], Innovation Proposal v1.1 [INV-INT-14].
 
@@ -599,10 +600,10 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 10 Mo
 ### 7.9. Modul Skalabilitas Multi-Cabang (M.9)
 
 #### **BR-F-37: Arsitektur Data Multi-Cabang (Multi-Branch Ready)**
-*   **Deskripsi**: Sistem database relasional MySQL wajib menyertakan kolom pengenal unit/cabang `cabang_id` (INT) sebagai foreign key di setiap tabel utama (transaksi persediaan, aset, keuangan, SDM) sejak fase inisiasi.
-*   **Aktor Terkait**: `pemilik` (selaku administrator data)
-*   **Aturan Bisnis**: Pada fase satu cabang fisik pertama saat ini, kolom `cabang_id` diisi secara otomatis dengan nilai default `1` (Kantor Pusat/Toko Utama) pada setiap penyimpanan data.
-*   **Kriteria Penerimaan**: Seluruh skema database MySQL ter-setup dengan relasi `cabang_id` yang konsisten, siap digunakan untuk replikasi data multi-cabang terpusat tanpa memerlukan restrukturisasi database di masa depan.
+*   **Deskripsi**: Sistem manajemen data wajib dirancang untuk mengaitkan identitas cabang pada setiap transaksi utama, inventaris, dan keuangan, sehingga siap menampung penambahan unit toko di lokasi fisik berbeda pada masa mendatang.
+*   **Aktor Terkait**: `pemilik`
+*   **Aturan Bisnis**: Pada fase operasional satu cabang saat ini, semua pencatatan akan dialokasikan secara default ke cabang utama (Toko Pusat).
+*   **Kriteria Penerimaan**: Seluruh tabel entitas bisnis telah mengakomodasi atribut cabang, memastikan sistem dapat digandakan ke lokasi baru tanpa perlu merombak dasar aplikasi.
 *   **Prioritas**: High
 *   **Sumber Data**: Project Charter v1.1 Bagian 4.1.1 [M.9], Innovation Proposal v1.1 [INV-INT-01].
 
@@ -611,10 +612,10 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 10 Mo
 ### 7.10. Modul Konfigurasi Sistem (Runtime Config) (M.10)
 
 #### **BR-F-38: Sistem Konfigurasi Dinamis Tanpa Hardcode (Runtime Config)**
-*   **Deskripsi**: Sistem harus menyediakan menu pengelolaan parameter regulasi bisnis yang tersimpan di tabel konfigurasi database `system_configs` agar dapat dimodifikasi oleh pemilik usaha secara dinamis tanpa mengubah kode program.
+*   **Deskripsi**: Sistem harus menyediakan menu pengelolaan parameter regulasi bisnis yang tersimpan secara dinamis di database agar dapat dimodifikasi oleh pemilik usaha tanpa intervensi pembaruan aplikasi.
 *   **Aktor Terkait**: `pemilik`
-*   **Aturan Bisnis**: Parameter dinamis meliputi: target laba smart payroll bulanan (**Rp 15.000.000**), persentase penggajian gaji laba (**25,0%**), limit kasbon karyawan (**Rp 1.000.000**), threshold deposit saldo PPOB (**Rp 150.000**), batas toleransi selisih kas (**Rp 10.000**), dan nilai rupiah per poin insentif karyawan.
-*   **Kriteria Penerimaan**: Pemilik mengubah target laba smart payroll bulanan dari **Rp 15.000.000** menjadi **Rp 18.000.000** di menu CLI, sistem menyimpan konfigurasi baru, dan komputasi penggajian bulanan langsung mengevaluasi target baru tersebut.
+*   **Aturan Bisnis**: Parameter dinamis meliputi: target laba smart payroll bulanan (**Rp 15.000.000**), persentase penggajian gaji laba (**25,0%**), limit kasbon karyawan (**Rp 1.000.000**), threshold deposit PPOB (**Rp 150.000**), batas toleransi selisih kas (**Rp 10.000**), dan nilai konversi poin insentif.
+*   **Kriteria Penerimaan**: Pemilik mengubah target laba bulanan dari **Rp 15.000.000** menjadi **Rp 18.000.000** di menu pengaturan, sistem menyimpan konfigurasi baru, dan komputasi payroll langsung mengevaluasi angka tersebut pada siklus berikutnya.
 *   **Prioritas**: High
 *   **Sumber Data**: Innovation Proposal v1.1 [INV-NEW-09].
 
@@ -625,84 +626,100 @@ Kebutuhan bisnis fungsional dirinci secara logis berdasarkan pengelompokan 10 Mo
 ### 8.1. Keamanan dan Privasi
 
 #### **BR-NF-01: Paradigma Pemrograman Fungsional (Keandalan Logika)**
-*   **Deskripsi**: Seluruh logika bisnis kalkulasi (HPP, BOM desimal, komisi poin, payroll gaji, depresiasi aset) wajib ditulis menggunakan paradigma pemrograman fungsional murni (*Functional Programming*) di Python (fungsi murni, imutabilitas, menolak penggunaan class/OOP di alur bisnis inti).
-*   **Kriteria Penerimaan**: Kode program Python terverifikasi bebas dari efek samping (*side-effects*), terbebas dari mutasi state variabel acak, dan mempermudah unit testing modular.
+*   **Deskripsi**: Seluruh logika bisnis yang memproses kalkulasi kritis (HPP, BOM desimal, komisi poin, payroll, depresiasi) wajib distruktur menggunakan paradigma yang menjamin keandalan dan konsistensi perhitungan (seperti _Functional Programming_).
+*   **Aktor Terkait**: `pemilik` (selaku verifikator sistem)
+*   **Aturan Bisnis**: Implementasi logika diwajibkan bebas dari manipulasi status variabel tersembunyi yang dapat merusak perhitungan stok.
+*   **Kriteria Penerimaan**: Modul kalkulasi matematika dipastikan beroperasi konsisten tanpa cacat perhitungan desimal, memungkinkan uji unit (*unit testing*) mandiri secara akurat.
 *   **Prioritas**: High
 *   **Sumber Data**: Project Charter v1.1 Bagian 8.2 [N-2.4], Tech Stack Decision v1.1 Bagian 3.2, Innovation Proposal v1.1 [INV-INT-02].
 
-#### **BR-NF-02: Arsitektur Infrastruktur Client-Server LAN Lokal**
-*   **Deskripsi**: Aplikasi CLI Python di kasir Windows 11 wajib terhubung ke server database MySQL lokal pada Mini PC Debian 12 melalui topologi jaringan kabel fisik UTP Cat6 LAN lokal di toko.
-*   **Kriteria Penerimaan**: Koneksi data kasir ke database server tetap berjalan lancar dengan latensi jaringan **< 1ms** meskipun koneksi internet eksternal ISP toko dalam keadaan terputus (jaringan mati).
+#### **BR-NF-02: Arsitektur Infrastruktur Terpusat Lokal (Client-Server)**
+*   **Deskripsi**: Aplikasi yang dioperasikan di konter toko wajib tersambung ke penyimpanan pusat secara lokal melalui jaringan fisik guna menjamin operasional tetap berjalan meski tidak ada akses internet eksternal.
+*   **Aktor Terkait**: `kasir`, `pramuniaga`, `pemilik`
+*   **Aturan Bisnis**: Arsitektur mewajibkan penyimpanan data diisolasi pada mesin server lokal terpisah dari stasiun kerja operasional harian.
+*   **Kriteria Penerimaan**: Komunikasi input transaksi di konter tersimpan secara aman di peladen toko dengan responsibilitas kilat (**< 1ms**) saat jaringan luas (internet) terputus.
 *   **Prioritas**: High
 *   **Sumber Data**: Tech Stack Decision v1.1 Bagian 6.2, Innovation Proposal v1.1 [INV-INT-03].
 
-#### **BR-NF-03: Proteksi SQL Injection & Injeksi Karakter Control CLI**
-*   **Deskripsi**: Sistem wajib mengamankan data MySQL dari celah SQL injection dengan menerapkan *parameterized queries* (`%s`) resmi driver, menolak manipulasi f-string SQL, serta menyaring masukan terminal yang mengandung karakter kontrol ANSI perusak visual teks.
-*   **Kriteria Penerimaan**: Percobaan input tanda petik tunggal (`'`) atau sintaks SQL (seperti `OR 1=1`) oleh kasir pada input pencarian nama barang ditolak aman oleh sistem tanpa merusak sintaks query basis data.
+#### **BR-NF-03: Proteksi Injeksi Data dan Kontrol Karakter**
+*   **Deskripsi**: Sistem wajib mengamankan integritas informasi dari serangan manipulasi input atau ketikan bebas yang berpotensi merusak instruksi basis data maupun merusak tampilan visual antarmuka pengguna.
+*   **Aktor Terkait**: `kasir`, `pramuniaga`, `gudang`
+*   **Aturan Bisnis**: Mekanisme input harus mengadopsi prosedur pengikatan parameter (*parameterized query*) resmi dan memblokir karakter pengendali terminal asing.
+*   **Kriteria Penerimaan**: Percobaan memasukkan karakter kutip tunggal (`'`) atau sintaks manipulasi pada field nama barang ditolak dengan aman tanpa mempengaruhi kelancaran sistem.
 *   **Prioritas**: High
 *   **Sumber Data**: Tech Stack Decision v1.1 Bagian 8.6 & 8.8, Innovation Proposal v1.1 [INV-INT-19].
 
-### 8.2. Audit dan Pelacakan Aktivitas
-*(Kebutuhan log kronologis Audit Trail terstruktur JSON telah dideklarasikan secara detail pada fungsional `BR-F-31`).*
+### 8.2. Keamanan Kredensial
 
-### 8.3. Keamanan Kredensial
-
-#### **BR-NF-04: Enkripsi Kredensial Sandi (bcrypt Cost 12)**
-*   **Deskripsi**: Kata sandi akun login seluruh pengguna wajib disimpan di basis data menggunakan enkripsi satu arah *bcrypt* dengan parameter Cost Factor = 12.
-*   **Kriteria Penerimaan**: Sandi polos tidak tersimpan di database MySQL. Kecepatan verifikasi login saat shift dimulai berjalan cepat di bawah **0,5 detik** tanpa membebani utilisasi CPU PC kasir harian.
+#### **BR-NF-04: Enkripsi Kredensial Tingkat Lanjut**
+*   **Deskripsi**: Kata sandi akses seluruh pengguna wajib disamarkan menggunakan fungsi pengacak kriptografi kuat dengan perhitungan waktu terukur (seperti standar _bcrypt_).
+*   **Aktor Terkait**: Semua staf pengguna aplikasi
+*   **Aturan Bisnis**: Sistem melarang penyimpanan sandi mentah dan mewajibkan penerapan _cost factor_ untuk mencegah serangan penebakan massal.
+*   **Kriteria Penerimaan**: Database tidak menyimpan kata sandi yang bisa dibaca. Verifikasi masuk diselesaikan secara stabil (**< 0,5 detik**) tanpa menguras daya pemrosesan stasiun kasir.
 *   **Prioritas**: High
 *   **Sumber Data**: Tech Stack Decision v1.1 Bagian 8.1, Innovation Proposal v1.1 [INV-INT-17].
 
-#### **BR-NF-05: Otentikasi Session CLI Stateless (JWT 8 Jam)**
-*   **Deskripsi**: Otorisasi session pengguna aktif di terminal CLI wajib diamankan menggunakan token berbasis JSON Web Token (JWT) terenkripsi algoritma HS256 dengan masa kedaluwarsa dibatasi selama **8 jam** (1 shift kerja).
-*   **Kriteria Penerimaan**: Staf kasir yang meninggalkan aplikasi CLI aktif melebihi 8 jam otomatis ter-logout dari sistem dan diarahkan ke layar login utama demi mencegah pembobolan menu Pemilik.
+#### **BR-NF-05: Otentikasi Sesi Waktu Terbatas (Stateless)**
+*   **Deskripsi**: Masa aktif izin masuk bagi pengguna di terminal konter harus dibatasi oleh penanda sesi (_token_) kedaluwarsa maksimal **8 jam** (setara satu rentang giliran kerja).
+*   **Aktor Terkait**: Semua staf pengguna aplikasi
+*   **Aturan Bisnis**: Validasi akses diatur tanpa membebani sistem basis data pusat di setiap perpindahan menu.
+*   **Kriteria Penerimaan**: Pengguna yang meninggalkan sesi lebih dari batas 8 jam akan secara paksa diputus dari layanan dan diminta masuk ulang, mencegah pengambilalihan profil oleh staf shift berikutnya.
 *   **Prioritas**: High
 *   **Sumber Data**: Tech Stack Decision v1.1 Bagian 8.2, Innovation Proposal v1.1 [INV-INT-18].
 
-#### **BR-NF-06: Keamanan Brute-Force Login (Rate Limiting 5x Locked 10 Menit)**
-*   **Deskripsi**: Sistem wajib membatasi kegagalan autentikasi login staf maksimal **5 kali berturut-turut** sebelum mengunci akses akun pengguna bersangkutan selama **10 menit** (menyimpan timestamp locked di database).
-*   **Kriteria Penerimaan**: Percobaan menebak kata sandi kasir secara salah sebanyak 5 kali berturut-turut langsung ditolak masuk, menampilkan pesan penguncian akun, dan menolak proses login selama 10 menit ke depan.
+#### **BR-NF-06: Penanggulangan Akses Berulang (Rate Limiting)**
+*   **Deskripsi**: Sistem wajib mendeteksi dan menangguhkan akun pengguna selama **10 menit** jika terjadi kegagalan otentikasi login sebanyak **5 kali berturut-turut**.
+*   **Aktor Terkait**: Semua staf pengguna aplikasi
+*   **Aturan Bisnis**: Perekaman waktu penangguhan disimpan secara terpusat untuk memblokir intervensi peretasan tebakan sandi mesin.
+*   **Kriteria Penerimaan**: Ketika kasir salah memasukkan sandi 5 kali, akses ditolak langsung, panel memperingatkan blokade 10 menit, dan sistem menunda penerimaan sandi baru.
 *   **Prioritas**: High
 *   **Sumber Data**: Tech Stack Decision v1.1 Bagian 8.7, Innovation Proposal v1.1 [INV-INT-20].
 
-#### **BR-NF-07: Enkripsi Ekspor Database Cadangan (AES-256 Kepatuhan UU PDP)**
-*   **Deskripsi**: File cadangan database .sql ekspor harian wajib dikompresi ke berkas zip terenkripsi algoritma kuat AES-256 bit dan diletakkan pada folder dengan hak akses terproteksi penuh administrative Linux (`chmod 700`).
-*   **Kriteria Penerimaan**: File cadangan database yang disalin secara ilegal melalui flashdisk tidak dapat diekstrak atau dibaca oleh pihak ketiga luar, menjamin kepatuhan regulasi perlindungan data UU PDP No. 27/2022.
+#### **BR-NF-07: Enkripsi Cadangan Basis Data (Kepatuhan UU PDP)**
+*   **Deskripsi**: Ekspor pencadangan harian kumpulan data bisnis dan pelanggan wajib dimampatkan dan dilindungi algoritma enkripsi ketat tingkat militer (AES-256) pada lokasi folder tertutup.
+*   **Aktor Terkait**: `pemilik`
+*   **Aturan Bisnis**: Kebijakan diwajibkan demi mencegah kebocoran kontak rahasia pelanggan ke pihak eksternal, sesuai mandat UU PDP No. 27/2022.
+*   **Kriteria Penerimaan**: Jika file rekap harian disalin keluar ke penyimpanan _flashdisk_ tak dikenal, berkas tidak bisa dibaca maupun diekstrak tanpa kunci rahasia utama.
 *   **Prioritas**: High
 *   **Sumber Data**: Tech Stack Decision v1.1 Bagian 8.5, Innovation Proposal v1.1 [INV-INT-21].
 
-### 8.4. Keandalan Sistem
+### 8.3. Keandalan Sistem
 
-#### **BR-NF-08: Penjadwalan Backup Data Otomatis Harian**
-*   **Deskripsi**: Sistem harus menjalankan skrip otomatisasi ekspor basis data cadangan ke format SQL terkompresi secara teratur setiap hari (pukul 21:00) ke folder penyimpanan sekunder Mini PC lokal.
-*   **Kriteria Penerimaan**: File cadangan database harian ter-generate otomatis tepat waktu setiap hari tanpa memerlukan intervensi manual pemilik usaha.
+#### **BR-NF-08: Penjadwalan Pencadangan Data Harian Otomatis**
+*   **Deskripsi**: Fasilitas penyalinan seluruh data transaksi harian wajib berjalan otomatis setiap kali toko selesai beroperasi (diarahkan pasca pukul 21:00) ke media sekunder.
+*   **Aktor Terkait**: `pemilik` (sebagai penanggung jawab data)
+*   **Aturan Bisnis**: Otomasi beroperasi pada jadwal malam hari tanpa bergantung pada campur tangan staf manusia.
+*   **Kriteria Penerimaan**: File duplikat data operasional berhasil dihasilkan dengan tepat pada waktu yang dijadwalkan, bebas keterlibatan pengelola secara langsung.
 *   **Prioritas**: High
 *   **Sumber Data**: Project Charter v1.1 Bagian 8.3 [N-3.1], Innovation Proposal v1.1 [INV-REC-01].
 
-### 8.5. Portabilitas
+### 8.4. Portabilitas
 
-#### **BR-NF-09: Portabilitas Runtime Dual-OS Lintas Windows & Linux**
-*   **Deskripsi**: Aplikasi CLI Python 3.14.2+ wajib dapat dijalankan lancar secara Dual-OS lintas lingkungan terminal Linux Debian 12 Bookworm (Mini PC Server) maupun Windows 11 (PC Kasir) tanpa ada modifikasi file logika program inti.
-*   **Kriteria Penerimaan**: Pustaka standard OS path (`pathlib`), standard encoding `utf-8`, and modul platform diimplementasikan fungsional untuk menyesuaikan perintah bersihkan layar (`cls` / `clear`) di Windows dan Linux secara mulus.
+#### **BR-NF-09: Kompatibilitas Lintas Sistem Operasi**
+*   **Deskripsi**: Sistem harus menjamin kompatibilitas format penamaan jalur direktori (_file path_) dan penyandian teks karakter (_encoding_) agar antarmuka dapat dibuka pada lingkungan Windows maupun Linux.
+*   **Aktor Terkait**: `pemilik` (sebagai penanggung jawab instalasi)
+*   **Aturan Bisnis**: Logika kode dioperasikan menggunakan pustaka yang mendukung kelancaran perpindahan basis OS tanpa penyuntingan konfigurasi ulang.
+*   **Kriteria Penerimaan**: Staf dapat mengakses konter via Windows di meja depan, dan pemilik bisa memeriksa laporan laba menggunakan tampilan layar yang sama rapinya pada terminal Linux server ruang belakang.
 *   **Prioritas**: High
 *   **Sumber Data**: Tech Stack Decision v1.1 Bagian 6.1.
 
-### 8.6. Kecepatan Respons
+### 8.5. Kecepatan Respons
 
-#### **BR-NF-10: Latensi Pemrosesan Laporan Tahunan & Stock Opname**
-*   **Deskripsi**: Agregasi pencarian laporan laba rugi tahunan konsolidasi dan kalkulasi rekonsiliasi data stock opname di database wajib diselesaikan dalam waktu kurang dari **5 detik** pada spesifikasi Mini PC server standar.
-*   **Kriteria Penerimaan**: Ketika menu pencarian laporan laba/rugi tahunan dipilih oleh pemilik, sistem memproses dan menampilkan data tabular dalam waktu kurang dari **2 detik**.
+#### **BR-NF-10: Latensi Pemrosesan Agregat Data Berat**
+*   **Deskripsi**: Penarikan dan agregasi kalkulasi ribuan baris informasi historis (seperti rekapitulasi laba tahunan konsolidasi atau pencocokan silang _stock opname_) wajib dieksekusi dengan kecepatan optimal.
+*   **Aktor Terkait**: `pemilik`, `kepala_percetakan`, `gudang`
+*   **Aturan Bisnis**: Kecepatan keluaran informasi komputasi kompleks dipatok berbatas paling lama **5 detik** pengembalian hasil ke layar.
+*   **Kriteria Penerimaan**: Manakala pimpinan merekomendasikan komputasi rentabilitas 12 bulan penuh, panel tabel analisis laba ditayangkan kembali secara utuh dalam batasan waktu di bawah **2 detik**.
 *   **Prioritas**: High
 *   **Sumber Data**: Project Charter v1.1 Bagian 8.2 [N-2.6], Feasibility Study v1.1 Bagian 4.2.6.
 
-### 8.7. Skalabilitas
-*(Kebutuhan arsitektur data multi-cabang ready telah dideklarasikan pada fungsional `BR-F-37`).*
+### 8.6. Kemudahan Penggunaan (Usability)
 
-### 8.8. Kemudahan Penggunaan (Usability)
-
-#### **BR-NF-11: Dashboard Ringkasan Harian CLI (Modern ANSI Console)**
-*   **Deskripsi**: Sistem harus menyediakan visualisasi layar dashboard terformat rapi (panel, borders, kontras warna status ANSI) menggunakan bantuan pustaka `rich` dan `tabulate` saat login level pemilik berhasil dilakukan.
-*   **Kriteria Penerimaan**: Pemilik disajikan ringkasan omzet harian berjalan, profit kotor, antrian kritis, stok menipis, dan sisa kas secara informatif di layar utama console CLI harian.
+#### **BR-NF-11: Antarmuka Teks Dashboard yang Kaya Visual**
+*   **Deskripsi**: Aplikasi terminal harus menyuguhkan panel ringkasan (_dashboard_) yang terorganisir apik dengan batas kotak yang jelas, format warna kontras, serta representasi tabel yang rapi saat pengguna sukses masuk.
+*   **Aktor Terkait**: `pemilik`, `kepala_percetakan`
+*   **Aturan Bisnis**: Konstruksi tampilan antarmuka diarahkan menggunakan penyempurna tampilan berbasis ANSI modern untuk memudahkan pembacaan laporan sekilas harian.
+*   **Kriteria Penerimaan**: Begitu pemilik beranda terbuka, terlihat kompilasi kotak berwarna mengelompokkan nilai uang, antrean menumpuk, peringatan stok genting, dan catatan waktu terkompilasi bersih nan mudah ditelaah.
 *   **Prioritas**: High
 *   **Sumber Data**: Innovation Proposal v1.1 [INV-NEW-01].
 
@@ -738,37 +755,37 @@ Berikut adalah kompilasi aturan kebijakan operasional numerik AbuCom yang wajib 
 7.  **Rekonsiliasi Kas Laci Kasir**:
     *   Batas maksimal toleransi selisih antara nominal uang kas fisik di laci kasir terhadap catatan sistem di akhir shift kasir adalah sebesar **Rp 10.000** per shift.
     *   Segala selisih melebihi batas **Rp 10.000** wajib merekam catatan tertulis justifikasi fisik dan memicu peringatan anomali audit ke pemilik.
-8.  **Keamanan Akun CLI**:
+8.  **Keamanan Akun**:
     *   *Rate Limiting*: Maksimal kegagalan input sandi login berturut-turut dibatasi sebanyak **5 kali**.
     *   *Penangguhan Akun*: Penguncian akun sementara dilakukan selama **10 menit** (`locked_until`) setelah batas terlampaui.
-    *   *Session Timeout*: Validitas session token JWT dibatasi maksimal **8 jam** sejak waktu pembuatan token login.
+    *   *Session Timeout*: Validitas otentikasi dibatasi maksimal **8 jam** sejak waktu login untuk mencerminkan lama satu giliran jam kerja normal.
 
 ---
 
 ## 10. Inovasi dan Rekomendasi Best Practice
 
-Penyusunan BRD ini mematuhi **Mandat Inovasi & Best Practice** dari pemilik dengan merancang integrasi 43 inovasi terstruktur yang dibagi sebagai berikut:
+Penyusunan BRD ini mematuhi **Mandat Inovasi & Best Practice** dari pemilik dengan merancang integrasi 42 inovasi terstruktur yang dibagi sebagai berikut:
 
 ### 10.1. Inovasi Terintegrasi
-Sebanyak 30 inovasi terintegrasi (`INV-INT-01` s.d `INV-INT-30`) disematkan secara penuh untuk memperkuat keandalan logika fungsional sistem, persediaan, logistik, administrasi SDM/Kasbon, dan skema keamanan kredensial. Inovasi arsitektur database *Multi-Branch Ready* sejak awal (`INV-INT-01`) memastikan kesiapan ekspansi ribuan cabang di masa depan. Paradigma *Functional Programming* murni (`INV-INT-02`) mengeliminasi bug pembulatan keuangan dan persediaan desimal.
+Sebanyak 30 inovasi terintegrasi (`INV-INT-01` s.d `INV-INT-30`) disematkan secara penuh untuk memperkuat keandalan logika fungsional sistem, persediaan, logistik, administrasi SDM/Kasbon, dan skema keamanan kredensial. Inovasi arsitektur database *Multi-Branch Ready* sejak awal (`INV-INT-01`) memastikan kesiapan ekspansi ribuan cabang di masa depan. Pendekatan operasional meminimalisasi bug pembulatan keuangan dan persediaan desimal.
 
 ### 10.2. Inovasi Tambahan Baru
-Sebanyak 13 inovasi tambahan baru (3 rekomendasi lama `INV-REC-01 s.d 03` dan 10 usulan baru AI `INV-NEW-01 s.d 09` dan `BR-F-40`) disematkan untuk meningkatkan kualitas interaksi visual user (Rich CLI Dashboard), optimalisasi pengadaan barang (Price Tracking Supplier & Manajemen Supplier/Utang), proteksi likuiditas kas pemilik (Dana Cadangan Darurat **Rp 4.500.000**), penegakan akuntabilitas kas kasir (Shift Handover Log & Toleransi Kasir **Rp 10.000**), serta sistem pencegahan kecurangan (Fraud Detection Alert).
+Sebanyak 12 inovasi tambahan (3 rekomendasi tertunda `INV-REC-01 s.d 03` dan 9 usulan fungsional opsional `INV-NEW-01 s.d 09`) disematkan untuk meningkatkan kualitas interaksi visual user, optimalisasi pengadaan barang, proteksi likuiditas kas pemilik (Dana Cadangan Darurat **Rp 4.500.000**), penegakan akuntabilitas kas kasir (Shift Handover Log & Toleransi Kasir **Rp 10.000**), serta sistem pencegahan kecurangan (Fraud Detection Alert).
 
 ### 10.3. Dampak dan Prioritas Implementasi
 Inovasi diatur prioritas pengembangannya secara taktis:
-*   **Prioritas Utama (Bulan ke-5 s.d 6)**: Pustaka import CSV semiautomatis (INV-NEW-08) dibangun awal untuk mendukung migrasi data Excel yang bersih, diikuti dengan penyusunan visual Dashboard CLI ringkas (INV-NEW-01) dan penjadwalan Backup otomatis (INV-REC-01).
-*   **Prioritas Kedua (Bulan ke-7 s.d 9)**: Price tracking supplier (INV-NEW-02), analisis prediksi re-order (INV-REC-03), dan tabel sistem konfigurasi dinamis (INV-NEW-09).
-*   **Prioritas Ketiga (Bulan ke-10)**: Fraud detection anomali (INV-NEW-06), alert jatuh tempo (INV-NEW-03), dan margin profit per produk (INV-NEW-05).
+*   **Prioritas Utama (Bulan ke-5 s.d 6)**: Impor CSV semiautomatis (INV-NEW-08) dibangun awal untuk mendukung migrasi data Excel yang bersih, diikuti dengan penyusunan visual Dashboard ringkas (INV-NEW-01) dan penjadwalan Backup otomatis (INV-REC-01).
+*   **Prioritas Kedua (Bulan ke-7 s.d 9)**: Pelacakan harga pemasok (INV-NEW-02), analisis prediksi re-order (INV-REC-03), dan perancangan konfigurasi fleksibel (INV-NEW-09).
+*   **Prioritas Ketiga (Bulan ke-10)**: Deteksi kecurangan anomali (INV-NEW-06), peringatan jatuh tempo (INV-NEW-03), dan rincian profitabilitas produk (INV-NEW-05).
 
 ---
 
 ## 11. Batasan dan Asumsi Bisnis
 
 ### 11.1. Batasan Operasional
-*   **Antarmuka Teks CLI**: Aplikasi murni berbasis terminal Command Line Interface (CLI) teks polos. Tidak ada aplikasi web mobile, GUI desktop, atau tablet kasir pada fase awal pengerjaan.
+*   **Antarmuka Teks**: Aplikasi murni berbasis terminal Command Line Interface (CLI) teks polos. Tidak ada aplikasi web mobile, GUI desktop, atau tablet kasir pada fase awal pengerjaan.
 *   **Pencatatan Pihak Ketiga Manual**: Mutasi keuangan saldo PPOB dan 6 akun transaksi e-wallet agen bank tidak terhubung otomatis via API eksternal perbankan (luar ruang lingkup). Staf harus memproses secara fisik di HP/EDC Agen lalu merekam data transaksi secara manual di aplikasi CLI.
-*   **Keterbatasan Paradigma Python**: Wajib menerapkan pemrograman fungsional murni tanpa class/OOP pada logika bisnis inti, yang meningkatkan kompleksitas manajemen status sesi pengguna (*state management nested closures*).
+*   **Keterbatasan Desain Perangkat Lunak**: Wajib mengekang penggunaan manipulasi kelas berbasis objek untuk fungsionalitas murni, yang meningkatkan ketelitian pada perlindungan memori sementara.
 *   **Penerapan Cabang Tunggal Awal**: Implementasi awal difokuskan hanya untuk 1 toko fisik utama terlebih dahulu, meskipun skema database relasional MySQL dirancang siap menampung ID cabang yang fleksibel.
 
 ### 11.2. Batasan Anggaran dan Waktu
@@ -778,12 +795,12 @@ Inovasi diatur prioritas pengembangannya secara taktis:
 ### 11.3. Asumsi Bisnis
 *   **Keberhasilan Rekrutmen Karyawan**: Berasumsi pemilik dapat merekrut 7 staf untuk mengisi struktur organisasi baru tepat waktu sebelum Go-Live aplikasi di Bulan ke-12.
 *   **Ketersediaan Data Awal**: Pemilik usaha meluangkan waktu melakukan pembersihan data (*cleansing*) dan migrasi awal dari Excel yang berserakan agar database awal bersih.
-*   **Infrastruktur Fisik Stabil**: Toko fisik memiliki pasokan listrik yang stabil (dilindungi UPS server lokal) dan koneksi jaringan kabel LAN UTP Cat6 stabil untuk topologi client-server.
+*   **Infrastruktur Fisik Stabil**: Toko fisik memiliki pasokan listrik yang stabil (dilindungi UPS server lokal) dan koneksi jaringan kabel LAN stabil untuk kelancaran arus informasi konter.
 
 ### 11.4. Ketergantungan Proyek (Project Dependencies)
 *   **Keandalan Akses & Saldo Akun Pihak Ketiga**: Kelangsungan transaksi kas PPOB dan 6 e-wallet bergantung penuh pada ketersediaan operasional fisik perangkat EDC/HP eksternal dan saldo minimal yang terjaga.
-*   **Stabilitas Pasokan Listrik & Jaringan LAN**: Mengingat database MySQL dipasang secara lokal, integritas transaksi sangat bergantung pada jaringan LAN kabel UTP Cat6 dan perlindungan UPS dari mati listrik mendadak.
-*   **Kompatibilitas Runtime Python**: Ketergantungan penuh pada tersedianya Python versi minimal 3.14.2+ beserta pustaka pendukung yang terinstal secara tepat lintas Windows 11 dan Linux Debian 12.
+*   **Stabilitas Pasokan Listrik & Jaringan LAN**: Mengingat database dipasang secara lokal, integritas transaksi sangat bergantung pada jaringan fisik stabil di toko dan perlindungan alat pencegah lonjakan.
+*   **Kompatibilitas Prasyarat Perangkat Lunak**: Ketergantungan penuh pada kemudahan beroperasinya interpreter pemrograman minimal versi 3.14.2+ dengan komponen terkait di lingkungan Windows 11 maupun Debian 12.
 
 ---
 
@@ -793,11 +810,11 @@ Berikut adalah identifikasi risiko operasional bisnis, probabilitas (1-5), dampa
 
 | Risiko Bisnis | Probabilitas | Dampak | Rencana Mitigasi Bisnis |
 |---|:---:|:---:|---|
-| **Burnout Kronis Pemilik Usaha**: Pemilik sakit/kelelahan ekstrim sebelum aplikasi go-live, menghentikan operasional toko fisik. | 3 | 5 | Optimalkan asisten AI untuk penulisan dokumentasi rutin, batasi ulasan berkala pemilik hanya pada testing fungsional CLI yang kritis. |
-| **Ketidakakuratan Migrasi Data Excel**: Data stok/keuangan lama yang berserakan diimpor dalam kondisi kotor dan rusak. | 4 | 4 | Gunakan modul import data CSV semiautomatis (INV-NEW-08) yang dilengkapi validasi tipe data masukan di Python sebelum masuk ke MySQL. |
-| **Penarikan Dana Mendadak Pinjaman Tanpa Bunga**: Kerabat dekat menarik dana modal secara mendadak, melumpuhkan kas toko. | 3 | 4 | **[KRITIS]** Amankan alokasi Dana Cadangan Darurat sebesar **Rp 4.500.000** ke rekening terdedikasi terpisah, terisolasi dari kas operasional harian toko. |
-| **Kecurangan Kas & Persediaan (Fraud Staf Baru)**: Staf kasir atau gudang melakukan manipulasi entry kas atau pencurian stok bahan. | 3 | 5 | Terapkan rekonsiliasi kas harian wajib (toleransi selisih **Rp 10.000**), log serah terima shift kasir, RBAC level pemilik, dan log Audit Trail JSON. |
-| **Ketidaksesuaian Adaptasi Staf Baru**: Staf baru dengan literasi komputer rendah mengalami kesulitan mengoperasikan terminal CLI teks. | 3 | 3 | Sediakan buku panduan visual *CLI User Manual* yang interaktif dan jadwalkan pelatihan simulasi sistem selama 3 hari berturut-turut sebelum go-live. |
+| **Burnout Kronis Pemilik Usaha**: Pemilik sakit/kelelahan ekstrim sebelum aplikasi go-live, menghentikan operasional toko fisik. | 3 | 5 | Optimalkan pendelegasian perancangan alur dokumentasi rutin, batasi ulasan berkala pemilik hanya pada validasi fungsionalitas yang kritis. |
+| **Ketidakakuratan Migrasi Data Excel**: Data stok/keuangan lama yang berserakan diimpor dalam kondisi kotor dan rusak. | 4 | 4 | Gunakan modul import data CSV semiautomatis (INV-NEW-08) yang dilengkapi validasi penyaringan kesalahan baris secara pra-perekaman. |
+| **Penarikan Dana Mendadak Pinjaman Tanpa Bunga**: Kerabat dekat menarik dana modal secara mendadak, melumpuhkan arus kas toko. | 3 | 4 | **[KRITIS]** Amankan alokasi Dana Cadangan Darurat sebesar **Rp 4.500.000** ke rekening terdedikasi terpisah, terisolasi dari kas operasional harian toko. |
+| **Kecurangan Kas & Persediaan (Fraud Staf Baru)**: Staf kasir atau gudang melakukan manipulasi entry kas atau pencurian stok bahan. | 3 | 5 | Terapkan rekonsiliasi kas harian wajib (toleransi selisih **Rp 10.000**), log serah terima shift kasir, RBAC level pemilik, dan log Audit Trail. |
+| **Ketidaksesuaian Adaptasi Staf Baru**: Staf baru dengan literasi komputer rendah mengalami kesulitan mengoperasikan terminal teks murni. | 3 | 3 | Sediakan buku panduan visual yang interaktif dan jadwalkan pelatihan simulasi operasional sistem berulang selama 3 hari sebelum go-live. |
 
 ---
 
@@ -806,20 +823,20 @@ Berikut adalah identifikasi risiko operasional bisnis, probabilitas (1-5), dampa
 Sistem AbuCom dinyatakan sukses dan layak diterima secara bisnis apabila memenuhi kriteria definisi selesai (*Definition of Done*) objektif berikut:
 
 1.  **Otomatisasi Laporan Finansial (100% Bebas Excel)**:
-    *   *Indikator*: Seluruh laporan laba/rugi per divisi harian/bulanan/tahunan, pengeluaran rutin, dan rekonsiliasi kas ter-generate instan (**< 5 detik**) di terminal CLI.
-    *   *Metode Uji*: Verifikasi biner (Ya/Tidak) bahwa pemilik tidak perlu menyalin data transaksi secara manual ke Excel untuk menghitung laporan laba rugi.
+    *   *Indikator*: Seluruh laporan laba/rugi per divisi harian/bulanan/tahunan, pengeluaran rutin, dan rekonsiliasi kas ter-generate instan (**< 5 detik**) di terminal.
+    *   *Metode Uji*: Verifikasi biner (Ya/Tidak) bahwa pemilik tidak perlu menyalin data transaksi secara manual ke Excel untuk merangkum angka pajak/laba rugi.
 2.  **Akurasi Sinkronisasi Stok Bahan Baku (< 1,0% Selisih)**:
     *   *Indikator*: Selisih kuantitas stok bahan baku cetak di gudang fisik terhadap catatan sistem di bawah **1,0%** saat stock opname berkala.
-    *   *Metode Uji*: Formula `(Jumlah Selisih Stok / Total Stok Sistem) * 100% <= 1,0%` diuji setelah 1 bulan berjalan penuh menggunakan HPP BOM dimensi/volume desimal.
+    *   *Metode Uji*: Formula `(Jumlah Selisih Stok / Total Stok Sistem) * 100% <= 1,0%` diuji setelah 1 bulan berjalan menggunakan pemotongan material desimal.
 3.  **Efisiensi Antrian Produksi (Zero-Missed Orders)**:
     *   *Indikator*: 0 pesanan kustom pelanggan terlewat, terlambat, atau lupa dikerjakan akibat kelalaian staf toko.
-    *   *Metode Uji*: Verifikasi log database antrian menunjukkan status transisi selesai 100% dari status `Antri` hingga `Diambil` untuk seluruh ID pesanan bulanan terdaftar.
+    *   *Metode Uji*: Verifikasi log tahapan transisi status selesai utuh 100% dari tahap `Antri` hingga status penutup `Diambil` untuk pesanan berjalan.
 4.  **Integritas Keamanan Hak Akses (100% Terjaga)**:
     *   *Indikator*: Peran staf operasional sama sekali tidak memiliki akses membuka menu administrasi keuangan sensitif, pinjaman bank, tabungan, dan smart payroll.
-    *   *Metode Uji*: Pengujian penetrasi internal (UAT) menunjukkan 100% percobaan akses ilegal peran staf ditolak sistem dengan pesan error otorisasi yang sesuai.
+    *   *Metode Uji*: Pengujian validasi antar peran membuktikan 100% percobaan akses melampaui otoritas dicegat oleh sistem penolakan terpusat.
 5.  **Mitigasi Burnout Pemilik Usaha**:
     *   *Indikator*: Pemilik berhasil mendelegasikan aktivitas kas, desain, produksi, dan gudang kepada staf, serta melacak kehadiran dan penggajian secara otomatis.
-    *   *Metode Uji*: Pemilik hanya perlu login ke aplikasi minimal 1 kali seminggu untuk memantau laba/rugi dan menyetujui payroll, sementara operasional toko berjalan mandiri tanpa intervensi fisik pemilik.
+    *   *Metode Uji*: Pemilik hanya perlu masuk ke aplikasi pelaporan 1-2 kali per minggu untuk memantau status omzet toko sementara kelangsungan aktivitas bisnis ditangani tim.
 
 ---
 
@@ -834,22 +851,26 @@ Berikut adalah glosarium alfabetis penjelasan istilah domain percetakan, retail,
 5.  **CAPEX (Capital Expenditure)**: Investasi pengeluaran modal awal untuk pengadaan aset fisik infrastruktur (Mini PC Server, LAN, PC Kasir) di awal proyek.
 6.  **Functional Programming (Pemrograman Fungsional)**: Paradigma pemrograman yang memperlakukan komputasi sebagai evaluasi fungsi matematika murni dan menghindari perubahan status (*state*) serta data yang dapat dimutasi.
 7.  **Kasbon**: Skema pinjaman uang tunai di muka yang diberikan pemilik kepada karyawan, yang pengembaliannya dipotong otomatis dari gaji bulanan karyawan bersangkutan.
-8.  **Map Snelhechter**: Jenis map kertas atau plastik yang dilengkapi dengan pengikat jepitan logam di tengahnya untuk menjepit kertas dokumen terlubang.
-9.  **Nama Dada**: Papan nama kecil (pin tag name) akrilik/resin yang dipasang di dada pakaian staf karyawan.
-10. **Nomor Induk Berusaha (NIB)**: Identitas pelaku usaha resmi di Indonesia yang diterbitkan oleh Lembaga OSS Kementerian Investasi RI untuk legalitas operasional dan rekrutmen.
-11. **NPV (Net Present Value)**: Selisih antara nilai sekarang dari aliran manfaat kas masuk dengan nilai sekarang dari aliran pengeluaran modal (CAPEX) dengan memperhitungkan faktor diskonto.
-12. **OPEX (Operational Expenditure)**: Biaya operasional rutin bulanan/tahunan pasca go-live yang dibutuhkan untuk memelihara kestabilan sistem aplikasi dan Mini PC server lokal.
-13. **Payback Period**: Jangka waktu yang dibutuhkan untuk memperoleh kembali seluruh modal investasi awal (CAPEX) berdasarkan akumulasi arus kas manfaat bersih tahunan.
-14. **PKWT (Perjanjian Kerja Waktu Tertentu)**: Kontrak kerja antara pengusaha dan karyawan untuk hubungan kerja dalam jangka waktu tertentu (karyawan kontrak).
-15. **PKWTT (Perjanjian Kerja Waktu Tidak Tertentu)**: Kontrak hubungan kerja yang bersifat tetap antara pengusaha dan karyawan.
-16. **PPOB (Payment Point Online Bank)**: Layanan loket pembayaran tagihan online yang bekerja sama dengan perbankan, seperti pulsa, token listrik PLN, tagihan air, dan internet.
-17. **Retur**: Pengembalian barang retail ATK rusak/salah dari pelanggan atau barang pengadaan dari supplier akibat cacat produksi untuk disinkronkan ke kas dan persediaan.
-18. **ROI (Return on Investment)**: Rasio persentase tingkat efisiensi pengembalian modal investasi yang ditanamkan pada proyek.
-19. **Stempel Flash**: Jenis stempel otomatis tanpa bantalan tinta luar, menggunakan karet khusus penyerap tinta warna yang disinari lampu flash mesin stempel saat pembuatan.
-20. **Stock Opname**: Proses penghitungan fisik persediaan barang/bahan baku di gudang secara langsung untuk dicocokkan dengan catatan stok sistem guna menyesuaikan selisih.
-21. **Uang Muka / DP (Down Payment)**: Pembayaran sebagian dari total harga transaksi yang diserahkan pelanggan di awal sebagai tanda jadi pesanan terdaftar.
-22. **UU PDP (Undang-Undang Pelindungan Data Pribadi)**: Undang-Undang Republik Indonesia Nomor 27 Tahun 2022 yang mengatur mengenai hak subjek data pribadi, kewajiban pengelola data pribadi (CRM Pelanggan), dan sanksi kebocoran data.
-23. **Utang Usaha (Accounts Payable)**: Kewajiban keuangan kepada supplier/vendor atas pengadaan bahan baku atau retail ATK dengan skema pembayaran tempo/tertunda.
+8.  **Laminasi**: Proses pelapisan barang cetakan (seperti foto atau undangan) dengan lembaran tipis plastik khusus bening untuk memberikan ketahanan cairan dan ketahanan pudar.
+9.  **Map Snelhechter**: Jenis map kertas atau plastik yang dilengkapi dengan pengikat jepitan logam di tengahnya untuk menjepit kertas dokumen terlubang.
+10. **Nama Dada**: Papan nama kecil (pin tag name) akrilik/resin yang dipasang di dada pakaian staf karyawan.
+11. **Nomor Induk Berusaha (NIB)**: Identitas pelaku usaha resmi di Indonesia yang diterbitkan oleh Lembaga OSS Kementerian Investasi RI untuk legalitas operasional dan rekrutmen.
+12. **NPV (Net Present Value)**: Selisih antara nilai sekarang dari aliran manfaat kas masuk dengan nilai sekarang dari aliran pengeluaran modal (CAPEX) dengan memperhitungkan faktor diskonto.
+13. **OPEX (Operational Expenditure)**: Biaya operasional rutin bulanan/tahunan pasca go-live yang dibutuhkan untuk memelihara kestabilan sistem aplikasi dan peladen sentral.
+14. **Payback Period**: Jangka waktu yang dibutuhkan untuk memperoleh kembali seluruh modal investasi awal (CAPEX) berdasarkan akumulasi arus kas manfaat bersih tahunan.
+15. **Pcs (Pieces)**: Satuan hitung dasar unit kuantitas benda tunggal individual eceran terkecil (seperti satu pulpen, satu hekter, atau satu flashdisk).
+16. **PKWT (Perjanjian Kerja Waktu Tertentu)**: Kontrak kerja antara pengusaha dan karyawan untuk hubungan kerja dalam jangka waktu tertentu yang sah berdasar regulasi (karyawan kontrak).
+17. **PKWTT (Perjanjian Kerja Waktu Tidak Tertentu)**: Kontrak hubungan kerja yang bersifat tetap antara pengusaha dan karyawan berdasarkan perundang-undangan tenaga kerja.
+18. **PPOB (Payment Point Online Bank)**: Layanan loket pembayaran tagihan online yang bekerja sama dengan perbankan, seperti pulsa, token listrik PLN, tagihan air, dan internet.
+19. **Retur**: Pengembalian barang retail ATK rusak/salah dari pelanggan atau barang pengadaan dari supplier akibat cacat produksi untuk disinkronkan ke kas dan persediaan.
+20. **Rim**: Satuan jumlah hitung tumpukan ukuran isi untuk produk komoditas kertas berjumlah standar baku 500 lembar utuh per paket kemasan.
+21. **ROI (Return on Investment)**: Rasio persentase tingkat efisiensi pengembalian modal investasi yang ditanamkan pada proyek.
+22. **Smart Payroll**: Modul penggajian perhitungan cerdas otomatis per bulan, menggabungkan variabel tetap target toko, upah performa, persentase profit 25%, batasan UMR dasar, dengan pemotongan sisa kasbon staf.
+23. **Stempel Flash**: Jenis stempel otomatis tanpa bantalan tinta luar, menggunakan karet khusus penyerap tinta warna yang disinari lampu kilat mesin saat proses pembentukannya.
+24. **Stock Opname**: Proses penghitungan fisik persediaan barang/bahan baku di gudang secara langsung untuk dicocokkan dengan catatan stok sistem guna menyesuaikan selisih.
+25. **Uang Muka / DP (Down Payment)**: Pembayaran sebagian dari total harga transaksi yang diserahkan pelanggan di awal sebagai tanda jadi pesanan terdaftar.
+26. **UU PDP (Undang-Undang Pelindungan Data Pribadi)**: Undang-Undang Republik Indonesia Nomor 27 Tahun 2022 yang mengatur mengenai hak perlindungan privasi kontak, kewajiban pengelola CRM, dan sanksi kebocoran identitas.
+27. **Utang Usaha (Accounts Payable)**: Kewajiban keuangan kepada supplier/vendor atas pengadaan bahan baku atau retail ATK dengan skema pembayaran tempo/tertunda.
 
 ---
 
@@ -861,7 +882,7 @@ Berikut adalah daftar 6 berkas referensi resmi fase Planning yang digunakan seca
 |---|---|---|---|
 | 1 | `01_project_charter.md` | `docs/sdlc/01_planning/01_project_charter.md` | Dokumen Project Charter v1.1 — Referensi primer definisi ruang lingkup, modul, dan tim. |
 | 2 | `02_feasibility_study.md` | `docs/sdlc/01_planning/02_feasibility_study.md` | Dokumen Feasibility Study v1.1 — Referensi kelayakan ekonomi (NPV, ROI, BEP), operasional, teknis, dan prasyarat. |
-| 3 | `03_stakeholder_register.md` | `docs/sdlc/01_planning/03_stakeholder_register.md`| Dokumen Stakeholder Register v1.1 — Referensi profil 19 stakeholder, Power/Interest grid, dan hak akses dasar. |
-| 4 | `04_tech_stack_decision.md` | `docs/sdlc/01_planning/04_tech_stack_decision.md` | Dokumen Tech Stack Decision v1.1 — Referensi batasan mandatori Python, MySQL, CLI, library utama, dan keamanan. |
-| 5 | `05_innovation_proposal.md` | `docs/sdlc/01_planning/05_innovation_proposal.md` | Dokumen Innovation Proposal v1.1 — Referensi parameter 42 inovasi (integrated, recommended, new) dan relasi modul. |
-| 6 | `narasi.txt` | `docs/sdlc/narasi.txt` | Narasi Asli Pemilik Usaha AbuCom — Referensi primer operasional, workflow manual divisi, dan mandat inovasi. |
+| 3 | `03_stakeholder_register.md` | `docs/sdlc/01_planning/03_stakeholder_register.md`| Dokumen Stakeholder Register v1.1 — Referensi profil 19 stakeholder, matrik perbandingan, dan hak akses dasar. |
+| 4 | `04_tech_stack_decision.md` | `docs/sdlc/01_planning/04_tech_stack_decision.md` | Dokumen Tech Stack Decision v1.1 — Referensi batasan keamanan arsitektur, lingkungan Dual-OS, dan kriptografi. |
+| 5 | `05_innovation_proposal.md` | `docs/sdlc/01_planning/05_innovation_proposal.md` | Dokumen Innovation Proposal v1.1 — Referensi parameter keseluruhan 42 ide inovasi pengembangan toko ritel/PPOB. |
+| 6 | `narasi.txt` | `docs/sdlc/narasi.txt` | Narasi Asli Pemilik Usaha AbuCom — Referensi primer operasional, workflow manual divisi, dan mandat mutlak pemilik. |
