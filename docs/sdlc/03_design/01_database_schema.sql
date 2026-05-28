@@ -3,8 +3,8 @@
 -- ============================================================
 -- Nama Dokumen: Database Schema (DDL SQL)
 -- Nama Proyek: AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
--- Versi Dokumen: 1.1
--- Tanggal Pembuatan: 2026-05-24
+-- Versi Dokumen: 1.2
+-- Tanggal Pembuatan: 2026-05-29
 -- Penyusun: Senior Database Architect & DDL Validation Expert
 -- Status Dokumen: Final
 -- Deskripsi: File inisialisasi skema basis data fisik MySQL 8.x LTS AbuCom
@@ -18,6 +18,7 @@
 -- ------|------------|-----------------------------------------|---------------------------
 -- 1.0   | 2026-05-24 | Inisialisasi awal 28 tabel, index, seed | Senior Database Architect
 -- 1.1   | 2026-05-24 | Validasi & penyempurnaan menyeluruh     | Senior Database Architect & DDL Validation Expert
+-- 1.2   | 2026-05-29 | Validasi FASE 1-8 (Issue #0074)         | Senior Database Architect & DDL Validation Expert
 -- ============================================================
 
 -- ============================================================
@@ -375,7 +376,7 @@ CREATE TABLE limbah_produksi (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT 'Identifikasi unik log limbah produksi',
     transaksi_id INT NOT NULL COMMENT 'Nota transaksi pemesanan pemicu pengerjaan',
     bahan_baku_id INT NOT NULL COMMENT 'Referensi komponen bahan yang rusak/cacat',
-    kuantitas_limbah DECIMAL(15,4) NOT NULL COMMENT 'Jumlah volume bahan baku yang rusak dibuang',
+    kuantitas_limbah DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Jumlah volume bahan baku yang rusak dibuang',
     alasan_kerusakan TEXT NOT NULL COMMENT 'Keterangan deskripsi penyebab kegagalan cetak',
     kerugian_nominal DECIMAL(15,4) NOT NULL DEFAULT 0.0000 COMMENT 'Nilai rupiah kerugian: qty limbah * harga beli',
     tanggal_pencatatan TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Waktu penginputan laporan oleh operator',
@@ -598,7 +599,7 @@ CREATE TABLE audit_logs (
     CONSTRAINT fk_audit_logs_pengguna_id FOREIGN KEY (pengguna_id) REFERENCES pengguna(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT fk_audit_logs_cabang_id FOREIGN KEY (cabang_id) REFERENCES cabang(id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci 
-  COMMENT='Catatan log kronologis modifikasi data (FK pengguna) | Sensitivitas: Sangat Sensitif | Modul: M.7';
+  COMMENT='Catatan log kronologis modifikasi data (FK pengguna) | Sensitivitas: Sensitif | Modul: M.7';
 
 -- ------------------------------------------------------------
 -- [TABEL 26] backup_logs
@@ -681,7 +682,7 @@ VALUES (1, 'Toko Pusat Bandung', 'Jl. Raya Percetakan No. 45, RT 02/RW 03, Kecam
 
 -- Seed pengguna default (akun pemilik)
 INSERT INTO pengguna (id, nama_lengkap, username, password_hash, role, failed_login_attempts, locked_until, cabang_id) 
-VALUES (1, 'Pemilik Usaha AbuCom', 'pemilik', '$2b$12$K3h8jD8sS9fJ2gK3l8h9oOa8fS8jK9l8g7h6j5k4l3m2n1o0p9q8r', 'pemilik', 0, NULL, 1);
+VALUES (1, 'Pemilik Usaha AbuCom', 'pemilik', '$2b$12$K3h8jD8sS9fJ2gK3l8h9oOa8fS8jK9l8g7h6j5k4l3m2n1o0p9q8r', 'pemilik', 0, NULL, 1); /* Placeholder otentikasi bcrypt untuk seed data */
 
 -- Seed saldo_ppob (2 akun PPOB)
 INSERT INTO saldo_ppob (akun_tipe, saldo_terakhir, cabang_id) 
