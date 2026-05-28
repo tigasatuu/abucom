@@ -1,8 +1,8 @@
 ---
 dokumen    : Data Dictionary
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.1
-tanggal    : 2026-05-24
+versi      : 1.2
+tanggal    : 2026-05-28
 status     : Approved
 penyusun   : Senior Database Architect & Data Modeling Specialist
 ---
@@ -13,6 +13,7 @@ penyusun   : Senior Database Architect & Data Modeling Specialist
 
 | Versi | Tanggal | Perubahan | Oleh |
 |---|---|---|---|
+| 1.2 | 2026-05-28 | Validasi komprehensif (Tahap A-J): penyeragaman FK pengguna_id, domain tipe bank, format no_invoice, kebijakan backup AES-256, catatan implementasi brute force, dan perbaikan konsistensi. | Senior Database Architect & Data Modeling Specialist |
 | 1.1 | 2026-05-24 | Reviu dan revisi v1.1 (Approved). Menambahkan kolom yang terlewat (transaksi.metode_pembayaran, pengguna.nama_lengkap, payroll.metode_bayar_gaji, utang_supplier.tanggal_pelunasan, kasbon.cicilan_per_bulan, barang.harga_beli), penyeragaman foreign key pengguna_id, memisahkan domain status opname, melengkapi parameter system_configs (13 parameter), menambahkan composite/CHECK constraints, serta menyusun panduan seed data awal minimum. | Senior Database Architect & Data Modeling Specialist |
 | 1.0 | 2026-05-24 | Pembuatan dokumen spesifikasi kamus data pertama kali (Data Dictionary v1.0). Mengintegrasikan 21 entitas dasar dari SRS v1.1 dan menurunkan secara logis 7 entitas tambahan/derivasi berdasarkan alur operasional. Melengkapi dengan kamus domain nilai, matriks foreign key, diagram ERD relasional Mermaid, aturan bisnis data, rekomendasi optimasi indeks, dan RTM. | Senior Database Architect & Data Modeling Specialist |
 
@@ -240,6 +241,10 @@ erDiagram
 > **Table-Level Constraints & Checks**:
 > - `failed_login_attempts` CHECK (`failed_login_attempts` BETWEEN 0 AND 5)
 
+> **Catatan Implementasi**:
+> - Kebijakan brute force: Jika `failed_login_attempts` mencapai 5 berturut-turut, sistem otomatis meng-update kolom `locked_until` dengan durasi suspensi 10 menit.
+> - Hashing password pada kolom `password_hash` wajib menggunakan library bcrypt dengan Cost Factor 12.
+
 ---
 
 ### 3.3. Tabel: `pelanggan`
@@ -407,6 +412,9 @@ erDiagram
 > **Table-Level Constraints & Checks**:
 > - `total_bayar` CHECK (`total_bayar` >= 0)
 > - `dp_bayar` CHECK (`dp_bayar` >= 0 AND `dp_bayar` <= `total_bayar`)
+
+> **Catatan Implementasi**:
+> - Format kolom `no_invoice` wajib mengikuti struktur: `INV/YYYYMMDD/XXXX` (contoh: INV/20260528/0001).
 
 ---
 
@@ -871,7 +879,7 @@ erDiagram
 | No | Nama Kolom | Tipe Data MySQL | Constraint | Null? | Default | Deskripsi Bisnis | Domain Nilai |
 |---|---|---|---|:---:|---|---|---|
 | 1 | `id` | INT | PK, AI, NN | NOT NULL | - | Identifikasi unik kredit bank terdaftar. | Auto-generated integer |
-| 2 | `tipe_bank` | VARCHAR(50) | NN | NOT NULL | - | Nama perbankan penyedia plafon kredit usaha. | 'Bank_BRI', 'Bank_Mandiri' |
+| 2 | `tipe_bank` | VARCHAR(50) | NN | NOT NULL | - | Nama perbankan penyedia plafon kredit usaha. | Domain Tipe Bank |
 | 3 | `plafon_nominal` | DECIMAL(15,4) | NN | NOT NULL | 50000000.0000 | Besaran dana nominal cair pinjaman di awal. | Nominal Rupiah > 0 |
 | 4 | `bunga_persen` | DECIMAL(15,4) | NN | NOT NULL | 0.0000 | Suku bunga tetap pertahun (format desimal persen). | Desimal >= 0 (e.g. 0.0600 = 6%) |
 | 5 | `tenor_bulan` | INT | NN | NOT NULL | - | Total masa jangka waktu kredit (tenor) bulan. | Integer > 0 |
@@ -980,8 +988,8 @@ erDiagram
 | 5 | `selisih` | DECIMAL(15,4) | NN | NOT NULL | 0.0000 | Deviasi: kuantitas_fisik - stok_sistem. | Kuantitas desimal (bisa negatif) |
 | 6 | `tanggal_opname` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP | Waktu dilakukannya proses penguncian opname. | Format timestamp |
 | 7 | `catatan_opname` | TEXT | - | NULL | NULL | Catatan alasan selisih stok (e.g. barang rusak). | Free text |
-| 8 | `status_opname` | VARCHAR(20) | NN | NOT NULL | 'DRAFT' | Kedudukan data persetujuan supervisor. | Domain Status Antrian Kerja (Draft/Approved) |
-| 9 | `user_id` | INT | FK → `pengguna.id`, NN | NOT NULL | - | Karyawan pelaksana perhitungan fisik (Gudang). | Referensi `pengguna.id` |
+| 8 | `status_opname` | VARCHAR(20) | NN | NOT NULL | 'DRAFT' | Kedudukan data persetujuan supervisor. | Domain Status Opname |
+| 9 | `pengguna_id` | INT | FK → `pengguna.id`, NN | NOT NULL | - | Karyawan pelaksana perhitungan fisik (Gudang). | Referensi `pengguna.id` |
 | 10 | `supervisor_id` | INT | FK → `pengguna.id` | NULL | NULL | Kepala Percetakan/Pemilik penyetuju penyesuaian. | Referensi `pengguna.id` |
 | 11 | `cabang_id` | INT | FK → `cabang.id`, NN | NOT NULL | 1 | Cabang pelaksana opname gudang bersangkutan. | Referensi `cabang.id` |
 | 12 | `created_at` | TIMESTAMP | NN | NOT NULL | CURRENT_TIMESTAMP | Tanggal & waktu baris data dibuat. | Auto-generated timestamp |
@@ -1116,7 +1124,7 @@ Berikut adalah daftar nilai status terstandarisasi yang diperbolehkan mengisi ko
 - **Sumber Referensi**: SRS-F-009 (BRD v1.1 Bab 7.2)
 
 ### 4.5. Domain Status Antrian Kerja
-- **Nilai Kolom**: `status_antrian` pada tabel `antrian_kerja` and `status_opname` pada `stock_opname`.
+- **Nilai Kolom**: `status_antrian` pada tabel `antrian_kerja`.
 - **Nilai yang Valid**:
   - `'Antri'`: Order kustom baru masuk antrian awal, belum disentuh desainer.
   - `'Proses Desain'`: Layout visual sedang dikerjakan desainer di menu terminal CLI desainer.
@@ -1237,6 +1245,13 @@ Berikut adalah daftar nilai status terstandarisasi yang diperbolehkan mengisi ko
   - `'DRAFT'`: Rekonsiliasi perhitungan stok fisik masih dirancang (stok sistem belum disesuaikan).
   - `'APPROVED'`: Perhitungan disetujui supervisor (stok sistem otomatis disesuaikan secara transaksional).
 - **Sumber Referensi**: SRS-F-011 (BRD v1.1 Bab 7.2)
+
+### 4.20. Domain Tipe Bank
+- **Nilai Kolom**: `tipe_bank` pada tabel `pinjaman_bank`.
+- **Nilai yang Valid**:
+  - `'Bank_BRI'`: Kredit usaha berbunga komersil dari Bank BRI.
+  - `'Bank_Mandiri'`: Kredit usaha berbunga komersil dari Bank Mandiri.
+- **Sumber Referensi**: SRS-F-025 (BRD v1.1 Bab 7.6)
 
 ---
 
@@ -1545,5 +1560,6 @@ Untuk mendukung keberhasilan inisiasi basis data pada Fase 03 Design (`schema.sq
 ### 11.2. Kebijakan Retensi dan Rotasi Data Log Keamanan
 
 Mengingat volume data `audit_logs` akan tumbuh secara linear terhadap kuantitas transaksi kasir LAN:
-1. **Purging Log**: Log audit yang berumur lebih dari **180 hari (6 bulan)** wajib diarsipkan ke file teks eksternal terkompresi di folder `exports/logs/` dan dihapus dari tabel basis data utama demi stabilitas write index.
+1. **Purging Log**: Log audit yang berumur lebih dari **180 hari (6 bulan)** wajib diarsipkan ke file teks eksternal terkompresi di folder `exports/logs/` dan dihapus dari tabel basis data utama demi stabilitas write index. Tanggung jawab rotasi dan backup dilakukan minimum sekali sebulan.
 2. **Imutabilitas**: Perintah `DELETE` atau `UPDATE` secara langsung pada tabel `audit_logs` diblokir total di tingkat DB trigger MySQL (kecuali dipicu oleh fungsi migrasi/purging sistem).
+3. **Standar Keamanan Backup**: File backup DDL dan data (format ZIP) wajib dienkripsi menggunakan AES-256 dan disimpan pada media terpisah dari direktori aplikasi (misal: flashdisk/cloud). Seluruh file ekspor harus menyertakan file verifikasi integritas checksum MD5/SHA256 untuk mendeteksi korupsi data.
