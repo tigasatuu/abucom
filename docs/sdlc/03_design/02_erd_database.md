@@ -1,8 +1,8 @@
 ---
 dokumen    : ERD Database
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.1
-tanggal    : 2026-05-24
+versi      : 1.2
+tanggal    : 2026-05-29
 status     : Final
 penyusun   : Senior Database Architect & Data Modeling Specialist
 ---
@@ -13,6 +13,7 @@ penyusun   : Senior Database Architect & Data Modeling Specialist
 
 | Versi | Tanggal    | Perubahan | Oleh |
 |:---:|---|---|---|
+| **1.2** | 2026-05-29 | Validasi menyeluruh terhadap Database Schema v1.1. Perbaikan total atribut menjadi 284 kolom sesuai DDL SQL fisik, memastikan konsistensi jumlah kolom. Penyusunan ulang format dokumen sesuai arahan Issue #0075. | Senior Database Architect & Data Modeling Specialist |
 | **1.1** | 2026-05-24 | Validasi & perbaikan menyeluruh v1.1. Koreksi statistik model data (Unique=9, CHECK=42), melengkapi matriks FK (audit_logs FKs), menyinkronkan jumlah kolom (stock_opname=13, utang_supplier=11), menyinkronkan incoming FK pengguna=17, serta menambahkan catatan anti-normalisasi (7.6), index komposit (7.7), dan seed data (7.8). | Senior Database Architect & Data Modeling Specialist |
 | **1.0** | 2026-05-24 | Inisialisasi awal penyusunan dokumen ERD (Entity Relationship Diagram) Database AbuCom. Mengintegrasikan seluruh 28 entitas fisik, 58 relasi foreign key, dan diagram modular terkelompok untuk menjamin keselarasan 100% dengan Database Schema DDL SQL v1.1 dan Data Dictionary v1.1. | Senior Database Architect & Data Modeling Specialist |
 
@@ -86,7 +87,7 @@ Visualisasi dalam dokumen ini menggunakan sintaks standar **Mermaid erDiagram** 
 ### 2.1. Statistik Ringkasan
 Berdasarkan visualisasi ERD fisik dan skema DDL SQL v1.1, statistik arsitektur model data AbuCom diuraikan sebagai berikut:
 * **Total Tabel**: 28
-* **Total Kolom/Atribut**: 307
+* **Total Kolom/Atribut**: 284
 * **Total Relasi Foreign Key**: 58
 * **Total Unique Constraint**: 9 (tunggal & composite)
 * **Total CHECK Constraint**: 42
@@ -1087,7 +1088,7 @@ Penyusunan spesifikasi formal ERD Database ini didasarkan pada dokumen referensi
 
 | No | Kode Ref | Nama Dokumen Acuan | Path Berkas Relatif | Kontribusi Konten Terhadap ERD |
 |:---:|---|---|---|---|
-| 1 | **REF-01** | Database Schema SQL v1.1 | `docs/sdlc/03_design/01_database_schema.sql` | **Sumber Kebenaran Tunggal fisik**. Memberikan spesifikasi 28 tabel, 307 nama kolom, tipe data presisi, foreign key, CHECK, UQ, index, dan seed data. |
+| 1 | **REF-01** | Database Schema SQL v1.1 | `docs/sdlc/03_design/01_database_schema.sql` | **Sumber Kebenaran Tunggal fisik**. Memberikan spesifikasi 28 tabel, 284 nama kolom, tipe data presisi, foreign key, CHECK, UQ, index, dan seed data. |
 | 2 | **REF-02** | Data Dictionary v1.1 | `docs/sdlc/02_analysis/05_data_dictionary.md` | Menyediakan kamus domain status, statistik ringkasan, relasi konseptual, dan traceability kebutuhan SRS-F-xxx. |
 | 3 | **REF-03** | Access Control Matrix v1.1 | `docs/sdlc/02_analysis/06_access_control_matrix.md` | Memberikan anotasi tingkat sensitivitas data per tabel (Operasional/Sensitif/Sangat Sensitif) dan visualisasi diagram otorisasi. |
 | 4 | **REF-04** | Software Requirements Specification v1.1 | `docs/sdlc/02_analysis/02_software_requirements.md` | Memvalidasi fungsionalitas CLI per entitas master (SRS-F-001 s.d SRS-F-040). |
