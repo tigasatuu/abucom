@@ -4,8 +4,8 @@ proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
 target     : docs/sdlc/03_design/05_bom_hpp_design.md
 prioritas  : High
 status     : Final
-versi      : v1.1
-dibuat     : 2026-05-25
+versi      : 1.2
+dibuat     : 2026-05-29
 penyusun   : Principal Manufacturing Systems Architect & Certified Cost Accounting Specialist
 ---
 
@@ -15,6 +15,7 @@ penyusun   : Principal Manufacturing Systems Architect & Certified Cost Accounti
 
 | Versi | Tanggal    | Perubahan | Oleh |
 |:---:|---|---|---|
+| **1.2** | 2026-05-29 | Validasi dan pemutakhiran komprehensif berdasarkan checklist Tahap A-F (Issue #0078). Penambahan mitigasi exception division by zero pada formula Gross Profit Margin. Sinkronisasi narasi referensi penarikan data harga beli dari tabel master barang untuk konsistensi dengan pseudocode. | Principal Manufacturing Systems Architect & Certified Cost Accounting Specialist |
 | **1.1** | 2026-05-25 | Validasi, audit mendalam, dan penyempurnaan dokumen. Penyelarasan penuh DDL master barang (kolom `harga_grosir`, `min_grosir`, `harga_mitra`, dll.), penambahan penjelasan InnoDB `FOR UPDATE` locking, klarifikasi persistensi kalkulasi HPP terhadap `detail_transaksi`, penulisan pseudocode pure FP untuk pendaftaran BOM baru dan sinkronisasi ATK internal, penyelarasan `audit_logs` JSON trail, serta pembetulan presisi 4 desimal pada seluruh numerik kalkulasi. | Principal Manufacturing Systems Architect & Certified Cost Accounting Specialist |
 | **1.0** | 2026-05-25 | Inisialisasi awal dokumen spesifikasi dan perancangan teknis untuk modul Bill of Materials (BOM) dan kalkulasi Harga Pokok Penjualan (HPP) berbasis presisi desimal. | Senior Manufacturing Systems Architect & Cost Accounting Specialist |
 
@@ -50,7 +51,7 @@ Dalam pengembangan sistem AbuCom CLI, dokumen ini merupakan deliverable kelima p
                   |
                   v
 +===================================+
-|   BOM & HPP Design v1.1 [DOK]     |  <-- POSISI DOKUMEN INI
+|   BOM & HPP Design v1.2 [DOK]     |  <-- POSISI DOKUMEN INI
 +===================================+
                   |
                   v
@@ -294,6 +295,7 @@ Untuk mengeliminasi deviasi selisih nilai uang akibat bug floating point bawaan 
 Nilai HPP yang akurat digunakan Pemilik untuk menganalisis persentase margin keuntungan kotor per produk (SRS-F-005):
 $$\text{Margin Keuntungan Kotor } (\%) = \left( \frac{\text{Harga Jual} - \text{HPP}}{\text{Harga Jual}} \right) \times 100$$
 Di mana $\text{Harga Jual}$ adalah tarif komersial (retail/grosir/mitra) yang dibayarkan pelanggan di kasir.
+**Mitigasi Error**: Jika $\text{Harga Jual} = 0$, maka $\text{Margin} = 0.00\%$ secara eksplisit ditetapkan untuk menghindari pengecualian pembagian dengan nol (*Division by Zero Exception*).
 
 ---
 
@@ -346,7 +348,8 @@ flowchart TD
     6.  Sistem mencatatkan log manipulasi data ke tabel `audit_logs`.
 
 ### 5.3. Alur 2 — Kalkulasi HPP saat Antrian Selesai (Trigger Utama)
-Kalkulasi HPP tidak dipicu saat kasir mencetak nota di awal, melainkan dipicu secara otomatis oleh sistem saat staf mengubah status antrian kerja kustom menjadi `'Selesai'`.
+Kalkulasi HPP tidak dipicu saat kasir mencetak nota di awal, melainkan dipicu secara otomatis oleh sistem saat staf mengubah status antrian kerja kustom menjadi `'Selesai'`. 
+Dalam proses ini, sistem menarik data `harga_beli` terkini dari master data tabel `barang` untuk memastikan HPP dihitung menggunakan modal historis pengadaan terakhir.
 
 #### Sequence Diagram Kalkulasi HPP & Pemotongan Stok
 ```mermaid
