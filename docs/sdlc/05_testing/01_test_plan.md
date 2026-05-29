@@ -1,8 +1,8 @@
 ---
 dokumen    : Test Plan
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.1
-tanggal    : 2026-05-26
+versi      : 1.2
+tanggal    : 2026-05-29
 status     : Reviewed
 penyusun   : Senior QA Lead & Test Strategy Architect
 ---
@@ -15,6 +15,7 @@ penyusun   : Senior QA Lead & Test Strategy Architect
 |:---:|---|---|---|
 | **1.0** | 2026-05-26 | Inisialisasi awal pembuatan dan penyusunan dokumen Test Plan secara komprehensif. Menyerap seluruh data referensi R-01 s.d R-18, mendefinisikan strategi pengujian, skenario boundary presisi desimal, kegagalan LAN, otorisasi RBAC, pengujian rendering CLI, lingkungan uji, dan menyusun matriks ketertelusuran lengkap. | Senior QA Lead & Test Strategy Architect |
 | **1.1** | 2026-05-26 | Hasil validasi, analisis, dan penyempurnaan komprehensif (v1.1). Mengatasi placeholder `[DATA BELUM TERSEDIA]`, menyinkronkan total 44 skenario uji terhadap 44 Use Case, memperjelas langkah pengujian keamanan (Bcrypt Cost 12, JWT 8 jam, rate limiting 5x salah, audit JSON, Fernet CRM, AES-256 backup, UU PDP), merinci kalkulasi boundary desimal HPP BOM dan Smart Payroll dengan angka konkret, melengkapi glosarium akronim Bab 1.6, memperluas kriteria sign-off UAT menjadi 7 kriteria terukur, dan melengkapi pustaka referensi Bab 15. | Senior QA Architect & SDLC Documentation Specialist |
+| **1.2** | 2026-05-29 | Hasil validasi, analisis, dan penyempurnaan komprehensif (v1.2). Menyesuaikan path absolut menjadi path relatif di Bab 1.4, menambahkan glosarium alat pengujian (venv, pytest, coverage.py, seed.sql, schema.sql), memperbarui tanggal sign-off UAT, dan memastikan konsistensi format. | Senior QA Architect & SDLC Documentation Specialist |
 
 ---
 
@@ -57,11 +58,11 @@ Dalam siklus pengembangan perangkat lunak (SDLC) AbuCom, dokumen Test Plan ini b
 
 ### 1.4. Hubungan dengan Dokumen SDLC Lainnya
 *   **Dokumen Input (Basis Pengujian):**
-    *   [SRS v1.1](file:///c:/Users/donsise/Documents/abucom/docs/sdlc/02_analysis/02_software_requirements.md): Sumber formal kebutuhan fungsional (SRS-F-001 s.d SRS-F-040) dan non-fungsional (SRS-NF-001 s.d SRS-NF-011).
-    *   [ACM v1.1](file:///c:/Users/donsise/Documents/abucom/docs/sdlc/02_analysis/06_access_control_matrix.md): Definisi 8 peran internal dan matriks otorisasi menu/tabel CRUD.
-    *   [Security Design v1.1](file:///c:/Users/donsise/Documents/abucom/docs/sdlc/03_design/06_security_design.md): Spesifikasi bcrypt, JWT 8 jam, rate limiting 5 kali, UU PDP, sanitasi CLI, audit logs JSON, dan SOP insiden.
-    *   [BOM & HPP Design v1.1](file:///c:/Users/donsise/Documents/abucom/docs/sdlc/03_design/05_bom_hpp_design.md): Spesifikasi matematika presisi desimal `Decimal(15,4)`, pembulatan `ROUND_HALF_UP`, InnoDB row locking `FOR UPDATE`, limbah, dan sinkronisasi ATK.
-    *   [CLI Interaction Flow v1.1](file:///c:/Users/donsise/Documents/abucom/docs/sdlc/03_design/04_cli_interaction_flow.md): Alur navigasi terminal, ANSI formatting (`rich` & `tabulate`), thermal print wrapping, dan visual error `ERR-XXX-YYY`.
+    *   [SRS v1.1](docs/sdlc/02_analysis/02_software_requirements.md): Sumber formal kebutuhan fungsional (SRS-F-001 s.d SRS-F-040) dan non-fungsional (SRS-NF-001 s.d SRS-NF-011).
+    *   [ACM v1.1](docs/sdlc/02_analysis/06_access_control_matrix.md): Definisi 8 peran internal dan matriks otorisasi menu/tabel CRUD.
+    *   [Security Design v1.1](docs/sdlc/03_design/06_security_design.md): Spesifikasi bcrypt, JWT 8 jam, rate limiting 5 kali, UU PDP, sanitasi CLI, audit logs JSON, dan SOP insiden.
+    *   [BOM & HPP Design v1.1](docs/sdlc/03_design/05_bom_hpp_design.md): Spesifikasi matematika presisi desimal `Decimal(15,4)`, pembulatan `ROUND_HALF_UP`, InnoDB row locking `FOR UPDATE`, limbah, dan sinkronisasi ATK.
+    *   [CLI Interaction Flow v1.1](docs/sdlc/03_design/04_cli_interaction_flow.md): Alur navigasi terminal, ANSI formatting (`rich` & `tabulate`), thermal print wrapping, dan visual error `ERR-XXX-YYY`.
 *   **Dokumen Output (Penerima Manfaat):**
     *   **Test Cases & Test Scripts:** Acuan utama pembuatan berkas kasus uji terperinci.
     *   **Test Report:** Basis evaluasi penentuan status peluncuran (*go-live decision*).
@@ -94,6 +95,11 @@ Dalam siklus pengembangan perangkat lunak (SDLC) AbuCom, dokumen Test Plan ini b
 *   **SDLC** (*Software Development Life Cycle*): Siklus hidup pengembangan perangkat lunak.
 *   **IEEE** (*Institute of Electrical and Electronics Engineers*): Organisasi standar teknis dunia.
 *   **ISTQB** (*International Software Testing Qualifications Board*): Organisasi standardisasi pengujian software.
+*   **venv** (*Virtual Environment*): Lingkungan Python terisolasi.
+*   **pytest**: Framework pengujian unit Python.
+*   **coverage.py**: Alat ukur code coverage Python.
+*   **seed.sql**: Skrip data awal database.
+*   **schema.sql**: Skrip struktur tabel database.
 
 ### 1.7. Referensi Dokumen SDLC
 Daftar berkas referensi utama tercantum secara komprehensif pada **Bab 15** dokumen ini.
@@ -845,7 +851,7 @@ UAT dinyatakan sah dan disetujui untuk peluncuran sistem (*go-live*) jika seluru
 [ ] Kriteria 7: Ekspor backup database format ZIP terenkripsi AES-256 terbukti menolak pembongkaran ilegal.
 
 Dibuat di  : Bandung, Jawa Barat
-Pada tanggal: 26 Mei 2026
+Pada tanggal: 29 Mei 2026
 
 Pihak Penyetuju,
 
