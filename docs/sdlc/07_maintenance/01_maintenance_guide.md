@@ -1,8 +1,8 @@
 ---
 dokumen    : Maintenance Guide
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.1
-tanggal    : 2026-05-27
+versi      : 1.2
+tanggal    : 2026-05-30
 status     : Revised
 penyusun   : Senior IT Service Manager & Maintenance Operations Architect
 ---
@@ -325,7 +325,7 @@ Operasional normal program mengikat pustaka package manager berikut pada berkas 
     ```
 2.  Pastikan tercetak status log sukses:
     `[SUCCESS] Backup basis data sukses dibuat: backup_YYYYMMDD_210000.zip`
-3.  Jika tertulis status `[ERROR]`, segera jalankan Prosedur Tanggap Darurat Kegagalan Backup (Bab 13).
+3.  Jika tertulis status `[eror]`, segera jalankan Prosedur Tanggap Darurat Kegagalan Backup (Bab 13).
 
 ### 4.5. SOP Pemantauan Dashboard Anomali Pemilik
 1.  Pemilik Usaha (Alfatih) wajib memeriksa panel keamanan saat login harian sebagai `pemilik`.
@@ -612,7 +612,7 @@ Jika terjadi kendala sistem di laci kasir saat Go-Live, staf toko wajib melapork
 *   **Severity Levels (Dampak Teknis)**:
     *   `S1 (Blocker)`: Crash total sistem, data loss, database corruption, atau login ditolak biner untuk seluruh user.
     *   `S2 (Critical)`: Modul inti (M.1 Kasir / M.2 Persediaan) mati, atau enkripsi Fernet/bcrypt bypass.
-    *   `S3 (Major)`: Kerusakan fungsi pelaporan margin, PPOB alert, atau payroll error.
+    *   `S3 (Major)`: Kerusakan fungsi pelaporan margin, PPOB alert, atau payroll eror.
     *   `S4 (Minor)`: Glitch mojibake Visual CLI (`DEF-COMPAT-001`), layout tergeser, atau delay notifikasi WhatsApp.
     *   `S5 (Trivial)`: Ejaan kata typo pada menu teks.
 *   **Priority Levels (Urgensi Bisnis)**:
@@ -735,6 +735,12 @@ flowchart TD
 *   **Upgrade Linux Debian (Server)**:
     -   Backup seluruh folder `/var/lib/mysql-backups/` dan salinan konfig `/etc/mysql/`.
     -   Picu upgrade Debian menggunakan CD/DVD repositori luring lokal.
+*   **Upgrade MySQL 8.4 LTS Offline**:
+    -   Unduh paket `.deb` bundle MySQL 8.4 LTS dari mesin berinternet, salin ke USB flashdisk.
+    -   Hentikan service: `sudo systemctl stop mysql`.
+    -   Jalankan instalasi lokal: `sudo dpkg -i mysql-*.deb`.
+    -   Jalankan utilitas upgrade basis data: `sudo mysql_upgrade -u root -p`.
+    -   Mulai ulang service: `sudo systemctl start mysql`.
 *   **Upgrade Windows (Klien Kasir)**:
     -   Matikan windows update otomatis eksternal (karena luring). Upgrade minor disalurkan luring via media installer internal resmi Microsoft.
 
@@ -789,11 +795,10 @@ if [ -f "$ENV_FILE" ]; then
     ZIP_PASSWORD=$(grep -E "^BACKUP_ZIP_PASSWORD=" "$ENV_FILE" | cut -d'=' -f2- | tr -d '"' | tr -d "'")
 fi
 
-# [PERINGATAN KEAMANAN] Fallback jika berkas .env tidak ditemukan atau variabel kosong
+# [PERINGATAN KEAMANAN] Skrip dihentikan jika berkas .env tidak ditemukan atau variabel kosong (NO HARDCODING)
 if [ -z "$ZIP_PASSWORD" ]; then
-    # Sandi fallback jika terpaksa
-    ZIP_PASSWORD="AbuCom_SecureBackupZip_Pass_2026_X9z!"
-    echo "[$(date)] [WARNING] BACKUP_ZIP_PASSWORD tidak ditemukan di .env, menggunakan sandi fallback!" >> /var/log/abucom_backup.log
+    echo "[$(date)] [ERROR] BACKUP_ZIP_PASSWORD tidak ditemukan di .env! Eksekusi dibatalkan." >> /var/log/abucom_backup.log
+    exit 1
 fi
 
 # 3. Eksekusi mysqldump aman menggunakan berkas opsi (TANPA password plaintext ter-hardcode)
@@ -908,13 +913,13 @@ Sistem AbuCom memetakan insiden ke dalam 5 tipe insiden keamanan/operasional kri
 2.  **Selisih Kas Berulang**: Log `shift_handover` mencatatkan status `'ANOMALI'` (selisih kas > Rp 10.000) berturut-turut selama 3 shift kasir terakhir.
 3.  **Mati Listrik (UPS Alarm)**: Sirkuit catu listrik PLN padam mendadak sehingga alarm baterai cadangan UPS 1 dan 2 berbunyi beep berkala.
 4.  **Kegagalan Backup**: Log `backup_logs` merekam status `'FAILED'` berturut-turut selama 2 hari operasional harian.
-5.  **Ketidakcocokan Checksum Cadangan**: Berkas ZIP backup manual menolak di-dekripsi atau hasil restorasi database sandbox testing menunjukkan error integritas relasional database.
+5.  **Ketidakcocokan Checksum Cadangan**: Berkas ZIP backup manual menolak di-dekripsi atau hasil restorasi database sandbox testing menunjukkan eror integritas relasional database.
 
 ### 13.2. Matriks Eskalasi Insiden (Level 1, 2, 3)
 
 | Level Eskalasi | Aktor Penanggung Jawab | Deskripsi Batasan Tindakan | Waktu Respon Maksimum |
 |---|---|---|---|
-| **Level 1 (Staf Kasir)** | Kasir / Pramuniaga | Melayani transaksi, melaporkan error visual CLI, dan mencatat manual kertas nota. | &le; 10 Menit |
+| **Level 1 (Staf Kasir)** | Kasir / Pramuniaga | Melayani transaksi, melaporkan eror visual CLI, dan mencatat manual kertas nota. | &le; 10 Menit |
 | **Level 2 (Supervisor)** | Kepala Percetakan | Melakukan opname fisik, approval anomali selisih kas kasir, absensi, dan restart PC klien. | &le; 30 Menit |
 | **Level 3 (IT Administrator)** | Pemilik Usaha / DevOps AI | Rotasi kunci rahasia, restore database, ganti hardware server, dan ufw rules. | &le; 2 Jam |
 
@@ -949,6 +954,16 @@ Jika kendala teknis tidak dapat ditangani mandiri oleh pemilik toko:
 *   **DevOps Technical Support Line**: `[DATA: DIISI OLEH PEMILIK USAHA — Alfatih]`
 *   **Email Dukungan Resmi**: `[DATA: DIISI OLEH PEMILIK USAHA — Alfatih]`
 *   **Waktu Layanan Tanggap Darurat**: Setiap hari operasional toko pukul 08:00 s.d 21:30 WIB.
+
+### 13.7.1. Prosedur Pengisian Kontak Darurat
+Pemilik Usaha (Alfatih) wajib segera mengisi placeholder kontak darurat di atas menggunakan prosedur berikut selambat-lambatnya 1 (satu) hari kerja sebelum fase Go-Live:
+1. Buka file dokumen `01_maintenance_guide.md` ini menggunakan editor teks.
+2. Cari baris `[DATA: DIISI OLEH PEMILIK USAHA — Alfatih]`.
+3. Ganti teks tersebut dengan data kontak aktual yang dapat dihubungi. Contoh format pengisian:
+   *   **DevOps Technical Support Line**: `0812-3456-7890 (WhatsApp/Telepon)`
+   *   **Email Dukungan Resmi**: `alfatih.support@abucom.id`
+4. Simpan perubahan dokumen. Jangan isi dengan data palsu karena ini digunakan pada saat kondisi krisis.
+
 
 ### 13.8. Diagram Alur Eskalasi Insiden (Mermaid Flowchart)
 
@@ -1032,7 +1047,7 @@ Jika terdeteksi selisih kas kasir berulang atau jumlah retur abnormal pada salah
     USE abucom_db;
     CHECK TABLE transaksi, detail_transaksi, barang, pengguna, audit_logs;
     ```
-2.  Jika salah satu tabel menunjukkan status `Corrupt` atau `Error`, picu kueri perbaikan InnoDB:
+2.  Jika salah satu tabel menunjukkan status `Corrupt` atau `eror`, picu kueri perbaikan InnoDB:
     ```sql
     -- [LINUX DEBIAN 12 — Server] — MySQL Console
     REPAIR TABLE transaksi;
@@ -1180,7 +1195,7 @@ Jika printer thermal nota kasir rusak fisik atau terbakar:
     *   Lakukan aktivitas serah terima shift kasir secara tertib di akhir shift kerja harian staf.
 
 ### 17.4. Masalah Backup Gagal (ERR-FILE-001 / ERR-FILE-039)
-*   **Gejala**: Berkas log harian server `/var/log/abucom_backup.log` merekam status `[ERROR] Eksekusi mysqldump gagal!`.
+*   **Gejala**: Berkas log harian server `/var/log/abucom_backup.log` merekam status `[eror] Eksekusi mysqldump gagal!`.
 *   **Kemungkinan Penyebab**:
     1.  Berkas opsi keamanan `/root/.my.cnf` terhapus atau kata sandi root MySQL di dalamnya salah.
     2.  Ruang kapasitas penyimpanan SSD server Debian penuh (Disk Space 100%).
@@ -1191,7 +1206,7 @@ Jika printer thermal nota kasir rusak fisik atau terbakar:
         ls -l /root/.my.cnf
         ```
         Pastikan owner `root:root` dan permission `600`.
-    2.  Uji kueri command mysqldump manual sebagai root untuk menelisik detail log eror.
+    2.  Uji kueri command mysqldump manual sebagai root untuk menelisik detail log error.
     3.  Hapus ZIP backup berumur > 30 hari di server untuk melonggarkan disk SSD.
 *   **Pencegahan**:
     *   Pantau disk space server secara berkala setiap bulan (df -h).
@@ -1300,7 +1315,7 @@ Aktivitas pemeliharaan sistem dual-OS luring toko percetakan AbuCom dihadapkan p
 6.  **Resistensi Kasir**: Staf kasir menolak atau kesulitan navigasi CLI keyboard-friendly, memperlambat antrian konter.
 7.  **Data Loss Saat Recovery**: File ZIP backup terenkripsi korup atau sandi unzip lupa saat disaster recovery server baru.
 8.  **Internal Fraud Laci Kas**: Staf kasir memanipulasi row pembatalan DP secara sepihak untuk pencurian uang kas fisik.
-9.  **Decimal Rounding Error**: Selisih perhitungan desimal stok bahan baku BOM akibat runtime Python logic bug.
+9.  **Decimal Rounding eror**: Selisih perhitungan desimal stok bahan baku BOM akibat runtime Python logic bug.
 10. **Supplier Credit Default**: Jatuh tempo utang supplier terlewat akibat kegagalan notifikasi alert H-3 M.6.
 
 ### 18.2. Tabel Matriks Risiko
