@@ -1,10 +1,10 @@
 ---
 dokumen    : Git Workflow
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.1
-tanggal    : 2026-05-26
+versi      : 1.2
+tanggal    : 2026-05-29
 status     : Approved
-penyusun   : Principal DevOps Engineer & Technical Documentation Architect
+penyusun   : Principal DevOps Architect & Technical Documentation Auditor
 ---
 
 # Git Workflow — AbuCom
@@ -13,6 +13,7 @@ penyusun   : Principal DevOps Engineer & Technical Documentation Architect
 
 | Versi | Tanggal | Perubahan | Oleh |
 |:---:|:---:|:---|:---|
+| **1.2** | 2026-05-29 | Validasi komprehensif berdasarkan Issue #0083 (T1-T10): Menambahkan prosedur initial commit, konfigurasi remote origin ke IP statis 192.168.1.200, penambahan enkripsi AES-256 pada file backup bundle, penyesuaian 16 scope commit, penambahan step notifikasi pada alur hotfix, perlindungan folder handover di .gitignore, serta penyempurnaan struktur dan diksi bahasa Indonesia. | Principal DevOps Architect & Technical Documentation Auditor |
 | **1.1** | 2026-05-26 | Validasi komprehensif v1.1: Menyelesaikan seluruh temuan gap dari R-01 s.d R-07, mengintegrasikan 10 larangan mutlak R-01 Bab 16 ke Bab 14, menyempurnakan alur branching modul M.3, menetapkan konvensi commit layer logic/cli dan berkas docs SDLC, menambahkan perintah Git eksak pada setiap langkah alur kerja, mendefinisikan skema manual merge conflict, prosedur eskalasi AI, format laporan review Gemini 3 Flash, instruksi instalasi offline git-filter-repo, rotasi backup USB, email Junior Programmer baku, serta template handover_notes.txt dan lokasi penyimpanannya. | Principal DevOps Engineer & Technical Documentation Architect |
 | **1.0** | 2026-05-26 | Inisialisasi awal penyusunan dokumen *Git Workflow* secara komprehensif. Menyelaraskan seluruh spesifikasi versi 1.1 dari Coding Standard, Environment Setup, Module Structure, Tech Stack Decision, System Architecture, Security Design, dan Narasi Pemilik. Mendefinisikan strategi feature branching, konvensi commit message, merge policy, code review quality gate, tagging, versioning, keamanan file sensitif, backup lokal, kolaborasi tim campuran (staf manusia + 6 AI), quick reference commands, dan checklist kepatuhan. | Senior DevOps Engineer & Git Workflow Architect |
 
@@ -28,7 +29,7 @@ Dokumen **Git Workflow** ini disusun untuk mendefinisikan secara formal, rinci, 
 ### 1.2. Cakupan Dokumen
 Cakupan aturan dalam dokumen Git Workflow ini meliputi:
 *   Prinsip dasar pengelolaan version control lokal offline LAN.
-*   Konfigurasi Git awal (Instalasi, Identity, Global Setting, .gitignore, dan .gitattributes).
+*   Konfigurasi Git awal (Instalasi, Identity, Global Setting, Remote Server, .gitignore, dan .gitattributes).
 *   Strategi branching (Feature Branching Model, diagram Mermaid, konvensi penamaan branch, dan proteksi branch).
 *   Konvensi commit (Conventional Commits, tipe, scope valid berbasis modul, deskripsi imperative, dan contoh commit Benar vs Salah).
 *   Alur kerja pengembangan (flowchart Mermaid, alur kerja feature/bugfix/hotfix/docs).
@@ -40,6 +41,8 @@ Cakupan aturan dalam dokumen Git Workflow ini meliputi:
 *   Panduan Git khusus untuk tim campuran (Junior Programmer + 6 Model AI).
 *   Perintah Git yang sering digunakan (Quick Reference).
 *   Checklist kepatuhan pre-merge.
+
+**Di Luar Cakupan (Out-of-scope)**: Dokumen ini tidak mengatur detail teknis penulisan kode sumber (diatur di *Coding Standard*), spesifikasi infrastruktur server fisik (diatur di *System Architecture*), atau pedoman fungsional aplikasi (diatur di berkas *Software Requirements*).
 
 ### 1.3. Posisi Dokumen dalam Siklus SDLC
 Dalam siklus pengembangan sistem (*System Development Life Cycle* — SDLC) AbuCom, dokumen ini merupakan deliverable keempat pada **Fase 04 — Implementation (Fase Konstruksi)**. Dokumen ini bertindak sebagai panduan operasional wajib guna mematangkan cara pengelolaan kode program yang dihasilkan pada Fase 04 ini.
@@ -77,7 +80,7 @@ Dalam siklus pengembangan sistem (*System Development Life Cycle* — SDLC) AbuC
 
 ### 1.4. Hubungan dengan Dokumen SDLC Lainnya (Input & Output)
 *   **Dokumen Input (Acuan)**:
-    - [Coding Standard v1.1](docs/sdlc/04_implementation/01_coding_standard.md): Acuan Bab 15 (Version Control Git), Bab 17 (Checklist Kepatuhan), standardisasi desimal `decimal.Decimal` dan FP murni.
+    - [Coding Standard v1.2](docs/sdlc/04_implementation/01_coding_standard.md): Acuan Bab 15 (Version Control Git), Bab 17 (Checklist Kepatuhan), standardisasi desimal `decimal.Decimal` dan FP murni.
     - [Environment Setup v1.1](docs/sdlc/04_implementation/02_environment_setup.md): Acuan Bab 9 (Setup Git lokal), Bab 8.5 (Setup .gitignore), credentials setup (.env.example).
     - [Module Structure v1.1](docs/sdlc/04_implementation/03_module_structure.md): Acuan Bab 2.3 (10 modul fungsional), Bab 3.1 (ASCII direktori pohon proyek), Bab 13 (Module-to-File mapping) untuk penentuan scope commit.
     - [Tech Stack Decision v1.1](docs/sdlc/01_planning/04_tech_stack_decision.md): SSoT untuk platform runtime, locked library version, dan dual-OS portabilitas.
@@ -123,7 +126,7 @@ Setiap perubahan baris kode wajib tercatat dengan jelas siapa pembuatnya (AI man
 
 ### 2.2. Aturan Umum Penggunaan Git
 1.  `[WAJIB]` Seluruh pengerjaan kode program (fungsional, utilitas, CLI, middleware, konfigurasi, test suite) wajib dilacak menggunakan repositori Git lokal.
-2.  `[DILARANG]` Melakukan push langsung atau mengedit secara instan kode program di branch utama `main`.
+2.  `[DILARANG KERAS]` Melakukan push langsung atau mengedit secara instan kode program di branch utama `main`.
 3.  `[WAJIB]` Setiap tugas pengembangan wajib dikerjakan pada branch terpisah (*Feature Branch*) sebelum digabungkan melalui proses *code review* formal.
 4.  `[WAJIB]` Seluruh pesan commit wajib mematuhi standar *Conventional Commits* menggunakan bahasa Indonesia profesional.
 
@@ -178,14 +181,23 @@ Untuk mencegah anomali sintaksis akibat perbedaan line ending sistem operasi dua
     Jalankan perintah berikut untuk menyetel editor default konsol Git:
     `git config --global core.editor nano`
 
-### 3.4. Inisialisasi Repository Lokal
+### 3.4. Konfigurasi Remote Server LAN (Origin)
+Mengingat AbuCom beroperasi secara lokal (*offline LAN*), repositori pusat berada di Mini PC Server Debian. Klien Kasir (Windows 11) `[WAJIB]` menghubungkan repositori lokalnya ke server:
+```cmd
+git remote add origin abucom_app@192.168.1.200:/var/git/abucom.git
+```
+*(Catatan: IP `192.168.1.200` merupakan IP statis server sesuai penetapan di Dokumen System Architecture).*
+
+### 3.5. Inisialisasi Repository Lokal dan Baseline
 Buka Windows Terminal (CMD/Bash) di PC Kasir, masuk ke folder proyek dan inisialisasi repositori Git:
 ```cmd
 cd C:\Users\donsise\Documents\abucom
 git init
+git add .gitignore requirements.txt .env.example main.py
+git commit -m "chore: initial commit, setup environment baseline"
 ```
 
-### 3.5. Konfigurasi File .gitignore (Lengkap)
+### 3.6. Konfigurasi File .gitignore (Lengkap)
 Buat file `.gitignore` pada root direktori proyek `C:\Users\donsise\Documents\abucom\.gitignore` (gabungan R-01 Bab 15.4 & R-02 Bab 8.5) untuk mencegah kebocoran credentials atau berkas sampah ter-track:
 ```
 # ==============================================================================
@@ -208,13 +220,15 @@ venv/
 ENV/
 pip_wheels/
 
-# 3. Hasil Backup, Desain & Struk Kasir Lokal (DILARANG TRACK BULK FILES)
+# 3. Hasil Backup, Desain, Struk Kasir Lokal & Handover Notes
 exports/backups/*
 exports/designs/*
 exports/receipts/*
+exports/handover/*
 !exports/backups/.gitkeep
 !exports/designs/.gitkeep
 !exports/receipts/.gitkeep
+!exports/handover/.gitkeep
 
 # 4. Berkas Temporary Sistem Operasi & IDE
 Thumbs.db
@@ -226,7 +240,7 @@ Desktop.ini
 *.bak
 ```
 
-### 3.6. Konfigurasi File .gitattributes (Line Ending Cross-OS)
+### 3.7. Konfigurasi File .gitattributes (Line Ending Cross-OS)
 Buat file `.gitattributes` pada root direktori proyek `C:\Users\donsise\Documents\abucom\.gitattributes` untuk memaksa penanganan line ending yang konsisten lintas platform Dual-OS secara kaku:
 ```
 # ==============================================================================
@@ -246,7 +260,7 @@ Buat file `.gitattributes` pada root direktori proyek `C:\Users\donsise\Document
 *.bat text eol=crlf
 *.cmd text eol=crlf
 ```
-> ⚠️ **[INSTRUKSI OPERASIONAL VERIFIKASI]**: Berkas `.gitattributes` di atas belum tercantum pada berkas rancangan SDLC awal manapun. Pengembang `[WAJIB]` menuangkan berkas ini di root proyek untuk memproteksi integritas visual terminal rich.
+> ⚠️ **[INSTRUKSI OPERASIONAL VERIFIKASI]**: Pengembang `[WAJIB]` menuangkan berkas ini di root proyek untuk memproteksi integritas visual terminal rich.
 > Untuk memverifikasi bahwa `.gitattributes` sudah bekerja memaksa penanganan LF secara presisi, jalankan perintah pengujian visual berikut di terminal:
 > ```bash
 > git check-attr eol -- logic/transaksi.py
@@ -302,7 +316,7 @@ gitGraph
 | **`bugfix/<deskripsi-bug>`** | Perbaikan kesalahan atau celah logika yang ditemukan pada lingkungan development. | `STK-011` (Gemini Flash) / Developer terkait | Penggabungan normal setelah unit testing perbaikan dinyatakan sukses. |
 | **`hotfix/<deskripsi-hotfix>`**| Perbaikan darurat atas anomali data di lingkungan produksi yang menghambat operasional toko. | `STK-000` atau Coder Keamanan (`STK-013`) | Penggabungan cepat setelah diverifikasi mandiri oleh pemilik. |
 | **`docs/<nama-dokumen>`** | Penyusunan draf atau revisi dokumen SDLC di subfolder `docs/`. | `STK-010` (Gemini Pro Low) | Penggabungan langsung setelah disetujui format bahasanya oleh pemilik. |
-| **`refactor/<deskripsi>`** | Restrukturisasi struktur logic/ atau db/ tanpa merubah output fungsi bisnis. | `STK-012` (Claude Sonnet) | `[WAJIB]` lolos 100% regression testing logic. |
+| **`refactor/<deskripsi>`** | Restrukturisasi struktur `logic/` atau `db/` tanpa merubah output fungsi bisnis. | `STK-012` (Claude Sonnet) | `[WAJIB]` lolos 100% regression testing logic. |
 | **`chore/<deskripsi>`** | Pemeliharaan berkas konfigurasi, ignore list, requirements.txt, or seed.sql. | `STK-014` (GPT-OSS) / Developer terkait | Penggabungan normal. |
 
 ### 4.4. Konvensi Penamaan Branch
@@ -327,7 +341,7 @@ gitGraph
 >     ```
 
 ### 4.5. Aturan Proteksi Branch (Branch Protection Rules)
-1.  `[DILARANG]` Melakukan modifikasi langsung, commit mentah, or force-push (`git push --force`) pada branch `main`.
+1.  `[DILARANG KERAS]` Melakukan modifikasi langsung, commit mentah, atau force-push (`git push --force`) pada branch `main`.
 2.  `[WAJIB]` Setiap proses penggabungan branch fitur ke `main` wajib berstatus bebas konflik (*conflict-free*).
 3.  `[WAJIB]` Setiap merge ke `main` wajib dilampiri review persetujuan dari Gemini 3 Flash (`STK-011`) dan ditandatangani manual oleh pemilik (`STK-000`).
 
@@ -358,7 +372,7 @@ Setiap pesan commit wajib ditulis terstruktur menggunakan format **Conventional 
 |:---:|:---|:---|
 | **`feat`** | Penambahan fungsionalitas bisnis baru. | `feat(transaksi): tambah kalkulasi harga grosir M1` |
 | **`fix`** | Perbaikan bug, kesalahan logika, or celah keamanan. | `fix(sdm): koreksi sisa kasbon potong payroll M4` |
-| **`docs`** | Pembaruan draf dokumen SDLC or inline docstrings Python.| `docs(sdlc): susun spesifikasi git workflow v1.1` |
+| **`docs`** | Pembaruan draf dokumen SDLC or inline docstrings Python.| `docs(sdlc): susun spesifikasi git workflow v1.2` |
 | **`chore`** | Pemeliharaan config, .gitignore, dependencies, DDL. | `chore(config): tambah dependensi cryptography di requirements` |
 | **`test`** | Pembuatan or perbaikan unit/integration tests suite. | `test(inventaris): tambah unit test logic bom hpp` |
 | **`refactor`**| Restrukturisasi kode tanpa merubah logika luar. | `refactor(db): optimasi connection pool factory db_connector` |
@@ -369,8 +383,9 @@ Setiap pesan commit wajib ditulis terstruktur menggunakan format **Conventional 
 | **`build`** | Perubahan sistem build, setup wheels offline. | `build: setup local deb package installer` |
 
 ### 5.3. Aturan Scope Commit
-Scope commit mendefinisikan bagian modul logis mana yang dimodifikasi. Pengembang `[WAJIB]` menggunakan salah satu dari 14 scope resmi berikut (sesuai Module Structure R-03):
-`transaksi`, `inventaris`, `ppob`, `sdm`, `antrian`, `keuangan`, `keamanan`, `crm`, `cabang`, `config`, `db`, `cli`, `middleware`, `utils`.
+Scope commit mendefinisikan bagian modul logis atau direktori layer mana yang dimodifikasi. Pengembang `[WAJIB]` menggunakan salah satu dari **16 scope resmi** berikut (sesuai Module Structure R-03 dan kebutuhan ekosistem):
+
+`transaksi`, `inventaris`, `ppob`, `sdm`, `antrian`, `keuangan`, `keamanan`, `crm`, `cabang`, `config`, `db`, `cli`, `middleware`, `utils`, `logic`, `sdlc`.
 
 ### 5.4. Aturan Deskripsi Commit
 *   Menggunakan huruf kecil di awal deskripsi (kecuali nama singkatan standard).
@@ -379,7 +394,7 @@ Scope commit mendefinisikan bagian modul logis mana yang dimodifikasi. Pengemban
 
 ### 5.5. Aturan Body dan Footer Commit (Opsional)
 *   **Body**: Menjelaskan konteks "mengapa" perubahan dilakukan dan "bagaimana" cara kerjanya jika kompleks.
-*   **Footer**: Merekam pemutusan breaking changes (`BREAKING CHANGE:`) or referensi issue terkait (misal: `Resolves: #0041`).
+*   **Footer**: Merekam pemutusan breaking changes (`BREAKING CHANGE:`) atau referensi issue terkait (misal: `Resolves: #0041`).
 *   **Co-authored-by**: Atribusi wajib untuk AI (Detail di Bab 12).
 
 ### 5.6. Contoh Commit Message Lengkap (Benar vs Salah)
@@ -396,10 +411,10 @@ Setiap commit `[WAJIB]` merepresentasikan **satu perubahan logis tunggal yang ut
 
 > ⚠️ **[PANDUAN KHUSUS COMMIT LINTAS-LAYER & DOKUMEN]**:
 > 1.  **Larangan Commit Lintas-Layer (Logic vs CLI)**: Jika pengembang AI mengubah file logika `logic/transaksi.py` dan menu presentasi `cli/menu_transaksi.py` secara bersamaan, perubahan tersebut `[DILARANG KERAS]` digabungkan dalam satu commit. Perubahan wajib dipecah menjadi dua commit terpisah demi mempertahankan batasan arsitektural:
->     *   Commit 1 (Layer 2 - Business Logic): `feat(transaksi): tambah kalkulasi diskon grosir M1`
+>     *   Commit 1 (Layer 2 - Business Logic): `feat(logic): tambah kalkulasi diskon grosir M1`
 >     *   Commit 2 (Layer 1 - Presentation): `feat(cli): tambah form input diskon grosir M1`
 > 2.  **Commit Berkas Dokumentasi SDLC Baru**: Untuk pembuatan atau revisi berkas draf dokumen perencanaan SDLC, gunakan tipe `docs` dengan scope `sdlc`. Contoh:
->     `docs(sdlc): tambah berkas spesifikasi git workflow v1.1`
+>     `docs(sdlc): tambah berkas spesifikasi git workflow v1.2`
 
 ---
 
@@ -466,7 +481,7 @@ Setiap pengembang `[WAJIB]` menjalankan perintah Git eksak berikut secara kronol
     ```
 
 ### 6.3. Alur Kerja untuk Penambahan Fitur Baru (Feature Workflow)
-Wajib mematuhi alur step-by-step di atas secara kaku. Semua file logic bisnis baru dilarang ditaruh langsung di root folder melainkan diletakkan rapi pada folder layer-nya (misal `logic/` or `cli/`).
+Wajib mematuhi alur step-by-step di atas secara kaku. Semua file logic bisnis baru dilarang ditaruh langsung di root folder melainkan diletakkan rapi pada folder layer-nya (misal `logic/` atau `cli/`).
 
 ### 6.4. Alur Kerja untuk Perbaikan Bug (Bugfix Workflow)
 1.  Buat branch perbaikan dari main terbaru: `git checkout -b bugfix/stok-opname-minus`.
@@ -475,9 +490,11 @@ Wajib mematuhi alur step-by-step di atas secara kaku. Semua file logic bisnis ba
 
 ### 6.5. Alur Kerja untuk Perbaikan Darurat (Hotfix Workflow)
 1.  Ditransmisikan saat server produksi offline di toko mengalami crash fatal.
-2.  Buka branch hotfix: `git checkout -b hotfix/jwt-signature-key`.
-3.  Perbaiki nilai parameter rahasia di `.env` (atau perbaikan middleware).
-4.  Commit `fix(keamanan): perbaiki token validation`, merge langsung ke main, dan tag sebagai patch rilis.
+2.  `[WAJIB]` **Notifikasi dan penghentian (*freeze*)**: Junior Programmer wajib menghentikan sementara seluruh aktivitas koding model AI yang sedang berjalan di branch fitur lain guna mencegah konflik merge yang fatal saat hotfix diintegrasikan.
+3.  Buka branch hotfix: `git checkout -b hotfix/jwt-signature-key`.
+4.  Perbaiki nilai parameter rahasia di `.env` (atau perbaikan middleware).
+5.  Commit `fix(keamanan): perbaiki token validation`, merge langsung ke main, dan tag sebagai patch rilis.
+6.  Cabut status pembekuan (*unfreeze*) agar AI dapat melanjutkan sinkronisasi dari `main` terbaru.
 
 ### 6.6. Alur Kerja untuk Pembaruan Dokumentasi (Docs Workflow)
 1.  Turunkan branch dokumentasi: `git checkout -b docs/audit-logs`.
@@ -493,7 +510,7 @@ Bab ini menguraikan kebijakan merge commit non-fast-forward dan memandu langkah-
 ### 7.1. Kebijakan Merge (Merge Policy)
 Sistem AbuCom menerapkan kebijakan **Merge Commit non-fast-forward (`--no-ff`)** untuk setiap penggabungan branch fitur ke branch utama.
 *   **Justifikasi**: Kebijakan `--no-ff` memaksa Git untuk selalu membuat commit merger baru. Hal ini sangat penting untuk menjaga keterbacaan pohon sejarah repositori (*history graph*) secara terstruktur, sehingga Junior Programmer dapat melacak kapan satu fitur modul spesifik diintegrasikan secara utuh.
-*   `[DILARANG]` Menggunakan perintah rebase (`git rebase`) pada branch bersama karena merusak integritas garis waktu kontribusi AI.
+*   `[DILARANG KERAS]` Menggunakan perintah rebase (`git rebase`) pada branch bersama karena merusak integritas garis waktu kontribusi AI.
 
 ### 7.2. Prosedur Merge Branch Fitur ke Main
 Saat penggabungan siap dieksekusi oleh Pemilik Toko (`STK-000`):
@@ -558,13 +575,13 @@ flowchart TD
 Bab ini menjabarkan gerbang kualitas (quality gate) yang wajib dilalui setiap branch sebelum diizinkan menyatu ke main, melibatkan review otomatis dan manual.
 
 ### 8.1. Prosedur Code Review Sebelum Merge
-Every branch fitur yang telah diselesaikan wajib melalui tinjauan kode (*code review*) di repositori lokal LAN sebelum diperbolehkan menyatu ke `main`:
+Setiap branch fitur yang telah diselesaikan wajib melalui tinjauan kode (*code review*) di repositori lokal LAN sebelum diperbolehkan menyatu ke `main`:
 1.  Developer AI memicu pengajuan tinjauan ke Junior Programmer.
 2.  Tinjauan otomatis dijalankan terlebih dahulu untuk menyaring kesalahan sintaksis kasat mata.
 3.  Pemilik Toko melakukan review visual akhir secara manual pada berkas diff perubahan.
 
 ### 8.2. Peran Reviewer dalam Tim AbuCom
-*   **Reviewer Otomatis (Gemini 3 Flash — `STK-011`)**: Bertanggung jawab mengecek kepatuhan sintaksis terhadap Coding Standard R-01, mendeteksi jika ada pendefinisian `class` ilegal, mengecek presisi desimal uang, and memfilter credentials hardcoded.
+*   **Reviewer Otomatis (Gemini 3 Flash — `STK-011`)**: Bertanggung jawab mengecek kepatuhan sintaksis terhadap Coding Standard R-01, mendeteksi jika ada pendefinisian `class` ilegal, mengecek presisi desimal uang, dan memfilter credentials hardcoded.
 *   **Reviewer Akhir (Junior Programmer — `STK-000`)**: Pemilik toko memverifikasi kecocokan fungsi terhadap workflow operasional kasir fisik dan menandatangani persetujuan merger.
 
 > 📝 **[FORMAT LAPORAN REVIEW OTOMATIS GEMINI 3 FLASH]**:
@@ -601,7 +618,7 @@ Setiap tinjauan wajib memastikan 12 checklist dari Coding Standard (R-01 Bab 17)
 2.  `[WAJIB]` Anotasi Type Hints PEP 484 dan docstring PEP 257 Args/Returns lengkap?
 3.  `[WAJIB]` Komputasi nominal Rupiah & stok menggunakan `decimal.Decimal` dan pembulatan `ROUND_HALF_UP` eksplisit?
 4.  `[WAJIB]` Query basis data MySQL menggunakan parameterized placeholders `%s`, bebas f-string?
-5.  `[WAJIB]` Operasi multi-tabel dibungkus di dalam ACID transaction (commit/rollback) InnoDB?
+5.  `[WAJIB]` Operasi multi-tabel dibungkus di dalam blok transaksi ACID yang aman (commit/rollback)?
 6.  `[WAJIB]` Berkas rahasia `.env` telah dipastikan aman ter-ignore oleh berkas `.gitignore`?
 7.  `[WAJIB]` Path berkas lokal dikelola menggunakan modul `pathlib` secara aman lintas OS?
 8.  `[WAJIB]` CLI menggunakan rich panels dan tabulate tabular?
@@ -659,7 +676,7 @@ git tag -n
 Bab ini merinci perlindungan file sensitif, kredensial, dan data pribadi (UU PDP) agar tidak bocor ke dalam riwayat repositori Git.
 
 ### 10.1. Daftar File yang WAJIB Dikecualikan (.gitignore)
-Untuk mencegah kebocoran credentials rahasia ke repositori bersama, file-file berikut `[DILARANG]` di-track oleh Git:
+Untuk mencegah kebocoran credentials rahasia ke repositori bersama, file-file berikut `[DILARANG KERAS]` di-track oleh Git:
 *   `.env` (Credentials produksi).
 *   `.env.test` (Credentials testing).
 *   `venv/` (Virtual environment lokal).
@@ -683,7 +700,7 @@ Jika terjadi kecelakaan di mana file rahasia `.env` (atau kata sandi database ri
 2.  **Pembersihan Riwayat Repositori (Menggunakan git-filter-repo)**:
     Utilitas `git-filter-repo` `[WAJIB]` diunduh dan dipasang secara luring pada PC kasir dalam kondisi virtual environment aktif menggunakan perintah pip offline:
     ```bash
-    pip install git-filter-repo --no-index --find-links /path/to/offline/packages
+    pip install git-filter-repo --no-index --find-links C:/Users/donsise/Downloads/abucom_offline_packages
     ```
     Setelah terinstal, jalankan perintah berikut untuk menghapus file secara permanen dari seluruh sejarah commit Git agar tidak bisa ditarik kembali:
     ```bash
@@ -692,7 +709,7 @@ Jika terjadi kecelakaan di mana file rahasia `.env` (atau kata sandi database ri
 3.  **Catat Insiden**: Rekam kejadian bocornya credentials ke log audit manual pemilik dengan status `'SECURITY_BREACH_RESOLVED'`.
 
 ### 10.4. Aturan Perlindungan Rahasia (.env, JWT Key, Fernet Key)
-`[DILARANG]` menuliskan credentials, pass database, secret key JWT, or Fernet key UU PDP secara hardcoded (string statis) di dalam file Python. Seluruh rahasia wajib dipanggil dinamis via `os.environ` menggunakan perantara casting `config/settings.py` (R-03 Bab 8.2).
+`[DILARANG KERAS]` menuliskan credentials, pass database, secret key JWT, atau Fernet key UU PDP secara hardcoded (string statis) di dalam file Python. Seluruh rahasia wajib dipanggil dinamis via `os.environ` menggunakan perantara casting `config/settings.py` (R-03 Bab 8.2).
 
 ---
 
@@ -711,24 +728,28 @@ Karena proyek AbuCom berjalan offline LAN luring tanpa server cloud eksternal (A
     ```bash
     git bundle create exports/backups/abucom_repo_backup.bundle --all
     ```
-3.  Salin file `abucom_repo_backup.bundle` tersebut ke dalam USB Flashdisk eksternal.
-4.  Batasi wewenang fisik flashdisk backup, simpan di brankas terkunci toko.
+3.  **Enkripsi File Backup**: Sesuai kebijakan *Security Design* (R-06), file bundle tersebut `[WAJIB]` dienkripsi menjadi format ZIP menggunakan kata sandi (AES-256) sebelum disalin. (Gunakan utilitas kompresi yang mendukung enkripsi AES, misal 7-Zip via CLI lokal):
+    ```cmd
+    7z a -tzip -p"SANDI_RAHASIA_DARI_ENV" -mem=AES256 exports/backups/abucom_repo_backup.zip exports/backups/abucom_repo_backup.bundle
+    ```
+4.  Salin file terenkripsi `abucom_repo_backup.zip` tersebut ke dalam USB Flashdisk eksternal. Hapus file `.bundle` asli tanpa enkripsi dari mesin lokal jika sudah berhasil.
+5.  Batasi wewenang fisik flashdisk backup, simpan di brankas terkunci toko.
 
 ### 11.3. Prosedur Recovery Repository dari Backup
 Jika PC Kasir Utama mengalami kerusakan SSD fatal:
-1.  Pasang sistem operasi Windows 11 baru, instal runtime Python 3.14.2+ and Git.
-2.  Hubungkan USB Flashdisk backup pemilik.
-3.  Lakukan restorasi repositori menggunakan clone langsung dari berkas bundle:
+1.  Pasang sistem operasi Windows 11 baru, instal runtime Python 3.14.2+ dan Git.
+2.  Hubungkan USB Flashdisk backup pemilik. Ekstrak file `abucom_repo_backup.zip` menggunakan kata sandi rahasia untuk mendapatkan file `.bundle`.
+3.  Lakukan restorasi repositori menggunakan clone langsung dari berkas bundle tersebut:
     ```bash
-    git clone C:/path/to/flashdisk/abucom_repo_backup.bundle C:/Users/donsise/Documents/abucom
+    git clone C:/path/to/extracted/abucom_repo_backup.bundle C:/Users/donsise/Documents/abucom
     ```
 4.  Repositori Git akan kembali pulih 100% beserta seluruh sejarah commit dan branch-nya.
 
 > 💡 **[PROSEDUR ROTASI 2 USB FLASHDISK BACKUP]**:
 > Untuk menjamin keandalan data cadangan fisik, Pemilik Toko `[WAJIB]` menyiapkan minimal 2 unit USB Flashdisk khusus (kapasitas minimal 32GB) yang diberi label fisik secara permanen sebagai **USB-A (Hari Ganjil)** dan **USB-B (Hari Genap)**.
 > *   **Skema Rotasi Harian**:
->     1.  Pada tanggal ganjil (misal 27 Mei), gunakan **USB-A**. Hubungkan ke PC Kasir, jalankan perintah `git bundle create exports/backups/abucom_repo_backup_ganjil.bundle --all`, salin berkas bundle ke USB-A, eject secara aman, dan simpan di brankas.
->     2.  Pada tanggal genap (misal 28 Mei), gunakan **USB-B**. Hubungkan ke PC Kasir, jalankan perintah `git bundle create exports/backups/abucom_repo_backup_genap.bundle --all`, salin berkas bundle ke USB-B, eject secara aman, dan simpan di brankas.
+>     1.  Pada tanggal ganjil (misal 27 Mei), gunakan **USB-A**. Hubungkan ke PC Kasir, jalankan prosedur bundle dan enkripsi, salin berkas `.zip` ke USB-A, eject secara aman, dan simpan di brankas.
+>     2.  Pada tanggal genap (misal 28 Mei), gunakan **USB-B**. Hubungkan ke PC Kasir, jalankan prosedur bundle dan enkripsi, salin berkas `.zip` ke USB-B, eject secara aman, dan simpan di brankas.
 > Skema rotasi ini sangat krusial untuk mencegah kegagalan data cadangan akibat corrupt-nya salah satu USB saat proses penulisan bundle manual.
 
 ---
@@ -754,12 +775,12 @@ Untuk memelihara audit kepemilikan kode program yang dihasilkan, setiap model AI
 > Konvensi email dan identitas Git untuk model-model AI di atas belum didefinisikan secara baku pada SDLC terdahulu. Pemilik Toko `[WAJIB]` menyalin berkas config identitas AI ini ke sistem otomasi subagent masing-masing. Setiap model AI pengembang yang diaktifkan wajib menjalankan perintah `git config user.name "<nama-model>"` dan `git config user.email "<email-model>"` lokal pada direktori kerjanya sebelum melakukan commit pertama agar setiap commit terekam dengan atribusi yang valid.
 
 ### 12.2. Aturan Kolaborasi Branch Antar-AI
-1.  `[DILARANG]` Dua model AI bekerja pada satu branch fitur yang sama secara simultan. Hal ini memicu merge conflict yang rumit.
+1.  `[DILARANG KERAS]` Dua model AI bekerja pada satu branch fitur yang sama secara simultan. Hal ini memicu merge conflict yang rumit.
 2.  Setiap model AI wajib membuat sub-branch fitur sendiri untuk tugas spesifiknya (misal: `feature/modul-transaksi-cli` khusus untuk Claude Sonnet dan `feature/modul-transaksi-db` khusus untuk Gemini Pro High).
 3.  Penggabungan antar sub-branch fitur dikelola secara formal menggunakan pull request lokal.
 
 ### 12.3. Aturan Atribusi Commit untuk Kontribusi AI (Co-authored-by)
-Jika suatu fungsi Python dibangun secara kolaboratif (misal Claude Sonnet menulis logika CLI and Gemini Pro High menyempurnakan kalkulasi desimal HPP-nya), commit message wajib menyertakan trailer **`Co-authored-by:`** di bagian footer pesan commit untuk menghormati atribusi hak cipta biner AI:
+Jika suatu fungsi Python dibangun secara kolaboratif (misal Claude Sonnet menulis logika CLI dan Gemini Pro High menyempurnakan kalkulasi desimal HPP-nya), commit message wajib menyertakan trailer **`Co-authored-by:`** di bagian footer pesan commit untuk menghormati atribusi hak cipta biner AI:
 ```
 feat(inventaris): selesaikan formula HPP stempel flash desimal
 
@@ -773,7 +794,7 @@ Signed-off-by: Junior Programmer <donsise@example.com>
 Saat satu model AI menyelesaikan tugas dasar (misal GPT-OSS membuat boilerplate DDL database) dan perlu diserahterjemahkan ke model AI berikutnya (misal Claude Opus memasang rbac guard):
 1.  Model AI pertama (`GPT-OSS`) wajib melakukan commit dan push branch fitur target ke repositori lokal.
 2.  Model AI pertama `[WAJIB]` menuliskan berkas catatan status program (`handover_notes.txt`) di folder `/exports/handover/` (Direktori ini dimasukkan ke `.gitignore` agar tidak mengotori repositori utama).
-3.  Model AI kedua (`Claude Opus`) melakukan checkout branch tersebut, membaca `handover_notes.txt`, and melanjutkan konstruksi pengkodean aspek keamanan.
+3.  Model AI kedua (`Claude Opus`) melakukan checkout branch tersebut, membaca `handover_notes.txt`, dan melanjutkan konstruksi pengkodean aspek keamanan.
 
 > 📝 **[TEMPLATE FORMAT HANDOVER NOTES]**:
 > Berkas `handover_notes.txt` `[WAJIB]` disusun secara rapi menggunakan struktur format berikut:
@@ -852,13 +873,13 @@ Bab ini menguraikan daftar praktik yang dilarang keras diimplementasikan oleh pe
 
 | No | Praktik yang DILARANG MUTLAK | Dampak Negatif Kritis | Solusi / Standar yang Benar |
 |:---:|:---|:---|:---|
-| 1 | Melakukan push langsung ke branch `main`. | Codebase produksi tidak stabil, berisiko merusak sistem laci kasir riil toko. | Wajib menggunakan branch `feature/` and melalui pre-merge quality gate. |
-| 2 | Commit file rahasia `.env` or kata sandi db. | Kebocoran kunci rahasia finansial dan credentials database ke riwayat Git. | Wajib memasukkan `.env` ke ignore list `.gitignore` sejak awal. |
+| 1 | Melakukan push langsung ke branch `main`. | Codebase produksi tidak stabil, berisiko merusak sistem laci kasir riil toko. | Wajib menggunakan branch `feature/` dan melalui pre-merge quality gate. |
+| 2 | Commit file rahasia `.env` atau kata sandi db. | Kebocoran kunci rahasia finansial dan credentials database ke riwayat Git. | Wajib memasukkan `.env` ke ignore list `.gitignore` sejak awal. |
 | 3 | Melakukan force-push (`git push --force`). | Merusak sejarah commit pengembang AI lain, menghapus sejarah kontribusi. | Dilarang keras. Gunakan penggabungan merge normal. |
 | 4 | Commit file binary besar (PDF desain, zip backup).| Ukuran repositori membengkak secara eksponensial pada server offline LAN. | Wajib meletakkan data di folder `/exports/` yang di-ignore Git. |
 | 5 | Menulis commit message tidak informatif ("fix").| Menyulitkan proses tracking bug dan audit forensik internal pemilik. | Wajib mengikuti standar Conventional Commits terstruktur. |
 | 6 | Mengerjakan multi-fitur di satu branch. | Rollback darurat tidak bisa dilakukan secara atomik, kode berantakan. | Satu branch khusus untuk satu tugas modular use case. |
-| 7 | Merge ke `main` tanpa proses code review. | Masuknya bug pembulatan desimal or OOP class ilegal ke codebase steril. | Wajib review otomatis Gemini 3 Flash dan tanda tangan Pemilik. |
+| 7 | Merge ke `main` tanpa proses code review. | Masuknya bug pembulatan desimal atau OOP class ilegal ke codebase steril. | Wajib review otomatis Gemini 3 Flash dan tanda tangan Pemilik. |
 | 8 | Force checkout menghapus merge conflict kasar. | Kehilangan baris logika transaksional ACID yang krusial untuk integritas database. | Selesaikan konflik secara manual dan teliti di editor kode. |
 
 ### 14.1. Integrasi 10 Larangan Mutlak Coding Standard (R-01 Bab 16)
@@ -891,7 +912,7 @@ Staf pengembang dan pemilik toko `[WAJIB]` memastikan checklist berikut bernilai
 *   [ ] **4.** Apakah berkas `.gitattributes` telah terbuat dan diatur untuk memaksa line ending LF lintas platform Dual-OS?
 *   [ ] **5.** Apakah seluruh pengujian unit test fungsional pada folder `tests/` dinyatakan lolos 100% tanpa error?
 *   [ ] **6.** Apakah persentase jangkauan pengujian (*code coverage*) logika bisnis utama di folder `logic/` telah mencapai minimal 90%?
-*   [ ] **7.** Apakah review otomatis dari Gemini 3 Flash (`STK-011`) telah dipicu and menyatakan kode 100% patuh terhadap Coding Standard (zero violation)?
+*   [ ] **7.** Apakah review otomatis dari Gemini 3 Flash (`STK-011`) telah dipicu dan menyatakan kode 100% patuh terhadap Coding Standard (zero violation)?
 *   [ ] **8.** Apakah proses penggabungan branch dipastikan menggunakan kebijakan merge commit `--no-ff` (non-fast-forward)?
 *   [ ] **9.** Apakah setiap commit yang dikerjakan secara kolaboratif telah mencantumkan atribusi `Co-authored-by` untuk model AI terkait?
 *   [ ] **10.** Apakah branch fitur yang telah sukses digabungkan langsung dihapus secara lokal dan remote demi kebersihan repositori?
@@ -900,14 +921,14 @@ Staf pengembang dan pemilik toko `[WAJIB]` memastikan checklist berikut bernilai
 
 ## 16. Referensi Dokumen
 
-Berikut adalah daftar dokumen referensi formal versi 1.1 yang digunakan sebagai dasar penyusunan spesifikasi teknis Git Workflow ini:
+Berikut adalah daftar dokumen referensi formal versi 1.2 yang digunakan sebagai dasar penyusunan spesifikasi teknis Git Workflow ini:
 
 | No | Kode Ref | Nama Dokumen Referensi | Path Relatif File | Versi | Prioritas | Peran / Relevansi Spesifik |
 |:---:|:---:|:---|:---|:---:|:---:|:---|
 | 1 | R-01 | **Coding Standard** | `docs/sdlc/04_implementation/01_coding_standard.md` | v1.1 | **PRIMER** | Sumber aturan Bab 15 (Version Control Git), Bab 16 (Larangan), Bab 17 (Checklist), serta standardisasi desimal. |
 | 2 | R-02 | **Environment Setup** | `docs/sdlc/04_implementation/02_environment_setup.md` | v1.1 | **PRIMER** | Sumber spesifikasi Bab 9 (Setup Git lokal), Bab 8.5 (ignore rules), dan verifikasi credentials. |
-| 3 | R-03 | **Module Structure** | `docs/sdlc/04_implementation/03_module_structure.md` | v1.1 | **SEKUNDER** | Peta direktori standar proyek, daftar 10 modul fungsional, and matriks pemetaan file untuk scope commit. |
-| 4 | R-04 | **Tech Stack Decision**| `docs/sdlc/01_planning/04_tech_stack_decision.md` | v1.1 | **SEKUNDER** | Batasan runtime, locked requirements, dual-OS portabilitas, and spesifikasi asisten AI. |
+| 3 | R-03 | **Module Structure** | `docs/sdlc/04_implementation/03_module_structure.md` | v1.1 | **SEKUNDER** | Peta direktori standar proyek, daftar 10 modul fungsional, dan matriks pemetaan file untuk scope commit. |
+| 4 | R-04 | **Tech Stack Decision**| `docs/sdlc/01_planning/04_tech_stack_decision.md` | v1.1 | **SEKUNDER** | Batasan runtime, locked requirements, dual-OS portabilitas, dan spesifikasi asisten AI. |
 | 5 | R-05 | **System Architecture**| `docs/sdlc/03_design/03_system_architecture.md` | v1.1 | **TERSIER** | Konfigurasi physical server, local LAN offline, connection pool size 5, dan repeatable read isolation level. |
 | 6 | R-06 | **Security Design** | `docs/sdlc/03_design/06_security_design.md` | v1.1 | **TERSIER** | Keamanan credentials, enkripsi backups AES-256 ZIP, chmod 700 server, dan audit log JSON structure. |
 | 7 | R-07 | **Narasi Pemilik** | `docs/sdlc/narasi.txt` | v1.1 | **TERSIER** | Konteks operasional, susunan tim campuran (Junior Programmer + 6 Model AI spesialis), dan kolaborasi luring. |
