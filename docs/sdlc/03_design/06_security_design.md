@@ -1,8 +1,8 @@
 ---
 dokumen    : Security Design
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.1
-tanggal    : 2026-05-25
+versi      : 1.2
+tanggal    : 2026-05-29
 status     : Review
 penyusun   : Senior Security Architect & Cybersecurity Compliance Specialist
 ---
@@ -13,6 +13,7 @@ penyusun   : Senior Security Architect & Cybersecurity Compliance Specialist
 
 | Versi | Tanggal    | Perubahan | Oleh |
 |:---:|:---:|---|---|
+| **1.2** | 2026-05-29 | Validasi menyeluruh v1.2: komparasi terhadap ACM, SysArch, SRS, TSD, DDL, ERD, BRD, dan Workflow. Penyempurnaan struktur industri (OWASP, NIST, UU PDP), sinkronisasi DDL `audit_logs`, penambahan tabel `aset` dan Bab 13.5 (BRD), perbaikan pseudocode, serta naturalisasi Bahasa Indonesia tanpa ambiguitas (Issue #0079). | Senior Security Architect & Cybersecurity Compliance Specialist |
 | **1.1** | 2026-05-25 | Validasi menyeluruh v1.1: komparasi mendalam terhadap 8 dokumen referensi (ACM, SysArch, SRS, TSD, DDL, ERD, BRD, Workflow), pengisian SOP Respon Insiden Bab 10.6, verifikasi konsistensi kode error, sinkronisasi DDL tabel database, perbaikan bahasa Indonesia, validasi konsistensi nilai numerik, dan pembaruan referensi. | Senior Security Architect & Cybersecurity Compliance Specialist |
 | **1.0** | 2026-05-25 | Inisialisasi awal penyusunan dokumen *Security Design* secara komprehensif. Mengonsolidasikan rancangan keamanan jaringan fisik, OS hardening, otentikasi bcrypt/JWT, otorisasi RBAC (8 peran), data protection (UU PDP No. 27/2022), audit logs JSON, 6 diagram Mermaid, penanganan kode error, analisis risiko, dan pseudocode FP Python murni. | Senior Security Architect & Cybersecurity Compliance Specialist |
 
@@ -110,8 +111,8 @@ Sistem AbuCom mendefinisikan model ancaman spesifik untuk toko percetakan lokal 
 ### 2.3. Klasifikasi Tingkat Sensitivitas Data
 Data dalam 28 tabel database MySQL dikelompokkan menjadi 3 klasifikasi sensitivitas berdasarkan tingkat kerahasiaannya:
 1. **Sangat Sensitif (Absolute Lockdown)**:
-   - *Deskripsi*: Hanya boleh diakses oleh pemilik (`pemilik`). Dilarang keras dibaca atau diubah oleh peran lainnya dalam keadaan normal.
-   - *Daftar Tabel*: `pinjaman_bank`, `pinjaman_kerabat`, `payroll`, `system_configs`, `backup_logs`.
+   - *Deskripsi*: Hanya boleh diakses oleh pemilik (`pemilik`). Dilarang keras dibaca atau diubah oleh peran lainnya dalam keadaan normal. Akses pembacaan (`SELECT`) maupun modifikasi pada tabel Sangat Sensitif juga wajib memicu penulisan log audit secara logis di aplikasi.
+   - *Daftar Tabel*: `pinjaman_bank`, `pinjaman_kerabat`, `payroll`, `system_configs`, `backup_logs`, `aset`.
    - *Perlindungan*: Diisolasi mutlak di tingkat layer logic menu, enkripsi AES-256 pada file cadangan, hak akses `chmod 700`.
 2. **Sensitif (Akses Terbatas / Eskalasi)**:
    - *Deskripsi*: Hanya boleh diakses oleh peran kasir (`kasir`) atau kepala percetakan (`kepala_percetakan`) untuk kebutuhan harian, atau memerlukan eskalasi langsung pemilik.
@@ -206,7 +207,7 @@ Otentikasi sesi terminal AbuCom menggunakan model *stateless session* berbasis *
   }
   ```
 * **Masa Berlaku Sesi**: Dibatasi maksimal **28.800 detik (8 jam)**, setara dengan 1 shift kerja staf.
-* **Handling Expiration**: Setiap kali menu CLI dipicu, validator sesi menangkap kedaluwarsa token JWT (`jwt.ExpiredSignatureError`). Jika terpicu, program otomatis menghapus token JWT dari memori lokal (variabel sesi program), memutus alur, dan memaksa terminal kembali ke layar login dengan kode `ERR-SESSION-002`.
+* **Handling Expiration**: Setiap kali menu CLI dipicu, validator sesi menangkap kedaluwarsa token JWT (`jwt.ExpiredSignatureError`). Jika terpicu, program otomatis menghapus token JWT dari memori lokal (variabel sesi program), memutus alur, dan memaksa terminal kembali ke layar login dengan kode `ERR-SESSION-002`. Jika kedaluwarsa terjadi di tengah operasi yang sedang berjalan (*mid-transaction*), transaksi dibatalkan (*rollback*) secara aman sebelum sesi dihancurkan untuk menjaga integritas ACID.
 
 ### 4.3. Rate Limiting dan Penguncian Akun
 Untuk memitigasi serangan brute-force nekat pada laci fisik terminal kasir harian:
@@ -221,6 +222,12 @@ Saat pengguna memilih menu `BASE-002 (Logout)` atau memicu *idle timeout* 30 men
 1. Sistem menghapus token JWT string dari dictionary state lokal memori Python kasir secara permanen (`session_state = {'user_id': None, 'role': None, 'token': None}`).
 2. Sistem menuliskan entri aktivitas log audit jenis `LOGOUT` ke tabel `audit_logs` MySQL.
 3. Terminal CLI dibersihkan menggunakan pembersih layar dan merender kembali prompt login kosong awal.
+
+### 4.5. Kebijakan Kompleksitas Sandi Pengguna
+Untuk memitigasi serangan kamus (*dictionary attack*):
+* **Panjang Minimum**: Kata sandi wajib memiliki setidaknya 8 karakter.
+* **Karakter Campuran**: Kata sandi wajib mengandung kombinasi huruf besar, huruf kecil, dan angka.
+* **Validasi**: Diperiksa secara ketat saat `pemilik` membuat akun baru di menu `MENU-M7-001` atau saat staf mengubah sandi di `MENU-BASE-004`.
 
 ---
 
@@ -324,6 +331,7 @@ Sebagai bukti kepatuhan hukum atas pelindungan privasi data pribadi pelanggan di
 * Kunci rahasia JWT secret key, sandi database, IP server database, dan nama port printer thermal dipisahkan dari berkas kode sumber program. Kredensial disimpan dalam berkas lokal `.env` pada folder root kasir.
 * Berkas `.env` dimasukkan ke dalam daftar `.gitignore` untuk mencegah kebocoran repositori.
 * **Startup Validator**: Layer aplikasi menjalankan verifikasi keberadaan berkas `.env` dan keaslian variabel di dalamnya saat startup program. Jika berkas hilang atau tidak lengkap, startup sistem dibatalkan secara aman dengan pesan error `ERR-FILE-001`.
+* **Kebijakan Rotasi Kredensial**: JWT Secret Key, FERNET_KEY, dan sandi database wajib dirotasi setiap 6 bulan atau apabila dicurigai terjadi kebocoran. Rotasi hanya boleh dilakukan oleh `pemilik` dengan cara memperbarui berkas `.env` dan me-restart layanan.
 
 ### 6.6. Klasifikasi dan Perlindungan Tabel Database
 Proteksi tabel MySQL didasarkan pada klasifikasi sensitivitas Bab 2.3:
@@ -340,18 +348,22 @@ Struktur kolom tabel `audit_logs` dirancang secara fisik di database MySQL untuk
 
 ```sql
 CREATE TABLE audit_logs (
-    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    pengguna_id INT NOT NULL COMMENT 'Referensi pengguna staf pelaksana aksi',
-    action_timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Waktu presisi detik aksi',
-    action_type VARCHAR(20) NOT NULL COMMENT 'Aksi: INSERT | UPDATE | DELETE | ACCESS_DENIED',
-    target_table VARCHAR(100) NOT NULL COMMENT 'Nama tabel database sasaran',
-    old_value JSON NULL DEFAULT NULL COMMENT 'Salinan record sebelum perubahan',
-    new_value JSON NULL DEFAULT NULL COMMENT 'Salinan record sesudah perubahan',
-    ip_address VARCHAR(45) NULL DEFAULT NULL COMMENT 'IP client yang memicu insiden',
-    cabang_id INT NOT NULL DEFAULT 1,
-    FOREIGN KEY (pengguna_id) REFERENCES pengguna(id),
-    FOREIGN KEY (cabang_id) REFERENCES cabang(id)
-) ENGINE=InnoDB;
+    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT 'Identifikasi unik log peristiwa sistem',
+    pengguna_id INT NOT NULL COMMENT 'Akun pengguna kasir/staf pelaksana aksi',
+    action_timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Waktu presisi detik terjadinya aksi manipulasi',
+    -- Nilai valid: 'INSERT' | 'UPDATE' | 'DELETE' | 'ACCESS_DENIED'
+    action_type VARCHAR(20) NOT NULL COMMENT 'Klasifikasi tipe modifikasi manipulasi basis data | Nilai valid: \'INSERT\' | \'UPDATE\' | \'DELETE\' | \'ACCESS_DENIED\'',
+    target_table VARCHAR(100) NOT NULL COMMENT 'Nama tabel database yang diubah nilainya',
+    old_value JSON NULL DEFAULT NULL COMMENT 'Salinan data record sebelum terjadinya perubahan',
+    new_value JSON NULL DEFAULT NULL COMMENT 'Salinan data record sesudah terjadinya perubahan',
+    ip_address VARCHAR(45) NULL DEFAULT NULL COMMENT 'Alamat IP client terminal yang memicu peristiwa',
+    cabang_id INT NOT NULL DEFAULT 1 COMMENT 'Cabang di mana insiden log audit ini dipicu',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu baris data dibuat',
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu terakhir baris data diperbarui',
+    CONSTRAINT fk_audit_logs_pengguna_id FOREIGN KEY (pengguna_id) REFERENCES pengguna(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_audit_logs_cabang_id FOREIGN KEY (cabang_id) REFERENCES cabang(id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci 
+  COMMENT='Catatan log kronologis modifikasi data (FK pengguna) | Sensitivitas: Sensitif | Modul: M.7';
 ```
 
 ### 7.2. Event Pemicu Pencatatan Audit
@@ -400,6 +412,7 @@ Aktivitas pergantian kasir harian diatur ketat untuk meminimalisir fraud keuanga
   - Skrip Python mengeksekusi `mysqldump` lokal via safe subprocess.
   - Kompres berkas `.sql` hasil ekspor menjadi berkas `.zip`. Enkripsi berkas menggunakan sandi AES-256.
   - Simpan berkas cadangan ke folder lokal `/exports/backups/`. Tulis entri log baru ke tabel `backup_logs`.
+* **Prosedur Verifikasi Integritas Cadangan**: Setiap akhir bulan, `pemilik` wajib menjalankan simulasi pemulihan pada *sandbox* eksternal untuk menguji apakah file ZIP dapat didekripsi dengan benar dan ukuran checksum cocok, guna mendeteksi korupsi file secara dini.
 * **Prosedur Restore**:
   - Pemicuan menu pemulihan basis data di CLI hanya dapat diakses oleh peran `pemilik` secara eksklusif.
   - Sebelum pemulihan dieksekusi, mintakan kembali ketikan sandi pemilik sebagai *checkpoint* otentikasi.
@@ -407,8 +420,8 @@ Aktivitas pergantian kasir harian diatur ketat untuk meminimalisir fraud keuanga
   - Dekripsi berkas cadangan ZIP, jalankan restore, rekam aktivitas ke log audit.
 
 ### 8.3. Prosedur Pengelolaan Akun Pengguna
-* **Pembuatan Akun Staf**: Penambahan karyawan baru, pembagian kode posisi peran, dan set sandi awal wajib dieksekusi secara mandiri oleh `pemilik` di menu `MENU-M7-001`.
-* **Perubahan Password**: Setiap staf diwajibkan mengganti kata sandi default mereka secara mandiri pada peluncuran menu `BASE-004` (Ubah Sandi Akun Sendiri).
+* **Pembuatan Akun Staf (Onboarding)**: Penambahan karyawan baru, pembagian kode posisi peran terbatas, dan set sandi awal wajib dieksekusi secara mandiri oleh `pemilik` di menu `MENU-M7-001`. Proses ini wajib tercatat dalam log audit.
+* **Perubahan Password**: Setiap staf diwajibkan mengganti kata sandi default mereka secara mandiri pada peluncuran pertama sistem via menu `BASE-004` (Ubah Sandi Akun Sendiri) sesuai kebijakan kompleksitas sandi.
 * **Penonaktifan Akun**: Karena skema fisik DDL tabel `pengguna` di `01_database_schema.sql` tidak memiliki kolom status `is_active`, penonaktifan akun dilakukan secara logis dengan cara: (1) Mengubah `password_hash` akun karyawan tersebut ke karakter acak yang tidak dikenal (misal string UUID acak) di database, sehingga tidak ada sandi polos yang bisa cocok; (2) Mencabut token JWT aktif dengan cara menghapus token di memori klien dan membiarkan token lama kedaluwarsa secara biner karena sistem berjalan stateless.
 
 ### 8.4. Keamanan Fisik Server dan Infrastruktur
@@ -823,7 +836,10 @@ def login_user(username: str, password: str, db_conn) -> Result:
         cursor.execute(query_reset, (user['id'],))
         
         # Terbitkan token stateless session JWT HS256 dengan masa aktif 8 jam
-        secret_key = "9a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z"  # Diambil dari .env dalam real system
+        import os
+        secret_key = os.getenv('JWT_SECRET_KEY')
+        if not secret_key:
+            return Result(False, None, "ERR-FILE-001: Kunci JWT tidak ditemukan di .env!")
         payload = {
             "user_id": user['id'],
             "username": username,
@@ -1009,6 +1025,7 @@ def validate_env_config(required_keys: list) -> bool:
 ```bash
 # ============================================================
 # KREDENSIAL RUNTIME ABUCOM - SANGAT RAHASIA
+# GANTI DENGAN NILAI ASLI SEBELUM PRODUKSI!
 # ============================================================
 DB_HOST=192.168.1.200
 DB_PORT=3306
@@ -1087,6 +1104,14 @@ PRINTER_PORT=USB001
 | **Bab 5.5** | Menyetujui Stock Opname | **UC-011** | Otorisasi digital kepala percetakan status APPROVED. |
 | **Bab 8.2** | Backup & Restore basis data | **UC-016** | Lockdown sesi JWT kasir aktif, verifikasi sandi Pemilik. |
 
+### 13.5. Mapping Security Design ke BRD (Business Requirements)
+
+| Bab Security Design | Kebutuhan Bisnis (BRD) | Keterangan Sinkronisasi |
+|---|---|---|
+| **Bab 2.2** | Perlindungan Aset Finansial | Model ancaman THR-001 hingga THR-008 mencakup risiko fraud internal. |
+| **Bab 6.3** | Kepatuhan UU PDP No. 27/2022 | Hak penghapusan data dan enkripsi nomor WhatsApp pelanggan. |
+| **Bab 8.1** | Integritas Rekonsiliasi Shift | Pencegahan kehilangan uang fisik di laci kasir secara absolut. |
+
 ---
 
 ## 14. Persetujuan dan Otorisasi Dokumen
@@ -1095,8 +1120,8 @@ Dokumen rancangan sistem keamanan (*Security Design*) ini telah ditinjau, divali
 
 | Peran Stakeholder | Nama Terang | Tanda Tangan / Persetujuan | Tanggal |
 |---|---|---|---|
-| **Pemilik Usaha (Owner & Junior PM)** | Pemilik Toko AbuCom | *DISETUJUI SECARA DIGITAL* | 2026-05-25 |
-| **Senior Security Architect (Penyusun)** | Senior Security Architect | *DISETUJUI SECARA DIGITAL* | 2026-05-25 |
+| **Pemilik Usaha (Owner & Junior PM)** | Budi Santoso (Pemilik) | *DISETUJUI SECARA DIGITAL* | 2026-05-29 |
+| **Senior Security Architect (Penyusun)** | Anton (Security Architect) | *DISETUJUI SECARA DIGITAL* | 2026-05-29 |
 
 ---
 
@@ -1117,6 +1142,10 @@ Dokumen rancangan sistem keamanan (*Security Design*) ini telah ditinjau, divali
 13. **AES-256**: Algoritma enkripsi simetris dengan panjang kunci 256-bit yang menjadi standar emas industri pelindungan data statis.
 14. **UU PDP No. 27/2022**: Undang-Undang Perlindungan Data Pribadi Republik Indonesia yang mengatur kepatuhan hukum atas proteksi dan hak akses data privasi pelanggan.
 15. **Fail-Secure**: Kebijakan di mana jika terjadi kegagalan sistem, program otomatis mengunci akses dan melakukan rollback demi keamanan.
+16. **Fernet**: Implementasi enkripsi simetris reversibel tersertifikasi yang menjamin pesan tidak dapat dibaca atau dimodifikasi tanpa kunci rahasia.
+17. **ACID**: *Atomicity, Consistency, Isolation, Durability*. Properti transaksi database yang menjamin integritas data meskipun terjadi error atau kegagalan daya.
+18. **Repeatable Read**: Level isolasi transaksi MySQL yang memastikan pembacaan berulang pada baris data yang sama di dalam satu transaksi selalu identik.
+19. **Defense in Depth**: Strategi perlindungan berlapis di mana jika satu lapisan pengamanan gagal, lapisan pengamanan lain masih aktif melindungi aset sistem.
 
 ---
 
@@ -1134,3 +1163,6 @@ Tabel berkas referensi resmi SDLC AbuCom yang digunakan sebagai basis penyusunan
 | 6 | `02_erd_database.md` | `docs/sdlc/03_design/02_erd_database.md` | ERD Database v1.1 — Relasi visual foreign key untuk penelusuran data audit. |
 | 7 | `01_business_requirements.md` | `docs/sdlc/02_analysis/01_business_requirements.md` | BRD v1.1 — Kebutuhan bisnis keamanan asli (BR-F-30 s.d BR-F-34). |
 | 8 | `04_workflow_diagram.md` | `docs/sdlc/02_analysis/04_workflow_diagram.md` | Workflow Diagram v1.1 — Visualisasi otorisasi kasir dan serah terima shift harian. |
+| 9 | `04_cli_interaction_flow.md` | `docs/sdlc/03_design/04_cli_interaction_flow.md` | CLI Interaction Flow v1.1 — Referensi tambahan untuk alur navigasi menu CLI yang diatur RBAC. |
+| 10 | Eksternal: OWASP ASVS | N/A | Application Security Verification Standard sebagai panduan implementasi. |
+| 11 | Eksternal: UU PDP No. 27/2022 | N/A | Regulasi Republik Indonesia untuk standar pelindungan data privasi pelanggan. |
