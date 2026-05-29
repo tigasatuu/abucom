@@ -1,8 +1,8 @@
 ---
 dokumen    : UAT Script
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.1
-tanggal    : 2026-05-26
+versi      : 1.2
+tanggal    : 2026-05-29
 status     : Reviewed
 penyusun   : Senior UAT Engineer & SQA Lead
 ---
@@ -13,6 +13,7 @@ penyusun   : Senior UAT Engineer & SQA Lead
 
 | Versi | Tanggal | Perubahan | Oleh |
 |:---:|---|---|---|
+| **1.2** | 2026-05-29 | Validasi komprehensif 10-dimensi, verifikasi keabsahan ID referensi silang, konsistensi kalkulasi desimal HPP/Payroll, konfirmasi placeholder eksekusi, serta penulisan ulang dokumen penuh tanpa truncation sukses dilaksanakan sesuai issue #0086. | Senior UAT Engineer & SQA Lead |
 | **1.1** | 2026-05-26 | Validasi komprehensif 10-dimensi, perbaikan sintaks tabel markdown (missing pipe), perbaikan heading UAT-036, standardisasi placeholder Tim Pelaksana dan Jadwal, verifikasi presisi desimal HPP BOM, Smart Payroll, depresiasi aset, dan handover shift. Status diperbarui menjadi Reviewed. | Senior UAT Engineer & SQA Lead |
 | **1.0** | 2026-05-26 | Inisialisasi awal pembuatan dan penyusunan dokumen UAT Script secara komprehensif. Menyerap seluruh data referensi dari Test Plan v1.1 dan Test Cases v1.1. Menyusun 44 skrip UAT individual, 1 skrip integrasi end-to-end hari operasional penuh, kriteria sign-off terukur, defect handling, glosarium, dan matriks ketertelusuran lengkap. | Senior UAT Analyst & Business Acceptance Specialist |
 
