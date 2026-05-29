@@ -1,8 +1,8 @@
 ---
 dokumen    : Release Notes
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.1
-tanggal    : 2026-05-27
+versi      : 1.2
+tanggal    : 2026-05-30
 status     : Validated
 penyusun   : Senior Release Manager & Technical Documentation Engineer
 reviewer   : Antigravity (Senior DevOps Lead)
@@ -23,7 +23,7 @@ approved_by: Alfatih (Pemilik Usaha AbuCom)
 ## 1. Informasi Dokumen
 
 ### 1.1. Tujuan Dokumen
-Dokumen **Release Notes v1.1** ini disusun sebagai catatan rilis resmi yang mendokumentasikan peluncuran sistem aplikasi **AbuCom v1.0.0**. Dokumen ini merangkum seluruh perubahan fitur baru, fitur keamanan, batasan yang diketahui, persyaratan minimum perangkat keras/perangkat lunak, panduan instalasi, konfigurasi default, hasil pengujian, diagram arsitektur, dan matriks risiko rilis. Dokumen ini bertujuan untuk memastikan kelancaran go-live operasional toko dan bertindak sebagai referensi bagi audiens teknis maupun pemilik usaha.
+Dokumen **Release Notes v1.2** ini disusun sebagai catatan rilis resmi yang mendokumentasikan peluncuran sistem aplikasi **AbuCom v1.0.0**. Dokumen ini merangkum seluruh perubahan fitur baru, fitur keamanan, batasan yang diketahui, persyaratan minimum perangkat keras/perangkat lunak, panduan instalasi, konfigurasi default, hasil pengujian, diagram arsitektur, dan matriks risiko rilis. Dokumen ini bertujuan untuk memastikan kelancaran go-live operasional toko dan bertindak sebagai referensi bagi audiens teknis maupun pemilik usaha.
 
 ### 1.2. Cakupan Dokumen
 Dokumen ini mencakup spesifikasi produk perangkat lunak **AbuCom CLI v1.0.0**, sebuah aplikasi manajemen internal terpadu berbasis *Command Line Interface* (CLI) dual-OS (Linux Debian 12 Server dan Windows 11 Kasir Klien) yang beroperasi secara 100% luring (*offline-only* LAN lokal) pada konter toko percetakan fisik AbuCom.
@@ -71,7 +71,7 @@ Dalam siklus hidup pengembangan sistem (SDLC) AbuCom, dokumen Release Notes ini 
 **AbuCom CLI v1.0.0**
 
 ### 2.2. Tanggal Rilis
-**2027-05-20** *(Estimasi, konfirmasi setelah UAT sign-off selesai)*
+**2026-05-30**
 
 ### 2.3. Tipe Rilis (Major / Minor / Patch)
 **Major Release (Rilis Perdana / Inisial)**
@@ -85,7 +85,7 @@ Rilis perdana v1.0.0 ini memigrasikan seluruh operasional administrasi, stok, ke
 * **Kasir Multi-Divisi:** Input cepat penjualan retail ATK, pesanan cetak kustom, e-wallet/jasa keuangan, PPOB pulsa/token, dan jasa service printer/PC.
 * **Kalkulator HPP BOM Presisi Desimal:** Penentuan HPP otomatis berbasis komposisi bahan desimal `Decimal(15,4)` dengan pembulatan `ROUND_HALF_UP` dan pemotongan stok bahan baku desimal.
 * **Dashboard Job Tracking 5 Status:** Alur transisi pesanan sekuensial interaktif (`Antri` &rarr; `Proses Desain` &rarr; `Produksi` &rarr; `Selesai` &rarr; `Diambil`).
-* **Smart Payroll & Kasbon:** Skema gaji dinamis (gaji tetap jika target laba bulanan toko Rp 15 juta tercapai, atau bagi hasil 25% proporsional jika target tidak tercapai) dengan proteksi minimum 50% UMR daerah (Rp 1.600.000) dan potong kasbon otomatis.
+* **Smart Payroll & Kasbon:** Skema gaji dinamis (gaji tetap jika target laba bulanan toko Rp 15.000.000 tercapai, atau bagi hasil 25% proporsional jika target tidak tercapai) dengan proteksi minimum 50% UMR daerah (Rp 1.600.000) dan potong kasbon otomatis.
 * **Poin Insentif Karyawan:** Bonus komisi otomatis berbasis beban kerja 4-tier transaksi staf harian.
 * **Infrastruktur Hardening & Kepatuhan:** Pembatasan menu RBAC 8 peran, logging audit trail detail, firewall port 3306 LAN segment, enkripsi Fernet CRM (patuh UU PDP), dan backup cron harian AES-256 ZIP.
 
@@ -165,48 +165,48 @@ Rilis perdana v1.0.0 ini memigrasikan seluruh operasional administrasi, stok, ke
 * **[SRS-F-012] Analisis Prediksi Re-Order Stok Bahan Baku:** Prediksi sisa hari ketersediaan bahan baku dari konsumsi harian bulanan, memicu notifikasi visual kuning/merah jika diprediksi habis dalam &le; 7 hari.
 * **[SRS-F-013] Fitur Riwayat Harga Beli Supplier (Price Tracking):** Merekam kronologis fluktuasi riwayat harga beli barang dari supplier setiap kali pengadaan barang masuk diinput.
 * **[SRS-F-014] Fitur Import Data CSV/Excel Semiautomatis:** Utilitas script CLI import massal awal dari CSV Microsoft Excel lama (barang, supplier, aset) secara atomik (bulk insert executemany) dalam < 5 detik.
-* **[SRS-F-039] Fitur Pencadangan & Pemulihan Basis Data Manual (Database Backup & Restore):** Panel administratif khusus pemilik untuk memicu dumping database manual via safe subprocess `mysqldump` passwordless (memakai file `/root/.my.cnf` 600) menjadi berkas ZIP terkompresi terenkripsi AES-256 bit.
-* **[SRS-F-040] Manajemen Data Supplier & Utang Usaha:** Profil supplier dan pencatatan utang usaha pengadaan tempo, hitung sisa tenggat hari tempo, pelunasan utang terintegrasi kas keluar.
+* **[SRS-F-037] Fitur Pencadangan & Pemulihan Basis Data Manual (Database Backup & Restore):** Panel administratif khusus pemilik untuk memicu dumping database manual via safe subprocess `mysqldump` passwordless (memakai file `/root/.my.cnf` 600) menjadi berkas ZIP terkompresi terenkripsi AES-256 bit.
+* **[SRS-F-015] Manajemen Data Supplier & Pencatatan Utang Usaha:** Profil supplier dan pencatatan utang usaha pengadaan tempo, hitung sisa tenggat hari tempo, pelunasan utang terintegrasi kas keluar.
 
 ### 4.3. Modul M.3 — Layanan Keuangan Digital, PPOB & Jasa Service
-* **[SRS-F-015] Manajemen Saldo PPOB & Alert Deposit Otomatis:** Pencatatan manual mutasi saldo virtual PPOB (Pulsa dan Token), memicu alert visual kasir berkedip jika saldo di bawah threshold kritis Rp 150.000.
-* **[SRS-F-016] Optimalisasi Biaya Admin Jasa Keuangan (6 Akun Digital):** Perbandingan biaya admin asli dari 6 e-wallet terdaftar (Mandiri Agen, Dana, Gopay, LinkAja, ShopeePay, OVO) untuk menyarankan opsi pengiriman uang paling ekonomis bagi pelanggan, menghitung komisi keuntungan toko.
-* **[SRS-F-017] Pencatatan Transaksi Jasa Service & Teknisi Terintegrasi:** Rekam data perbaikan PC/printer, track suku cadang retail gudang terpakai untuk service (stok retail terpotong otomatis, HPP suku cadang didebit ke nota service).
+* **[SRS-F-016] Manajemen Saldo PPOB & Alert Deposit Otomatis:** Pencatatan manual mutasi saldo virtual PPOB (Pulsa dan Token), memicu alert visual kasir berkedip jika saldo di bawah threshold kritis Rp 150.000.
+* **[SRS-F-017] Optimalisasi Biaya Admin Jasa Keuangan (6 Akun Digital):** Perbandingan biaya admin asli dari 6 e-wallet terdaftar (Mandiri Agen, Dana, Gopay, LinkAja, ShopeePay, OVO) untuk menyarankan opsi pengiriman uang paling ekonomis bagi pelanggan, menghitung komisi keuntungan toko.
+* **[SRS-F-018] Pencatatan Transaksi Jasa Service & Teknisi Terintegrasi:** Rekam data perbaikan PC/printer, track suku cadang retail gudang terpakai untuk service (stok retail terpotong otomatis, HPP suku cadang didebit ke nota service).
 
 ### 4.4. Modul M.4 — Manajemen SDM, Penggajian & Poin Karyawan
-* **[SRS-F-018] Manajemen Data Karyawan, Absensi, dan Kasbon:** Profil karyawan, absensi shift, dan pengajuan kasbon staf (limit kasbon aktif Rp 1.000.000).
-* **[SRS-F-019] Sistem Penggajian Otomatis Cerdas (Smart Payroll):** Komputasi slip payroll otomatis. **Skenario A:** Gaji Bulanan Tetap jika target laba bersih bulanan toko Rp 15.000.000 tercapai. **Skenario B:** Dana gaji dialokasikan 25% dari laba bersih bulanan berjalan dibagikan proporsional bobot kehadiran jika target tidak tercapai. Gaji dilindungi batas jaminan minimum 50% UMR daerah (Rp 1.600.000).
-* **[SRS-F-020] Sistem Poin Insentif Karyawan Berbasis Beban Kerja:** Bonus komisi otomatis berdasarkan beban transaksi staf harian (Tier 1: 1 Poin = Rp 500, Tier 2: 3 Poin = Rp 1.500, Tier 3: 5 Poin = Rp 2.500, Tier 4: 10 Poin = Rp 5.000).
-* **[SRS-F-021] Pemotongan Gaji Otomatis atas Kasbon Aktif:** Slip gaji bulanan secara otomatis memotong upah bersih karyawan jika terdeteksi memiliki utang kasbon aktif, update status kasbon menjadi LUNAS.
+* **[SRS-F-019] Manajemen Data Karyawan, Absensi, dan Kasbon:** Profil karyawan, absensi shift, dan pengajuan kasbon staf (limit kasbon aktif Rp 1.000.000).
+* **[SRS-F-020] Sistem Penggajian Otomatis Cerdas (Smart Payroll):** Komputasi slip payroll otomatis. **Skenario A:** Gaji Bulanan Tetap jika target laba bersih bulanan toko Rp 15.000.000 tercapai. **Skenario B:** Dana gaji dialokasikan 25% dari laba bersih bulanan berjalan dibagikan proporsional bobot kehadiran jika target tidak tercapai. Gaji dilindungi batas jaminan minimum 50% UMR daerah (Rp 1.600.000).
+* **[SRS-F-021] Sistem Poin Insentif Karyawan Berbasis Beban Kerja:** Bonus komisi otomatis berdasarkan beban transaksi staf harian (Tier 1: 1 Poin = Rp 500, Tier 2: 3 Poin = Rp 1.500, Tier 3: 5 Poin = Rp 2.500, Tier 4: 10 Poin = Rp 5.000).
+* **[SRS-F-022] Pemotongan Gaji Otomatis atas Kasbon Aktif:** Slip gaji bulanan secara otomatis memotong upah bersih karyawan jika terdeteksi memiliki utang kasbon aktif, update status kasbon menjadi LUNAS.
 
 ### 4.5. Modul M.5 — Sistem Manajemen Antrian & Pelacakan Desain
-* **[SRS-F-022] Sistem Antrian Digital (Job Tracking 5 Status):** Dashboard alur pekerjaan sekuensial real-time per divisi staf (`Antri` &rarr; `Proses Desain` &rarr; `Produksi` &rarr; `Selesai` &rarr; `Diambil`).
-* **[SRS-F-023] Arsip Desain Pelanggan untuk Cetak Ulang Cepat:** Desainer merekam string path lokasi berkas PDF mockup desain di server lokal klien, kompatibel Dual-OS (`pathlib` Windows/Linux).
-* **[SRS-F-024] Notifikasi Template WhatsApp Ready:** String pesan notifikasi invoice, nama, sisa DP terformat otomatis beserta link wa.me URL encoded (`urllib.parse.quote`) siap disalin kasir.
+* **[SRS-F-023] Sistem Antrian Digital (Job Tracking 5 Status):** Dashboard alur pekerjaan sekuensial real-time per divisi staf (`Antri` &rarr; `Proses Desain` &rarr; `Produksi` &rarr; `Selesai` &rarr; `Diambil`).
+* **[SRS-F-024] Arsip Desain Pelanggan untuk Cetak Ulang Cepat:** Desainer merekam string path lokasi berkas PDF mockup desain di server lokal klien, kompatibel Dual-OS (`pathlib` Windows/Linux).
+* **[SRS-F-025] Notifikasi Template WhatsApp Ready:** String pesan notifikasi invoice, nama, sisa DP terformat otomatis beserta link wa.me URL encoded (`urllib.parse.quote`) siap disalin kasir.
 
 ### 4.6. Modul M.6 — Administrasi Pinjaman, Aset & Pengeluaran
-* **[SRS-F-025] Administrasi Pinjaman Modal Terstruktur (Bank & Kerabat):** Pencatatan terpisah pinjaman modal bank komersial berbunga (BRI/Mandiri) lengkap tenor & jatuh tempo, serta pinjaman kerabat tanpa bunga yang fleksibel.
-* **[SRS-F-026] Laporan Laba/Rugi Komprehensif Instan per Divisi:** Agregasi pendapatan, HPP bahan baku desimal, OPEX, biaya limbah cetak, depresiasi aset menjadi laba kotor & bersih per divisi (< 2.0 detik).
-* **[SRS-F-027] Sistem Notifikasi Jatuh Tempo Utang Otomatis (Alert H-3):** Alert visual kuning berkedip saat startup login pemilik jika sisa hari jatuh tempo cicilan bank/utang supplier &le; H-3 (berkedip merah jika lewat jatuh tempo).
-* **[SRS-F-028] Pengelolaan Aset Tetap, Depresiasi, dan Tabungan Aset:** Pencatatan aset tetap, biaya depresiasi bulanan garis lurus didebit sebagai OPEX, alokasi tabungan virtual mesin baru dari laba berjalan.
+* **[SRS-F-026] Administrasi Pinjaman Modal Terstruktur (Bank & Kerabat):** Pencatatan terpisah pinjaman modal bank komersial berbunga (BRI/Mandiri) lengkap tenor & jatuh tempo, serta pinjaman kerabat tanpa bunga yang fleksibel.
+* **[SRS-F-027] Laporan Laba/Rugi Komprehensif Instan per Divisi:** Agregasi pendapatan, HPP bahan baku desimal, OPEX, biaya limbah cetak, depresiasi aset menjadi laba kotor & bersih per divisi (< 2.0 detik).
+* **[SRS-F-028] Sistem Notifikasi Jatuh Tempo Utang Otomatis (Alert H-3):** Alert visual kuning berkedip saat startup login pemilik jika sisa hari jatuh tempo cicilan bank/utang supplier &le; H-3 (berkedip merah jika lewat jatuh tempo).
+* **[SRS-F-029] Pengelolaan Aset Tetap, Depresiasi, dan Tabungan Aset:** Pencatatan aset tetap, biaya depresiasi bulanan garis lurus didebit sebagai OPEX, alokasi tabungan virtual mesin baru dari laba berjalan.
 * **[SRS-F-029] Pengelolaan Pengeluaran Operasional Rutin & Biaya Tak Terduga:** Rekam pengeluaran rutin bulanan (listrik, air, internet) dan tak terduga. Transaksi pengeluaran &ge; Rp 500.000 dikunci dan butuh verifikasi sandi `pemilik` fisik.
 
 ### 4.7. Modul M.7 — Keamanan, Audit Trail & Hak Akses
-* **[SRS-F-030] Role-Based Access Control (RBAC) Multi-Level CLI:** Proteksi dekorator hak akses menu CLI terhadap 8 peran internal sesuai token JWT HS256.
-* **[SRS-F-031] Audit Trail Kronologis Terstruktur (Format JSON):** Logger otomatis perubahan data sensitif menyimpan timestamp, `user_id`, aksi, nama tabel, detail JSON string `old_value` dan `new_value`.
-* **[SRS-F-032] Log Serah Terima Shift Karyawan (Shift Handover Log):** Tutup shift kasir lama, input kas laci fisik, kunci row data transaksi shift keluar dari modifikasi.
-* **[SRS-F-033] Rekonsiliasi Kas Harian Kasir (Cash Reconciliation):** Kalkulasi desimal uang kas sistem vs kas laci fisik, alert anomali fraud jika absolut selisih > Rp 10.000 (butuh eskalasi sandi Kepala/Pemilik).
-* **[SRS-F-034] Sistem Peringatan Anomali Transaksi (Fraud Detection Sederhana):** Peringatan visual merah di dashboard pemilik jika terdeteksi gagal login brute force > 5x, pembatalan DP > 3x, selisih kas > Rp 10.000.
-* **[SRS-F-035] Input Data Awal Secara Manual dari Excel:** Menu CLI setup awal wizard inisialisasi master data transaksional pada masa deployment.
+* **[SRS-F-031] Role-Based Access Control (RBAC) Multi-Level CLI:** Proteksi dekorator hak akses menu CLI terhadap 8 peran internal sesuai token JWT HS256.
+* **[SRS-F-032] Audit Trail Kronologis Terstruktur (Format JSON):** Logger otomatis perubahan data sensitif menyimpan timestamp, `user_id`, aksi, nama tabel, detail JSON string `old_value` dan `new_value`.
+* **[SRS-F-033] Log Serah Terima Shift Karyawan (Shift Handover Log):** Tutup shift kasir lama, input kas laci fisik, kunci row data transaksi shift keluar dari modifikasi.
+* **[SRS-F-034] Rekonsiliasi Kas Harian Kasir (Cash Reconciliation):** Kalkulasi desimal uang kas sistem vs kas laci fisik, alert anomali fraud jika absolut selisih > Rp 10.000 (butuh eskalasi sandi Kepala/Pemilik).
+* **[SRS-F-035] Sistem Peringatan Anomali Transaksi (Fraud Detection Sederhana):** Peringatan visual merah di dashboard pemilik jika terdeteksi gagal login brute force > 5x, pembatalan DP > 3x, selisih kas > Rp 10.000.
+* **[SRS-F-036] Input Data Awal Secara Manual dari Excel:** Menu CLI setup awal wizard inisialisasi master data transaksional pada masa deployment.
 
 ### 4.8. Modul M.8 — Pembatalan, Retur & CRM
-* **[SRS-F-036] Database Pelanggan Terstruktur (CRM Sederhana):** Profil pelanggan terhubung riwayat transaksi, WhatsApp terenkripsi Fernet, kepatuhan UU PDP No. 27/2022 (Right to Erasure / hard delete permanen).
+* **[SRS-F-038] Database Pelanggan Terstruktur (CRM Sederhana):** Profil pelanggan terhubung riwayat transaksi, WhatsApp terenkripsi Fernet, kepatuhan UU PDP No. 27/2022 (Right to Erasure / hard delete permanen).
 
 ### 4.9. Modul M.9 — Skalabilitas Multi-Cabang
-* **[SRS-F-037] Arsitektur Data Multi-Cabang (Multi-Branch Ready):** Kolom kunci asing `cabang_id` (INT) dipasang di setiap tabel database, filter query SELECT default `cabang_id` terikat `.env`.
+* **[SRS-F-039] Arsitektur Data Multi-Cabang (Multi-Branch Ready):** Kolom kunci asing `cabang_id` (INT) dipasang di setiap tabel database, filter query SELECT default `cabang_id` terikat `.env`.
 
 ### 4.10. Modul M.10 — Konfigurasi Sistem Runtime
-* **[SRS-F-038] Sistem Konfigurasi Dinamis Tanpa Hardcode (Runtime Config):** Parameter dinamis bisnis tersimpan di tabel `system_configs` (target laba, limit kasbon, threshold PPOB, toleransi kasir, rupiah per poin, UMR daerah).
+* **[SRS-F-040] Sistem Konfigurasi Dinamis Tanpa Hardcode (Runtime Config):** Parameter dinamis bisnis tersimpan di tabel `system_configs` (target laba, limit kasbon, threshold PPOB, toleransi kasir, rupiah per poin, UMR daerah).
 
 ### 4.11. Kebutuhan Teknis Tambahan (Additional)
 * **[SRS-F-ADD-01] Inisialisasi Startup Aplikasi CLI & Deteksi `.env`**
@@ -230,6 +230,7 @@ Sistem membatasi pemanggilan modul kode dan menu CLI secara biner di memori Pyth
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | **Modal, Tabungan & Pinjaman Bank** | **X** | — | — | — | — | — | — | — |
 | **Smart Payroll Penggajian & Config** | **X** | — | — | — | — | — | — | — |
+| **Otorisasi Retur & Batal Transaksi** | **X** | — | 🔐 | — | — | — | — | — |
 | **Persetujuan Stock Opname Gudang** | **X** | **X** | — | — | — | — | — | — |
 | **Persetujuan Selisih Kasir > Rp 10rb**| **X** | **X** | — | — | — | — | — | — |
 | **Manajemen Gudang & Input Supplier**| **X** | **X** | — | — | — | **X** | — | — |
@@ -238,6 +239,8 @@ Sistem membatasi pemanggilan modul kode dan menu CLI secara biner di memori Pyth
 | **Job Tracking Antrian Desain & Path**| **X** | **X** | — | **X** | — | — | **X** | — |
 | **Job Tracking Produksi & Limbah** | **X** | **X** | — | — | **X** | — | — | — |
 | **Pencatatan Ritel Fotokopi/Print** | **X** | **X** | **X** | — | — | — | **X** | **X** |
+
+*(Catatan: 🔐 menandakan bahwa eksekusi fungsi oleh peran tersebut mewajibkan verifikasi/eskalasi kata sandi pemilik di terminal)*
 
 ### 5.3. Proteksi Data Pribadi (Fernet CRM & UU PDP)
 * **Kriptografi Simetris:** WhatsApp pelanggan disandi biner **Fernet (cryptography)** 32-byte Base64 key sebelum disimpan ke tabel `pelanggan.whatsapp`, mematuhi **UU PDP No. 27 Tahun 2022**.
@@ -336,10 +339,10 @@ Berdasarkan hasil pengujian intensif pada lingkungan sandbox dan UAT akhir, sist
 4. Dekripsi ZIP backup terakhir: `unzip -P [sandi_zip] /var/lib/mysql-backups/backup.zip -d /tmp/`.
 5. Restore data: `mysql -u root -p abucom_db < /tmp/backup.sql`.
 
-#### 9.3.2. Rollback Kode Klien Kasir
-1. Buka terminal PC Kasir, masuk folder abucom, checkout tag stabil sebelumnya: `git checkout v0.9.0-stable`.
-2. Nyalakan ulang venv: `deactivate && activate`.
-3. Kembalikan file `.env` cadangan dari `.env.bak`.
+#### 9.3.2. Rollback Klien Kasir (Uninstall & Clean Reinstall)
+1. Buka terminal PC Kasir, masuk folder abucom, dan jalankan perintah deaktivasi venv: `deactivate`.
+2. Hapus direktori instalasi AbuCom v1.0.0 karena ini merupakan instalasi perdana (fresh install).
+3. Untuk kembali beroperasi secara manual, buka kembali file Microsoft Excel operasional lama toko.
 
 ### 9.4. Referensi Deployment Guide
 Buku panduan langkah demi langkah teknis operasional deployment terperinci dapat diakses pada dokumen [01_deployment_guide.md](docs/sdlc/06_deployment/01_deployment_guide.md).
@@ -410,7 +413,7 @@ Pengujian integrasi dilakukan secara luring pada database sandbox `abucom_test_d
 
 ### 11.3. Ringkasan Hasil UAT (User Acceptance Testing)
 User Acceptance Testing (UAT) telah selesai dilaksanakan secara formal oleh pengguna akhir di toko fisik AbuCom untuk memvalidasi kelayakan alur bisnis operasional.
-* **Pelaksana UAT:** Bpk. Abu (Pemilik Usaha / Sponsor) dan Bpk. Cetak (Kepala Percetakan / Key User).
+* **Pelaksana UAT:** Alfatih (Pemilik Usaha / Sponsor) dan Donsise (Kepala Percetakan / Key User).
 * **Hasil Skrip UAT:** Seluruh 44 skrip UAT individual (UAT-001 s.d UAT-044) dan 1 skrip UAT End-to-End Hari Operasional Penuh (UAT-E2E-001) berhasil dieksekusi dengan status **PASS 100%**.
 * **Status Defect:** Zero Open Defects (tidak ada bug berkategori Blocker, Critical, atau Major yang tersisa pada akhir sesi pengujian).
 
@@ -550,7 +553,7 @@ Proyek ini dikembangkan secara kolaboratif antara Junior Programmer internal tok
 ## 16. Informasi Dukungan Teknis dan Kontak
 
 ### 16.1. Kontak Dukungan Teknis
-* **WhatsApp Support Line:** `+62-812-3456-7890 (Teks Only)`
+* **WhatsApp Support Line:** `+62-811-2233-4455 (Nomor WhatsApp Resmi Dukungan Teknis)`
 * **Email Dukungan Resmi:** `support@abucom.com`
 
 ### 16.2. Jam Layanan Operasional
@@ -562,11 +565,14 @@ Apabila terjadi kendala sistem tingkat tinggi di konter kasir:
 2. **Fase 2 (Pelaporan):** Hubungi DevOps Technical Support Line di nomor WhatsApp resmi di atas, jelaskan gejala error (misal tampil kode error `ERR-DB-003`).
 3. **Fase 3 (Pemulihan):** DevOps Lead melakukan remote SSH lokal ke server Mini PC Debian 12 untuk memverifikasi log audit, status service MySQL daemon, atau memulihkan data dari backup terakhir.
 
+### 16.4. Hypercare Period
+Hypercare Period didefinisikan sebagai periode pasca go-live selama **2 minggu (14 hari kalender)** dimana tim pengembang (DevOps Lead dan Engineer terkait) bersiaga secara intensif, baik luring di lokasi toko maupun daring. Selama periode ini, setiap isu teknis, bug operasional, atau kendala adaptasi kasir akan ditangani dengan SLA (Service Level Agreement) maksimal 1 jam.
+
 ---
 
 ## 17. Persetujuan dan Otorisasi Rilis
 
-Dokumen Release Notes v1.1 ini diajukan dan disepakati oleh seluruh pihak penandatangan sebagai referensi resmi rilis produk AbuCom v1.0.0:
+Dokumen Release Notes v1.2 ini diajukan dan disepakati oleh seluruh pihak penandatangan sebagai referensi resmi rilis produk AbuCom v1.0.0:
 
 | Posisi Stakeholder | Nama Lengkap | Tanda Tangan | Tanggal Persetujuan |
 |---|---|---|---|
@@ -608,7 +614,7 @@ Dokumen Release Notes v1.1 ini diajukan dan disepakati oleh seluruh pihak penand
 
 ## 19. Referensi Dokumen
 
-Penyusunan dokumen Release Notes v1.1 ini didasarkan secara mutlak pada 16 berkas dokumentasi formal SDLC AbuCom:
+Penyusunan dokumen Release Notes v1.2 ini didasarkan secara mutlak pada 16 berkas dokumentasi formal SDLC AbuCom:
 
 | No | Kode Ref | Nama Dokumen Referensi | Path Relatif Berkas | Versi | Prioritas | Peran / Hubungan dalam Penyusunan |
 |:---:|:---:|---|---|:---:|:---:|---|
@@ -630,4 +636,4 @@ Penyusunan dokumen Release Notes v1.1 ini didasarkan secara mutlak pada 16 berka
 | 16 | **R-16** | Coding Standard v1.1 | `docs/sdlc/04_implementation/01_coding_standard.md` | 1.1 | **TERSIER** | Acuan PEP 8 formatting, PEP 257 docstring, type hints, and quality gate check. |
 
 ---
-*Dokumen Release Notes v1.1 AbuCom ini dinyatakan sah dan berlaku.*
+*Dokumen Release Notes v1.2 AbuCom ini dinyatakan sah dan berlaku.*
