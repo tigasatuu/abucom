@@ -1,8 +1,8 @@
 ---
 dokumen    : Coding Standard
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.1
-tanggal    : 2026-05-26
+versi      : 1.2
+tanggal    : 2026-05-29
 status     : Approved
 penyusun   : Principal Software Engineering Standards Architect & FP Code Quality Lead
 ---
@@ -13,7 +13,8 @@ penyusun   : Principal Software Engineering Standards Architect & FP Code Qualit
 
 | Versi | Tanggal | Perubahan | Oleh |
 | :---: | :---: | --- | --- |
-| **1.1** | 2026-05-26 | Validasi menyeluruh v1.1: komparasi mendalam terhadap 9 dokumen referensi (Tech Stack, SysArch, Security, BOM & HPP, CLI Flow, SRS, DDL, ERD, ACM). Melengkapi dekomposisi 10 modul dalam layout direktori, standard inisialisasi pool database local, mechanism retry LAN, standard data `NULL` MySQL &rarr; `None` Python, standard `ROUND_HALF_UP` desimal, integrasi pustaka `cryptography==42.0.5` untuk UU PDP, konvensi frozen dataclass vs NamedTuple, validitas sintaksis Python 3.14.2+ (no `typing.List`), standard error codes, dan pengujian deterministik fungsional. | Principal Software Engineering Standards Architect & FP Code Quality Lead |
+| **1.2** | 2026-05-29 | Validasi menyeluruh v1.2: perbaikan dekomposisi 10 modul (penambahan M.9 Laporan Keuangan di layout direktori), penambahan error code catalog (ERR-AUTH, ERR-DB, dll.), penyediaan template boilerplate header modul PEP 257, definisi spesifik interval eksponensial retry koneksi (2^attempt), penambahan aturan system logging aplikasi standar Python, pembakuan format decorator RBAC, penambahan semantic commit tipe refactor & test, serta pembersihan akronim tidak relevan. | Principal Software Engineering Standards Architect & FP Code Quality Lead |
+| **1.1** | 2026-05-26 | Validasi menyeluruh v1.1: komparasi mendalam terhadap 9 dokumen referensi (Tech Stack, SysArch, Security, BOM & HPP, CLI Flow, SRS, DDL, ERD, ACM). Melengkapi dekomposisi modul dalam layout direktori, standard inisialisasi pool database local, mechanism retry LAN, standard data `NULL` MySQL &rarr; `None` Python, standard `ROUND_HALF_UP` desimal, integrasi pustaka `cryptography==42.0.5` untuk UU PDP, konvensi frozen dataclass vs NamedTuple, validitas sintaksis Python 3.14.2+ (no `typing.List`), standard error codes, dan pengujian deterministik fungsional. | Principal Software Engineering Standards Architect & FP Code Quality Lead |
 | **1.0** | 2026-05-25 | Inisialisasi awal penyusunan dokumen *Coding Standard* secara komprehensif. Menetapkan seluruh konvensi penamaan, prinsip pemrograman fungsional murni (FP), standar type hints, format penulisan query database, arsitektur berlapis, standar keamanan (bcrypt/JWT/RBAC), antarmuka CLI, portabilitas lintas OS, dependensi terkunci, standar testing, larangan mutlak, serta checklist kepatuhan pengkodean. | Principal Software Engineering Standards Architect & FP Code Quality Lead |
 
 ---
@@ -48,7 +49,7 @@ Dalam siklus pengembangan sistem (*System Development Life Cycle* — SDLC) AbuC
                   |
                   v
 +===================================+
-|   Coding Standard v1.1 [DOK]      |  <-- POSISI DELIVERABLE INI
+|   Coding Standard v1.2 [DOK]      |  <-- POSISI DELIVERABLE INI
 +===================================+
                   |
                   v
@@ -93,10 +94,6 @@ Dalam siklus pengembangan sistem (*System Development Life Cycle* — SDLC) AbuC
 * **LAN**: *Local Area Network* (Jaringan offline lokal toko tanpa koneksi internet luar).
 * **PEP**: *Python Enhancement Proposal* (Dokumen standar panduan komunitas Python).
 * **HOF**: *Higher-Order Function* (Fungsi yang menerima atau mengembalikan fungsi lain).
-* **CRUD**: *Create, Read, Update, Delete* (Operasi data dasar basis data).
-* **UoM**: *Unit of Measure* (Satuan terkecil dasar stok barang).
-* **OPEX**: *Operating Expense* (Beban biaya operasional rutin toko).
-* **UPS**: *Uninterruptible Power Supply* (Perangkat daya stabilizer Mini PC kasir).
 
 ### 1.7. Tingkat Kepatuhan (Compliance Levels)
 Kepatuhan terhadap dokumen standar ini dikelompokkan berdasarkan aturan RFC 2119:
@@ -138,7 +135,7 @@ def potong_stok_benar(stok_saat_ini: Decimal, kuantitas_ambil: Decimal) -> Decim
 ```
 
 #### 2.2.2. Imutabilitas Data (Data Immutability)
-`[WAJIB]` Seluruh struktur data internal memori Python **MUST** bersifat *immutable*. Perubahan data dilakukan dengan menyalin objek baru (*new record*).
+`[WAJIB]` Seluruh struktur data internal memori Python **MUST** bersifat *imutabel* (immutable). Perubahan data dilakukan dengan menyalin objek baru (*new record*).
 * **Salah (❌ Mutable Dictionary)**:
 ```python
 # MELANGGAR: Dictionary bersifat mutable, nilainya dapat dirubah di tengah jalan
@@ -171,7 +168,7 @@ def render_kasir_menu(state: dict) -> None:
     print(f"Kasir ID: {state['user_id']} aktif.")
 ```
 
-#### 2.2.5. Higher-Order Functions & Composition
+#### 2.2.5. Higher-Order Functions (HOF) & Composition
 `[DIREKOMENDASIKAN]` Manipulasi data koleksi (filter stok kritis, kalkulasi total audit logs) sebaiknya memanfaatkan fungsi orde tinggi bawaan Python seperti `map()`, `filter()`, dan `functools.reduce()`.
 
 #### 2.2.6. Monad-like Error Handling (Result/Either Pattern)
@@ -272,6 +269,7 @@ abucom/
 │   ├── menu_inventaris.py      # Interaksi Modul M.2 & M.5 (Antrian)
 │   ├── menu_ppob_service.py    # Interaksi Modul M.3
 │   ├── menu_sdm_finansial.py   # Interaksi Modul M.4 & M.6 (Pinjaman)
+│   ├── menu_laporan.py         # Interaksi Modul M.9 (Laporan Keuangan)
 │   └── menu_configs.py         # Interaksi Modul M.10 (Configs)
 │
 ├── logic/                      # LAYER 2: BUSINESS LOGIC (Pure FP Python)
@@ -279,6 +277,7 @@ abucom/
 │   ├── bom_hpp.py              # Logika kalkulasi HPP desimal (M.2)
 │   ├── smart_payroll.py        # Logika payroll & komisi poin (M.4)
 │   ├── financial_engine.py     # Logika pinjaman & laba rugi (M.6)
+│   ├── financial_reporter.py   # Logika agregasi laporan keuangan (M.9)
 │   └── safety_validator.py     # Logika sanitasi input & checks
 │
 ├── db/                         # LAYER 3: DATA ACCESS (SQL Engine)
@@ -411,6 +410,17 @@ def hitung_gross_margin(harga_jual: Decimal, hpp: Decimal) -> Decimal:
 
 ### 6.4. Header File / Module Docstring
 `[WAJIB]` Setiap file modul `.py` baru **MUST** memiliki header metadata di baris teratas mendefinisikan tujuan modul dan kontributor (Ref: [System Architecture] Bab 1.4).
+
+**Template Header Module:**
+```python
+"""
+Nama Modul: <nama_file.py>
+Deskripsi: Berisi pure functions untuk kalkulasi Harga Pokok Penjualan (HPP) desimal
+           dan kalkulasi Bill of Materials (Modul M.2).
+Author: [Nama Pengembang / AI Asisten]
+Tanggal: [YYYY-MM-DD]
+"""
+```
 
 ### 6.5. Penulisan TODO dan FIXME
 * `[WAJIB]` Gunakan format `# TODO: [Tugas]` untuk menandai implementasi fitur yang ditangguhkan.
@@ -548,7 +558,8 @@ def execute_acid_transaction(db_connection, operations: list[Callable[[Any], Any
 ```
 
 ### 8.9. Pola Connection Pooling & Retry Mechanism
-`[WAJIB]` Untuk memitigasi gangguan switch jaringan LAN toko, modul database **MUST** mengimplementasikan pooling connection driver (`pool_size=5`, `pool_name="abupool"`) dan percobaan ulang otomatis (*retry with exponential backoff* sebanyak 3 kali) khusus saat menangkap kode error MySQL `2006` (*MySQL server gone away*) dan `2013` (*Lost connection during query*). (Ref: [System Architecture] Bab 6.2)
+`[WAJIB]` Untuk memitigasi gangguan switch jaringan LAN toko, modul database **MUST** mengimplementasikan pooling connection driver (`pool_size=5`, `pool_name="abupool"`) dan percobaan ulang otomatis khusus saat menangkap kode error MySQL `2006` (*MySQL server gone away*) dan `2013` (*Lost connection during query*).
+* Aturan Retry: **Exponential backoff sebanyak 3 kali** dengan interval tunggu **2^attempt detik (2 detik, 4 detik, 8 detik)**. (Ref: [System Architecture] Bab 6.2)
 
 ---
 
@@ -585,7 +596,7 @@ cursor.execute(query, (username_input,))
 `db_pool = mysql.connector.pooling.MySQLConnectionPool(pool_name="abupool", pool_size=5, ...)`
 
 ### 9.6. Penanganan Error Database (Retry & Rollback)
-`[WAJIB]` Tangkap kode error `2006` atau `2013`, jalankan percobaan ulang koneksi 3 kali secara exponential backoff sebelum program dibekukan aman.
+`[WAJIB]` Tangkap kode error `2006` atau `2013`, jalankan percobaan ulang koneksi 3 kali secara exponential backoff (waktu tunggu **2 detik, 4 detik, 8 detik**) sebelum program dibekukan aman.
 
 ### 9.7. Standar Tipe Data `DECIMAL(15,4)` and Mapping Python `decimal.Decimal`
 `[WAJIB]` Seluruh pemetaan data numerik presisi **MUST** disinkronkan:
@@ -607,6 +618,7 @@ def handle_null_decimal(val: Decimal | None) -> Decimal:
 ### 10.1. Aturan Pengelolaan Kredensial (`.env` & `python-dotenv`)
 * `[WAJIB]` Kredensial sensitif (sandi database, secret key JWT, Fernet key UU PDP) **MUST** disimpan di berkas `.env` lokal, dilarang keras di-hardcode ke file Python.
 * `[WAJIB]` Berkas `.env` **MUST** masuk ke berkas `.gitignore`. Sediakan berkas `.env.example` kosong sebagai templat.
+* `[WAJIB]` Lingkungan deployment dibedakan menggunakan variabel `APP_ENV` (development vs production) di `.env`.
 * `[WAJIB]` Skrip validator otomatis wajib mengecek kelengkapan `.env` saat startup aplikasi. Jika tidak ada, startup batal dengan kode `ERR-FILE-001`. (Ref: [Security Design] Bab 6.5)
 
 ### 10.2. Aturan Enkripsi Sandi (`bcrypt` Cost Factor 12)
@@ -629,19 +641,31 @@ def verify_user_password(password_polos: str, password_hash: str) -> bool:
 `[WAJIB]` Token JWT ditandatangani dengan algoritma HS256 terikat secret key `.env`. Masa berlaku kedaluwarsa dibatasi maksimal 28.800 detik (8 jam biner). Deteksi kedaluwarsa signature wajib memicu pembersihan sesi dan redirect paksa ke layar login kosong. (Ref: [Security Design] Bab 4.2)
 
 ### 10.4. Aturan Implementasi RBAC (Guard/Decorator Fungsional)
-`[WAJIB]` Batasi pemanggilan fungsi operasional bisnis menggunakan guard fungsional pembungkus `check_permission()` untuk memvalidasi peran JWT staf terhadap matriks otorisasi (Ref: [Security Design] Bab 5.3).
+`[WAJIB]` Batasi pemanggilan fungsi operasional bisnis menggunakan decorator fungsional pembungkus `require_role()` untuk memvalidasi peran JWT staf terhadap matriks otorisasi (Ref: [Security Design] Bab 5.3).
 * Matriks otorisasi visual hanyalah **contoh ringkas** di dalam modul. Untuk memelihara Single Responsibility Principle (SRP) and maintainability, kode program wajib membaca matriks otorisasi terpusat dari dokumen referensi, bukan di-hardcode biner di logic check.
 ```python
-def check_permission(menu_id: str, active_role: str) -> bool:
-    """Validator biner hak akses menu CLI AbuCom membaca matriks otorisasi."""
-    # Logic penarikan hak akses terpusat
-    # Contoh implementasi pembacaan matrix:
-    RBAC_MATRIX = {
-        'pemilik': ['MENU-M1-001', 'MENU-M4-002', 'MENU-M7-002', 'MENU-M2-010'],
-        'kasir': ['MENU-M1-001', 'MENU-M1-003', 'MENU-M7-003'],
-        'gudang': ['MENU-M2-001', 'MENU-M2-005', 'MENU-M2-009']
-    }
-    return menu_id in RBAC_MATRIX.get(active_role, [])
+from typing import Callable, Any
+from functools import wraps
+
+# Contoh implementasi pembacaan matrix (seharusnya diload dari config/SSoT):
+RBAC_MATRIX = {
+    'pemilik': ['MENU-M1-001', 'MENU-M4-002', 'MENU-M7-002', 'MENU-M2-010'],
+    'kasir': ['MENU-M1-001', 'MENU-M1-003', 'MENU-M7-003'],
+    'gudang': ['MENU-M2-001', 'MENU-M2-005', 'MENU-M2-009']
+}
+
+def require_role(menu_id: str) -> Callable:
+    """Decorator fungsional untuk validasi RBAC sebelum eksekusi aksi menu."""
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(session_state: dict, *args, **kwargs) -> Any:
+            active_role = session_state.get('role', 'guest')
+            if menu_id not in RBAC_MATRIX.get(active_role, []):
+                print(f"⛔ ERR-AUTH-002: Anda tidak memiliki akses ke {menu_id}")
+                return None
+            return func(session_state, *args, **kwargs)
+        return wrapper
+    return decorator
 ```
 
 ### 10.5. Aturan Sanitasi Input CLI
@@ -652,6 +676,11 @@ def check_permission(menu_id: str, active_role: str) -> bool:
 
 ### 10.7. Aturan Proteksi Data Pribadi (UU PDP Compliance)
 `[WAJIB]` Untuk mematuhi UU PDP No. 27/2022, kolom nomor WhatsApp pelanggan pada tabel `pelanggan` **MUST** dienkripsi secara reversible di memori Python menggunakan algoritma simetris `cryptography.fernet` dengan kunci Fernet 32-byte dari berkas `.env` sebelum dikirim ke database MySQL. (Ref: [Security Design] Bab 6.1)
+
+### 10.8. Standar System Logging (Debugging)
+`[WAJIB]` Untuk pelacakan *bug* dan pemantauan sistem (berbeda dari audit trail keamanan berbasis database), aplikasi wajib memanfaatkan modul standard `logging` Python.
+* Log aplikasi jika `APP_ENV=development` dicetak ke console, sedangkan `production` disimpan ke file fisik berekstensi `.log`.
+* Format wajib memuat: `[WAKTU] [LEVEL] [MODUL] Pesan`.
 
 ---
 
@@ -675,7 +704,16 @@ def check_permission(menu_id: str, active_role: str) -> bool:
 ### 11.5. Konvensi Pesan Error Visual (`ERR-XXX-YYY`)
 `[WAJIB]` Tampilkan kegagalan sistem di baris terbawah dengan warna merah ANSI tebal ber-format:
 `⛔ ERR-[KATEGORI]-[NOMOR]: [Pesan deskriptif fungsional bahasa Indonesia]`.
-* *Contoh*: `⛔ ERR-STOCK-010: Ketersediaan persediaan barang di database tidak mencukupi!`
+
+**Katalog Kategori Error (Error Code Catalog):**
+| Kategori | Prefix Code | Contoh Penggunaan dan Definisi |
+| --- | --- | --- |
+| **Authentication & RBAC** | `ERR-AUTH` | `ERR-AUTH-001: Kredensial tidak valid.` |
+| **Database & SQL** | `ERR-DB` | `ERR-DB-2006: Koneksi terputus dari database.` |
+| **Stok & Inventaris** | `ERR-STOCK` | `ERR-STOCK-010: Persediaan bahan baku tidak mencukupi.` |
+| **File & Konfigurasi** | `ERR-FILE` | `ERR-FILE-001: File .env tidak ditemukan.` |
+| **Validasi & Input** | `ERR-VAL` | `ERR-VAL-050: Format nilai desimal tidak sesuai.` |
+| **Jaringan & Layanan**| `ERR-NET` | `ERR-NET-001: Layanan PPOB pihak ketiga timeout.` |
 
 ### 11.6. Konvensi Pembersihan Layar Terminal (Cross-OS)
 `[WAJIB]` Fungsi pembersih terminal console wajib mendeteksi sistem operasi secara dinamis menggunakan platform runtime Python (Ref: [System Architecture] Bab 3.4).
@@ -748,6 +786,7 @@ Modul standard Python bawaan runtime yang wajib dioptimalkan:
 * `datetime` (Timestamp transaksi & payroll).
 * `typing` (Anotasi type hints).
 * `getpass` (Masking ketikan sandi terminal).
+* `logging` (Penulisan event debugging sistem).
 
 ### 13.5. Aturan Penambahan Dependensi Baru
 `[WAJIB]` Pengembang dilarang memasang library luar baru tanpa justifikasi teknis tertulis dan wajib memperoleh persetujuan pemilik usaha guna menghindari risiko membengkaknya overhead runtime server lokal.
@@ -796,6 +835,8 @@ Modul standard Python bawaan runtime yang wajib dioptimalkan:
 * `feat`: Fitur baru. (Contoh: `feat: implementasi fungsi hitung HPP BOM desimal`).
 * `fix`: Perbaikan bug. (Contoh: `fix: pembulatan desimal gaji kasbon UMR`).
 * `docs`: Pembaruan dokumentasi. (Contoh: `docs: update header modul rbac`).
+* `refactor`: Perbaikan atau restrukturisasi internal kode tanpa merubah logika bisnis. (Contoh: `refactor: pemindahan fungsi helper ke modul utilitas`).
+* `test`: Penambahan pengujian unit atau integrasi otomatis. (Contoh: `test: penambahan mock data test rbac`).
 
 ### 15.4. Aturan `.gitignore`
 `[WAJIB]` Berkas `.gitignore` wajib mengecualikan file berikut dari repositori Git:
