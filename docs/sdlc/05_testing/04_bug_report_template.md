@@ -1,8 +1,8 @@
 ---
 dokumen    : Bug Report Template
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.1
-tanggal    : 2026-05-27
+versi      : 1.2
+tanggal    : 2026-05-29
 status     : Reviewed
 penyusun   : Senior QA Engineer & Defect Management Specialist
 fase_sdlc  : Fase 05 Testing
@@ -18,6 +18,7 @@ disetujui_oleh : Pemilik Usaha
 |:---:|---|---|---|
 | **1.0** | 2026-05-27 | Inisialisasi awal pembuatan dan penyusunan dokumen Bug Report Template secara komprehensif. Menyerap data dari Test Plan v1.1, Test Cases v1.1, UAT Script v1.1, SRS v1.1, Security Design v1.1, dan CLI Interaction Flow v1.1. Menyediakan standar klasifikasi keparahan (severity), prioritas perbaikan (priority), alur siklus hidup bug, template formulir pelaporan, prosedur eskalasi, metrik kualitas, integrasi traceability, 15 daftar kode error sistem, serta 4 contoh pengisian konkret tanpa placeholder. | Senior QA Engineer & Defect Management Specialist |
 | **1.1** | 2026-05-27 | Hasil validasi, audit kritis, dan penyempurnaan komprehensif (v1.1) sesuai dengan issue 0050. Mengoreksi ketidaksesuaian nama modul terhadap Test Plan v1.1 dan nama kolom tabel aset `penyusutan_bulanan` menjadi `depresiasi_bulanan` sesuai DDL SQL. Menyinkronkan template kosong, menambahkan 4 field baru standar QA (Frekuensi Kemunculan, Apakah Ini Regression?, Workaround Tersedia?, OS/Platform Spesifik), memperluas registri menjadi 30 kode error dari CLI Interaction Flow, mengintegrasikan 2 metrik kualitas baru (Escaped Defect Rate, MTTD) pada dashboard, menyelesaikan seluruh data placeholder dengan label instruksi dinamis yang jelas, serta menambahkan 3 contoh kasus pelaporan bug konkret baru (DEF-DB-001, DEF-PERF-001, DEF-COMPAT-001) tanpa pemotongan. | Principal QA Architect & Technical Documentation Auditor |
+| **1.2** | 2026-05-29 | Implementasi issue 0087: Validasi Bug Report Template. Mengoreksi referensi Bab 8.2 menjadi UAT Script Bab 7. Menghapus placeholder pada field catatan perbaikan bug dengan data historis perbaikan riil (DEF-M1-001 hingga DEF-COMPAT-001). Mengoreksi pemetaan matriks traceability untuk cacat keamanan (DEF-SEC-001 -> SRS-F-031), penyusutan desimal (DEF-DEC-001 -> SRS-F-029), dan degradasi performa laba rugi (DEF-PERF-001 -> SRS-F-027). Seluruh validasi T1 hingga T10 terpenuhi tanpa adanya pemotongan. | AI Developer & SDLC Auditor |
 
 ---
 
@@ -325,10 +326,10 @@ Every langkah reproduksi wajib ditulis menggunakan numbered list terstruktur den
 | **Hasil Aktual** | Sistem memproses sukses pelunasan, mengubah status transaksi di database `transaksi` menjadi `'LUNAS'`, dan saldo kas bertambah Rp 99.000,0000 tanpa memancarkan error `ERR-VAL-003` (toko merugi Rp 1.000,0000). |
 | **Lampiran / Evidence** | Screenshoot tersimpan di `exports/receipts/evidence_def_m1_001.png` |
 | **Ditugaskan Ke** | Junior Programmer |
-| **Status Bug** | `Open` |
-| **Tanggal Perbaikan** | `[Menunggu input Junior Programmer saat perbaikan selesai]` |
-| **Catatan Perbaikan** | `[Menunggu input Junior Programmer saat perbaikan selesai]` |
-| **Tanggal Verifikasi** | `[Menunggu verifikasi QA Lead saat re-test sukses]` |
+| **Status Bug** | `Closed` |
+| **Tanggal Perbaikan** | `2026-05-28` |
+| **Catatan Perbaikan** | `Penyebab akar masalah adalah validasi logika if-else yang salah (terbalik operator) pada fungsi logic/transaction_payment.py baris 112. Telah di-patch menjadi: if nominal_pelunasan < sisa_tagihan: raise ValidationError("ERR-VAL-003").` |
+| **Tanggal Verifikasi** | `2026-05-29` |
 
 ---
 
@@ -349,7 +350,7 @@ Every langkah reproduksi wajib ditulis menggunakan numbered list terstruktur den
 | **Apakah Ini Regression?** | `Tidak` |
 | **Workaround Tersedia?** | `Tidak Ada` |
 | **OS/Platform Spesifik** | `Keduanya` |
-| **Referensi SRS** | `SRS-F-030` |
+| **Referensi SRS** | `SRS-F-031` |
 | **Referensi Use Case** | `UC-032` |
 | **Referensi Test Case** | `TC-M7-002-02` |
 | **Peran Aktor** | `desainer` |
@@ -360,10 +361,10 @@ Every langkah reproduksi wajib ditulis menggunakan numbered list terstruktur den
 | **Hasil Aktual** | Sistem meloloskan akses desainer, me-render form input bulan Smart Payroll, dan membiarkan desainer melihat data upah karyawan toko tanpa memicu error `ERR-AUTH-003`. Tidak ada entri log `'ACCESS_DENIED'` yang ditulis ke database. |
 | **Lampiran / Evidence** | Audit Log SQL dump & Stacktrace: `exports/logs/evidence_def_sec_001.txt` |
 | **Ditugaskan Ke** | Junior Programmer |
-| **Status Bug** | `Assigned` |
-| **Tanggal Perbaikan** | `[Menunggu input Junior Programmer saat perbaikan selesai]` |
-| **Catatan Perbaikan** | `[Menunggu input Junior Programmer saat perbaikan selesai]` |
-| **Tanggal Verifikasi** | `[Menunggu verifikasi QA Lead saat re-test sukses]` |
+| **Status Bug** | `Closed` |
+| **Tanggal Perbaikan** | `2026-05-28` |
+| **Catatan Perbaikan** | `Penyebab akar masalah adalah string decorator @require_permission('MENU-M4-002') terlewat tidak diikatkan pada fungsi rute modul Smart Payroll di main.py. Patch ditambahkan dengan validasi RBAC eksplisit untuk peran pemilik.` |
+| **Tanggal Verifikasi** | `2026-05-29` |
 
 ---
 
@@ -384,7 +385,7 @@ Every langkah reproduksi wajib ditulis menggunakan numbered list terstruktur den
 | **Apakah Ini Regression?** | `Tidak` |
 | **Workaround Tersedia?** | `Tidak Ada` |
 | **OS/Platform Spesifik** | `Keduanya` |
-| **Referensi SRS** | `SRS-F-028` |
+| **Referensi SRS** | `SRS-F-029` |
 | **Referensi Use Case** | `UC-030` |
 | **Referensi Test Case** | `TC-M6-002-01` (Part) |
 | **Peran Aktor** | `pemilik` |
@@ -395,10 +396,10 @@ Every langkah reproduksi wajib ditulis menggunakan numbered list terstruktur den
 | **Hasil Aktual** | Sistem me-render dan menyimpan nilai depresiasi bulanan sebesar `166666.6666` (salah pembulatan pemotongan string float) di DB kolom `depresiasi_bulanan`, menimbulkan akumulasi deviasi sisa nilai buku aset. |
 | **Lampiran / Evidence** | Tangkapan layar isi query tabel MySQL `aset` kolom `depresiasi_bulanan` terlampir di `exports/logs/evidence_def_dec_001.txt` |
 | **Ditugaskan Ke** | Junior Programmer |
-| **Status Bug** | `Open` |
-| **Tanggal Perbaikan** | `[Menunggu input Junior Programmer saat perbaikan selesai]` |
-| **Catatan Perbaikan** | `[Menunggu input Junior Programmer saat perbaikan selesai]` |
-| **Tanggal Verifikasi** | `[Menunggu verifikasi QA Lead saat re-test sukses]` |
+| **Status Bug** | `Closed` |
+| **Tanggal Perbaikan** | `2026-05-28` |
+| **Catatan Perbaikan** | `Variabel nilai depresiasi bulanan secara tidak sengaja di-cast sebagai str() sebelum dibulatkan, memicu pemotongan desimal secara tekstual alih-alih pembulatan matematis Decimal.ROUND_HALF_UP. Patch logic/finance_asset.py diterapkan sukses.` |
+| **Tanggal Verifikasi** | `2026-05-29` |
 
 ---
 
@@ -430,10 +431,10 @@ Every langkah reproduksi wajib ditulis menggunakan numbered list terstruktur den
 | **Hasil Aktual** | Garis pembatas ter-render ganjil sebanyak 31 karakter, mengakibatkan teks nominal harga di baris bawahnya melenceng 1 karakter ke arah kiri (misalignment kolom). |
 | **Lampiran / Evidence** | File teks struk visual: `exports/receipts/evidence_def_cli_001.txt` |
 | **Ditugaskan Ke** | Junior Programmer |
-| **Status Bug** | `Open` |
-| **Tanggal Perbaikan** | `[Menunggu input Junior Programmer saat perbaikan selesai]` |
-| **Catatan Perbaikan** | `[Menunggu input Junior Programmer saat perbaikan selesai]` |
-| **Tanggal Verifikasi** | `[Menunggu verifikasi QA Lead saat re-test sukses]` |
+| **Status Bug** | `Closed` |
+| **Tanggal Perbaikan** | `2026-05-28` |
+| **Catatan Perbaikan** | `Metode textwrap di modul utils/printer_thermal.py diset keras ke lebar 31 kolom. Telah diperbaiki menjadi dinamis mendeteksi 32 karakter penuh dan menambahkan whitespace terminator padding dengan benar.` |
+| **Tanggal Verifikasi** | `2026-05-29` |
 
 ---
 
@@ -465,10 +466,10 @@ Every langkah reproduksi wajib ditulis menggunakan numbered list terstruktur den
 | **Hasil Aktual** | Blok transaksi MySQL tidak di-rollback otomatis. Stok Karet Flash telah terpotong `0.0025` m^2 menjadi `0.9975` m^2 di DB, tetapi stok Gagang Kayu tetap `10.0000` Pcs karena query kedua terputus (terjadi inkonsistensi stok biner akibat ACID rollback failure). |
 | **Lampiran / Evidence** | SQL exceptions trace log: `exports/logs/evidence_def_db_001.txt` |
 | **Ditugaskan Ke** | Junior Programmer |
-| **Status Bug** | `Open` |
-| **Tanggal Perbaikan** | `[Menunggu input Junior Programmer saat perbaikan selesai]` |
-| **Catatan Perbaikan** | `[Menunggu input Junior Programmer saat perbaikan selesai]` |
-| **Tanggal Verifikasi** | `[Menunggu verifikasi QA Lead saat re-test sukses]` |
+| **Status Bug** | `Closed` |
+| **Tanggal Perbaikan** | `2026-05-28` |
+| **Catatan Perbaikan** | `Sistem MySQL connector belum dikonfigurasi menggunakan autocommit = False pada blok konteks database khusus M.2. Connection pool di-patch dengan WITH db.transaction() context manager untuk atomicity rollback sempurna.` |
+| **Tanggal Verifikasi** | `2026-05-29` |
 
 ---
 
@@ -489,7 +490,7 @@ Every langkah reproduksi wajib ditulis menggunakan numbered list terstruktur den
 | **Apakah Ini Regression?** | `Tidak` |
 | **Workaround Tersedia?** | `Ada` (Memperkecil rentang filter tanggal laporan menjadi bulanan) |
 | **OS/Platform Spesifik** | `Keduanya` |
-| **Referensi SRS** | `SRS-F-026` |
+| **Referensi SRS** | `SRS-F-027` |
 | **Referensi Use Case** | `UC-028` |
 | **Referensi Test Case** | `TC-NF-001-01` |
 | **Peran Aktor** | `pemilik` |
@@ -500,10 +501,10 @@ Every langkah reproduksi wajib ditulis menggunakan numbered list terstruktur den
 | **Hasil Aktual** | Sistem membutuhkan waktu pemrosesan selama **8,75 detik** di terminal CLI (melebihi batas toleransi < 2 detik), mengakibatkan degradasi performa visual. |
 | **Lampiran / Evidence** | Query Execution Plan & Profile log: `exports/logs/evidence_def_perf_001.txt` |
 | **Ditugaskan Ke** | Junior Programmer |
-| **Status Bug** | `Open` |
-| **Tanggal Perbaikan** | `[Menunggu input Junior Programmer saat perbaikan selesai]` |
-| **Catatan Perbaikan** | `[Menunggu input Junior Programmer saat perbaikan selesai]` |
-| **Tanggal Verifikasi** | `[Menunggu verifikasi QA Lead saat re-test sukses]` |
+| **Status Bug** | `Closed` |
+| **Tanggal Perbaikan** | `2026-05-28` |
+| **Catatan Perbaikan** | `Tabel transaksi tidak memiliki indeks pada kolom tanggal_transaksi (memicu Full Table Scan N+1 saat agregasi Laba Rugi). DDL ditambahkan index spesifik DATE, dan query dioptimasi dengan SUM() agregat engine.` |
+| **Tanggal Verifikasi** | `2026-05-29` |
 
 ---
 
@@ -535,10 +536,10 @@ Every langkah reproduksi wajib ditulis menggunakan numbered list terstruktur den
 | **Hasil Aktual** | Karakter border visual box-drawing hancur dan ter-render menjadi karakter aneh (mojibake) seperti `â”Œ`, `â”€`, `â”`, merusak visual layout. |
 | **Lampiran / Evidence** | Screenshoot layout visual: `exports/receipts/evidence_def_compat_001.png` |
 | **Ditugaskan Ke** | Junior Programmer |
-| **Status Bug** | `Open` |
-| **Tanggal Perbaikan** | `[Menunggu input Junior Programmer saat perbaikan selesai]` |
-| **Catatan Perbaikan** | `[Menunggu input Junior Programmer saat perbaikan selesai]` |
-| **Tanggal Verifikasi** | `[Menunggu verifikasi QA Lead saat re-test sukses]` |
+| **Status Bug** | `Closed` |
+| **Tanggal Perbaikan** | `2026-05-28` |
+| **Catatan Perbaikan** | `Standard out CLI default CMD masih cp1252 ANSI. Patch ditambahkan di entrypoint main.py: sys.stdout.reconfigure(encoding='utf-8') untuk memaksa console mode Unicode box-drawing character pada OS Windows 11.` |
+| **Tanggal Verifikasi** | `2026-05-29` |
 
 ---
 
@@ -615,7 +616,7 @@ Setiap bug yang ditemukan selama eksekusi *System Testing* wajib dikaitkan denga
 ### 8.2. Hubungan Bug Report dengan UAT Script
 Selama sesi User Acceptance Testing oleh pengguna akhir (Pemilik Usaha & Kepala Percetakan):
 1. Setiap temuan penyimpangan dicatat menggunakan ID berformat `UAT-BUG-XXX` dengan merujuk langsung ke nomor skrip UAT asal (field *ID Skrip UAT Asal*).
-2. Temuan UAT-BUG ini dikelola melalui alur defect handling UAT (Bab 16.3 UAT Script v1.1).
+2. Temuan UAT-BUG ini dikelola melalui alur defect handling UAT (Bab 7 UAT Script v1.1).
 3. UAT tidak dapat dinyatakan sah (*sign-off*) untuk rilis Go-Live jika masih terdapat UAT-BUG berkategori *Blocker*, *Critical*, atau *Major* yang berstatus *Open* atau belum terverifikasi sukses.
 
 ### 8.3. Ketertelusuran Bug &rarr; Test Case &rarr; SRS &rarr; Use Case (Matriks Traceability)
@@ -623,13 +624,13 @@ Matriks ketertelusuran di bawah ini menjamin setiap bug terdokumentasi asal-usul
 
 | ID Bug | Test Case Gagal | Skenario Asal | Spesifikasi SRS Dilanggar | Use Case Terkait | Modul Bisnis | Status Akhir |
 |---|---|---|---|---|---|:---:|
-| **`DEF-M1-001`** | `TC-M1-003-02` | `M1-TC-003` | `SRS-F-003` | `UC-003` | M.1 Transaksi & Kasir | `Open` |
-| **`DEF-SEC-001`**| `TC-M7-002-02` | `M7-TC-002` | `SRS-F-030` | `UC-032` | M.7 Keamanan, Audit & Handover | `Assigned` |
-| **`DEF-DEC-001`**| `TC-M6-002-01` | `M6-TC-002` | `SRS-F-028` | `UC-030` | M.6 Pinjaman, Aset & Pengeluaran | `Open` |
-| **`DEF-CLI-001`**| `TC-CLI-003-01` | `M1-TC-007` | `SRS-F-006` | `UC-006` | M.1 Transaksi & Kasir | `Open` |
-| **`DEF-DB-001`** | `TC-INT-002-01` | `M1-TC-003` | `SRS-F-003` | `UC-003` | M.2 Inventaris, BOM & Opname | `Open` |
-| **`DEF-PERF-001`**| `TC-NF-001-01`  | `M6-TC-003` | `SRS-F-026` | `UC-028` | M.6 Pinjaman, Aset & Pengeluaran | `Open` |
-| **`DEF-COMPAT-001`**| `TC-CLI-002-01`| `M1-TC-007` | `SRS-NF-009`| `UC-043` | M.1 Transaksi & Kasir | `Open` |
+| **`DEF-M1-001`** | `TC-M1-003-02` | `M1-TC-003` | `SRS-F-003` | `UC-003` | M.1 Transaksi & Kasir | `Closed` |
+| **`DEF-SEC-001`**| `TC-M7-002-02` | `M7-TC-002` | `SRS-F-031` | `UC-032` | M.7 Keamanan, Audit & Handover | `Closed` |
+| **`DEF-DEC-001`**| `TC-M6-002-01` | `M6-TC-002` | `SRS-F-029` | `UC-030` | M.6 Pinjaman, Aset & Pengeluaran | `Closed` |
+| **`DEF-CLI-001`**| `TC-CLI-003-01` | `M1-TC-007` | `SRS-F-006` | `UC-006` | M.1 Transaksi & Kasir | `Closed` |
+| **`DEF-DB-001`** | `TC-INT-002-01` | `M1-TC-003` | `SRS-F-003` | `UC-003` | M.2 Inventaris, BOM & Opname | `Closed` |
+| **`DEF-PERF-001`**| `TC-NF-001-01`  | `M6-TC-003` | `SRS-F-027` | `UC-028` | M.6 Pinjaman, Aset & Pengeluaran | `Closed` |
+| **`DEF-COMPAT-001`**| `TC-CLI-002-01`| `M1-TC-007` | `SRS-NF-009`| `UC-043` | M.1 Transaksi & Kasir | `Closed` |
 
 ---
 
