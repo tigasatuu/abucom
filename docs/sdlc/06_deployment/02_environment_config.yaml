@@ -6,13 +6,13 @@
 # --- BAGIAN 0: YAML ANCHORS FOR DRY PRINCIPLE ---
 # Definisi anchor untuk penggunaan ulang data secara konsisten lintas sistem
 anchors:
-  server_ip: &server_ip "192.168.1.200" # IP Statis Server Database
+  server_ip: &server_ip "192.168.1.200" # IP Statis Server Database LAN
   db_port: &db_port 3306 # Port standar MySQL
   db_name_prod: &db_name_prod "abucom_db" # Nama database produksi utama
   db_name_test: &db_name_test "abucom_test_db" # Nama database testing sandbox
-  db_user_app: &db_user_app "abucom_app" # User basis data level aplikasi
-  printer_port_prod: &printer_port_prod "USB001" # Port default printer thermal Windows
-  printer_width_prod: &printer_width_prod 58 # Lebar kertas thermal nota default
+  db_user_app: &db_user_app "abucom_app" # User basis data level aplikasi (bukan root)
+  printer_port_prod: &printer_port_prod "USB001" # Port default printer thermal Windows (bisa COM1)
+  printer_width_prod: &printer_width_prod 58 # Lebar kertas thermal nota default (58mm)
   jwt_lifetime: &jwt_lifetime 28800 # 8 Jam (28800 detik) masa aktif sesi staf
   bcrypt_cost: &bcrypt_cost 12 # Cost factor algoritma hashing sandi bcrypt
 
@@ -20,23 +20,33 @@ anchors:
 metadata:
   dokumen: "Environment Config"
   proyek: "AbuCom — Sistem Manajemen Terpadu Usaha Percetakan"
-  versi: "1.1"
-  tanggal: "2026-05-27"
-  status: "Tervalidasi v1.1"
+  versi: "1.2"
+  tanggal: "2026-05-29"
+  status: "Tervalidasi"
   penyusun: "Senior DevOps Engineer & Infrastructure Configuration Specialist"
   deskripsi: "File konfigurasi referensi tunggal (Single Source of Configuration Truth) untuk seluruh parameter, variabel lingkungan, kredensial, dan konfigurasi infrastruktur AbuCom."
   posisi_sdlc: "Fase 06 — Deployment (Deliverable 2)"
   format: "YAML (Declarative reference structure)"
   referensi_dokumen:
-    - "R-01"
-    - "R-02"
-    - "R-03"
-    - "R-04"
-    - "R-05"
-    - "R-06"
-    - "R-07"
-    - "R-08"
-    - "R-09"
+    - "R-01: Environment Setup"
+    - "R-02: Deployment Guide"
+    - "R-03: System Architecture"
+    - "R-04: Security Design"
+    - "R-05: Tech Stack Decision"
+    - "R-06: Coding Standard"
+    - "R-07: Database Schema"
+    - "R-08: Module Structure"
+    - "R-09: Git Workflow"
+  riwayat_perubahan:
+    - versi: "1.0"
+      tanggal: "2026-05-24"
+      deskripsi: "Inisialisasi awal konfigurasi."
+    - versi: "1.1"
+      tanggal: "2026-05-27"
+      deskripsi: "Validasi dan integrasi referensi R-01 s.d R-09."
+    - versi: "1.2"
+      tanggal: "2026-05-29"
+      deskripsi: "Audit komprehensif struktur YAML, standarisasi placeholder [HARUS DIISI MANUAL], perbaikan parameter keamanan JWT dan Fernet, serta penyelarasan nomenklatur SSoT sesuai isu #0088."
 
 # --- BAGIAN 2: KONFIGURASI LINGKUNGAN (ENVIRONMENTS) ---
 environments:
@@ -48,13 +58,14 @@ environments:
       name: *db_name_test
       user: "root"
       password: "[HARUS DIISI MANUAL]" # Ganti dengan kata sandi root basis data lokal pengembang secara manual.
+      pool_name: "abupool"
       pool_size: 1
       retry_attempts: 0
     security:
-      jwt_secret_key: "dummy_secret_key_for_testing_purposes_only"
+      jwt_secret_key: "[HARUS DIISI MANUAL]" # Gunakan perintah: python -c "import secrets; print(secrets.token_hex(32))"
       jwt_lifetime_seconds: 300 # 5 menit untuk testing
       bcrypt_cost_factor: 4 # Cost factor minimal untuk mempercepat unit test
-      fernet_key: "H_v3b02_vG7Y88c2b7n9mK8V9c2bL0n9mKw8V_c2bG7=" # Kunci statis dummy
+      fernet_key: "[HARUS DIISI MANUAL]" # Gunakan perintah: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode('utf-8'))"
       rate_limiting:
         max_attempts: 999
         lockout_minutes: 0
@@ -63,7 +74,7 @@ environments:
       cabang_id: 1
     output:
       receipt_mode: "file"
-      receipt_path: "exports/receipts/"
+      receipt_path: "exports/receipts/" # Path POSIX (Lintas-OS)
     logging:
       audit_mode: "console"
       level: "DEBUG"
@@ -76,13 +87,14 @@ environments:
       name: *db_name_test
       user: *db_user_app
       password: "[HARUS DIISI MANUAL]" # [SENSITIF] Isi dengan kata sandi user database 'abucom_app' di lingkungan staging.
+      pool_name: "abupool"
       pool_size: 2
       retry_attempts: 3
     security:
-      jwt_secret_key: "dummy_secret_key_for_testing_purposes_only"
+      jwt_secret_key: "[HARUS DIISI MANUAL]" # Gunakan perintah: python -c "import secrets; print(secrets.token_hex(32))"
       jwt_lifetime_seconds: 300
       bcrypt_cost_factor: *bcrypt_cost
-      fernet_key: "H_v3b02_vG7Y88c2b7n9mK8V9c2bL0n9mKw8V_c2bG7="
+      fernet_key: "[HARUS DIISI MANUAL]" # Gunakan perintah: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode('utf-8'))"
       rate_limiting:
         max_attempts: 5
         lockout_minutes: 10
@@ -91,7 +103,7 @@ environments:
       cabang_id: 1
     output:
       receipt_mode: "file"
-      receipt_path: "exports/receipts/"
+      receipt_path: "exports/receipts/" # Path POSIX (Lintas-OS)
     logging:
       audit_mode: "database"
       level: "INFO"
@@ -104,13 +116,14 @@ environments:
       name: *db_name_prod
       user: *db_user_app
       password: "[HARUS DIISI MANUAL]" # [SENSITIF] Isi dengan kata sandi user database 'abucom_app' di produksi (Sama dengan database.users[0].password).
+      pool_name: "abupool"
       pool_size: 5
       retry_attempts: 3
     security:
-      jwt_secret_key: "[HARUS DIISI MANUAL]" # [SENSITIF] Kunci rahasia signature JWT. Generate via: python -c "import secrets; print(secrets.token_hex(32))"
+      jwt_secret_key: "[HARUS DIISI MANUAL]" # [SENSITIF] Kunci rahasia signature JWT. Gunakan perintah: python -c "import secrets; print(secrets.token_hex(32))"
       jwt_lifetime_seconds: *jwt_lifetime
       bcrypt_cost_factor: *bcrypt_cost
-      fernet_key: "[HARUS DIISI MANUAL]" # [SENSITIF] Kunci enkripsi simetris Fernet (UU PDP). Generate via: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode('utf-8'))"
+      fernet_key: "[HARUS DIISI MANUAL]" # [SENSITIF] Kunci enkripsi simetris Fernet (UU PDP). Gunakan perintah: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode('utf-8'))"
       rate_limiting:
         max_attempts: 5
         lockout_minutes: 10
@@ -119,7 +132,7 @@ environments:
       cabang_id: 1
     output:
       receipt_mode: "both" # Nota struk dicetak fisik + disimpan file lokal .txt
-      receipt_path: "exports/receipts/"
+      receipt_path: "exports/receipts/" # Path POSIX (Lintas-OS)
     logging:
       audit_mode: "database"
       level: "WARNING"
@@ -472,19 +485,19 @@ application:
     DB_HOST=192.168.1.200
     DB_PORT=3306
     DB_USER=abucom_app
-    DB_PASSWORD=YOUR_DB_PASSWORD_HERE
+    DB_PASSWORD=[HARUS DIISI MANUAL]
     DB_NAME=abucom_db
     DB_POOL_SIZE=5
 
     # 3. Kunci Rahasia Otorisasi Sesi JWT (HS256)
-    JWT_SECRET_KEY=YOUR_JWT_SECRET_KEY_HERE
+    JWT_SECRET_KEY=[HARUS DIISI MANUAL]
     JWT_LIFETIME_SECONDS=28800
 
     # 4. Kunci Enkripsi WhatsApp CRM Pelanggan (Fernet Cryptography)
-    FERNET_KEY=YOUR_FERNET_KEY_HERE
+    FERNET_KEY=[HARUS DIISI MANUAL]
 
     # 5. Konfigurasi Pencadangan Database Terenkripsi AES-256
-    BACKUP_ZIP_PASSWORD=YOUR_BACKUP_ZIP_PASSWORD_HERE
+    BACKUP_ZIP_PASSWORD=[HARUS DIISI MANUAL]
 
     # 6. Konfigurasi Printer Thermal Nota Toko
     PRINTER_PORT=USB001
@@ -516,22 +529,22 @@ security:
         desc: "Pengawas operasional, validasi opname, shift handover"
       - role: "pramuniaga"
         level: 3
-        desc: "Input nota penjualan retail, CRM pendaftaran pelanggan"
+        desc: "Input nota penjualan retail, CRM pendaftaran pelanggan (Modul M.1 & M.8)"
       - role: "kasir"
         level: 3
-        desc: "Terima uang pembayaran, shift handover keluar"
+        desc: "Terima uang pembayaran, shift handover keluar (Modul M.1 & M.7)"
       - role: "desainer"
         level: 3
-        desc: "Ubah status antrian kerja, input direktori path file PDF"
+        desc: "Ubah status antrian kerja, input direktori path file PDF (Modul M.5)"
       - role: "produksi_cetak"
         level: 3
-        desc: "Pemotong bahan kustom, catat log limbah kertas (waste)"
+        desc: "Pemotong bahan kustom, catat log limbah kertas waste (Modul M.2)"
       - role: "fotocopy_print"
         level: 3
-        desc: "Pencatat cepat transaksi fotokopi retail"
+        desc: "Pencatat cepat transaksi fotokopi retail (Modul M.1)"
       - role: "gudang"
         level: 3
-        desc: "Input barang, kelola supplier, stock opname fisik"
+        desc: "Input barang, kelola supplier, stock opname fisik (Modul M.2)"
   data_protection:
     fernet_crm:
       key_length_bytes: 32
@@ -565,8 +578,8 @@ backup:
     cold_storage_retention_months: 12
     auto_cleanup: "Hapus backup berumur >30 hari via find command"
   directories:
-    server_backup_path: "/var/lib/mysql-backups"
-    client_backup_path: "exports/backups"
+    server_backup_path: "/var/lib/mysql-backups" # Path POSIX
+    client_backup_path: "exports/backups" # Path POSIX Lintas-OS
     owner: "root:root"
     permission: "chmod 700"
   cron_job:
@@ -653,7 +666,7 @@ logging:
     table: "backup_logs"
     desc: "Mencatat riwayat aktivitas backup database"
   system_logs:
-    path: "/var/log/abucom_backup.log"
+    path: "/var/log/abucom_system.log"
 
 # --- BAGIAN 14: KONFIGURASI TESTING ---
 testing:
@@ -775,55 +788,55 @@ references:
   - code: "R-01"
     name: "Environment Setup"
     path: "docs/sdlc/04_implementation/02_environment_setup.md"
-    version: "1.1"
+    version: "1.2"
     priority: "PRIMER"
     role: "Sumber data utama konfigurasi server/klien, requirements.txt, venv, printer port, backup, testing, and connection pool."
   - code: "R-02"
     name: "Deployment Guide"
     path: "docs/sdlc/06_deployment/01_deployment_guide.md"
-    version: "1.1"
+    version: "1.2"
     priority: "PRIMER"
     role: "Sumber data perbedaan lingkungan, skrip backup cron, SOP runbook startup/shutdown, smoke test, and risk matrix."
   - code: "R-03"
     name: "System Architecture"
     path: "docs/sdlc/03_design/03_system_architecture.md"
-    version: "1.1"
+    version: "1.2"
     priority: "PRIMER"
     role: "Sumber data topologi LAN, hardware server/klien, arsitektur 4-layer logis, connection pool, and multi-branch readiness."
   - code: "R-04"
     name: "Security Design"
     path: "docs/sdlc/03_design/06_security_design.md"
-    version: "1.1"
+    version: "1.2"
     priority: "PRIMER"
     role: "Sumber data bcrypt, JWT lifetimes, rate limiting, matrix RBAC, Fernet CRM, error codes, and audit trail JSON."
   - code: "R-05"
     name: "Tech Stack Decision"
     path: "docs/sdlc/01_planning/04_tech_stack_decision.md"
-    version: "1.1"
+    version: "1.2"
     priority: "PRIMER"
     role: "Sumber data platform runtime, database, standard libraries, locked versions requirements.txt, and hybrid methodology."
   - code: "R-06"
     name: "Coding Standard"
     path: "docs/sdlc/04_implementation/01_coding_standard.md"
-    version: "1.1"
+    version: "1.2"
     priority: "SEKUNDER"
     role: "Sumber data directory modular structure, PEP 8 code style, PEP 257 docstring style, type hints annotations, and git workflow."
   - code: "R-07"
     name: "Database Schema"
     path: "docs/sdlc/03_design/01_database_schema.sql"
-    version: "1.1"
+    version: "1.2"
     priority: "SEKUNDER"
     role: "Sumber data nama database utama/test, 28 daftar tabel InnoDB relasional, and application privilege user."
   - code: "R-08"
     name: "Module Structure"
     path: "docs/sdlc/04_implementation/03_module_structure.md"
-    version: "1.1"
+    version: "1.2"
     priority: "SEKUNDER"
     role: "Sumber data modular separation and entry point path."
   - code: "R-09"
     name: "Git Workflow"
     path: "docs/sdlc/04_implementation/04_git_workflow.md"
-    version: "1.1"
+    version: "1.2"
     priority: "TERSIER"
     role: "Sumber data branching convention feature/main, conventional commit styles, and tagging releases."
 
