@@ -1,8 +1,8 @@
 ---
 dokumen    : Test Cases
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.1
-tanggal    : 2026-05-26
+versi      : 1.2
+tanggal    : 2026-05-29
 status     : Reviewed
 penyusun   : Principal QA Architect & SDLC Documentation Auditor
 ---
@@ -15,6 +15,7 @@ penyusun   : Principal QA Architect & SDLC Documentation Auditor
 |:---:|---|---|---|
 | **1.0** | 2026-05-26 | Pembuatan awal dokumen Test Cases secara komprehensif. Menjabarkan 93 kasus uji terperinci hasil ekspansi dari 44 skenario uji Test Plan v1.1. Menyertakan data uji presisi desimal, error mapping, dekorator RBAC, dan matriks ketertelusuran lengkap. | Senior QA Engineer & Test Case Design Specialist |
 | **1.1** | 2026-05-26 | Audit, validasi, dan penyempurnaan menyeluruh (v1.1) sesuai dengan issue 0046. Mengatasi numbering gap dengan mengintegrasikan seluruh 44 skenario uji Test Plan v1.1. Menambahkan 20 kasus uji baru yang detail dan granular (M2-TC-003, M2-TC-004, M2-TC-006 s.d M2-TC-009, M3-TC-002, M3-TC-003, M4-TC-004, M4-TC-005, M5-TC-002, M5-TC-003, M6-TC-001 s.d M6-TC-004, M7-TC-003, M7-TC-004, M7-TC-005, M7-TC-007). Mengoreksi data kalkulasi desimal (HPP BOM karet flash, payroll UMR, mutasi kas, depresiasi aset) secara presisi. Menghapus data kosong/placeholder. Menstandarisasi format visual rich, menambahkan Entry/Exit Criteria (IEEE 829/ISTQB), dependency map, dan memperbarui matriks ketertelusuran lengkap. | Principal QA Architect & SDLC Documentation Auditor |
+| **1.2** | 2026-05-29 | Audit, validasi, dan penyempurnaan menyeluruh (v1.2) sesuai issue 0085. Memastikan konsistensi nama tabel database (transaksi, barang, poin_insentif, payroll), memverifikasi perhitungan desimal HPP dan margin, sinkronisasi kode error dengan SRS dan skema database, penambahan test case boundary dan negatif. | Principal QA Architect & SDLC Documentation Reviewer |
 
 ---
 
@@ -350,7 +351,7 @@ graph TD
 | **Prakondisi** | 1. Transaksi ritel `transaksi_id = 12` bernilai Rp 30.000,0000 (1 Rim HVS) berstatus `'LUNAS'`.<br>2. Stok HVS saat ini = 10 Rim, saldo kas kasir = Rp 100.000,0000. |
 | **Data Uji (Test Data)** | `transaksi_id = 12`, `barang_id = 1`, `kuantitas_retur = Decimal('1.0000')`, `sandi_pemilik = 'SandiStaf2026!'`. |
 | **Langkah Uji** | 1. Pilih menu Kasir > Retur Barang ATK.<br>2. Masukkan `transaksi_id` = `12`. <br>3. Input `kuantitas_retur` = `1.0000`. <br>4. Input sandi pemilik valid = `'SandiStaf2026!'`. |
-| **Hasil Diharapkan** | 1. Entri retur tercatat di tabel `retur_transaksi` DB.<br>2. Stok HVS bertambah kembali di DB menjadi 11 Rim.<br>3. Saldo kas kasir terpotong Rp 30.000,0000 menjadi Rp 70.000,0000.<br>4. Audit log mencatat tipe `'RETUR_ATK'`. |
+| **Hasil Diharapkan** | 1. Status transaksi di tabel `transaksi` berubah menjadi `'RETUR'`.<br>2. Stok HVS bertambah kembali di DB menjadi 11 Rim.<br>3. Saldo kas kasir terpotong Rp 30.000,0000 menjadi Rp 70.000,0000.<br>4. Audit log mencatat tipe `'RETUR_ATK'`. |
 | **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
 | **Catatan Tambahan** | Menggunakan transaksi ACID database. |
 
@@ -496,7 +497,7 @@ graph TD
 | **Prakondisi** | 1. Sesi login gudang aktif (`gudang01`).<br>2. Barang retail `barang_id = 2` (Pena Ballpoint) memiliki stok = `50.0000` Pcs di DB.<br>3. Harga beli HPP Pena = Rp 2.000,0000 / Pcs. |
 | **Data Uji (Test Data)** | `barang_id = 2`, `kuantitas_ambil = Decimal('2.0000')`, `keperluan = 'Untuk desainer toko'`. |
 | **Langkah Uji** | 1. Masuk menu Inventaris > Ambil ATK Internal.<br>2. Input `barang_id` = `2`. <br>3. Input `kuantitas_ambil` = `2.0000`. <br>4. Ketik keperluan = `'Untuk desainer toko'`. <br>5. Simpan transaksi. |
-| **Hasil Diharapkan** | 1. Stok Pena Ballpoint berkurang 2 Pcs menjadi `48.0000` Pcs di database.<br>2. Nominal kerugian HPP sebesar Rp 4.000,0000 (`2.0000` x Rp 2.000,0000) dibukukan otomatis di tabel `pengeluaran` dengan kategori `'OPEX_OPERASIONAL'`. |
+| **Hasil Diharapkan** | 1. Stok Pena Ballpoint berkurang 2 Pcs menjadi `48.0000` Pcs di database.<br>2. Nominal kerugian HPP sebesar Rp 4.000,0000 (`2.0000` x Rp 2.000,0000) dibukukan otomatis di tabel `pengeluaran` dengan tipe pengeluaran `'Rutin'`. |
 | **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
 | **Catatan Tambahan** | - |
 
@@ -762,7 +763,7 @@ graph TD
 | **Prakondisi** | 1. Karyawan `karyawan_id = 5` memiliki kasbon aktif sebesar Rp 300.000,0000.<br>2. Total gaji pokok setelah UMR protection = Rp 1.600.000,0000. |
 | **Data Uji (Test Data)** | `karyawan_id = 5`, `gaji_pokok = Decimal('1600000.0000')`, `kasbon_aktif = Decimal('300000.0000')`. |
 | **Langkah Uji** | 1. Login sebagai `pemilik`. Masuk menu Payroll > Proses Slip Gaji Bulanan.<br>2. Pilih `karyawan_id = 5`. <br>3. Konfirmasi proses payroll gaji. |
-| **Hasil Diharapkan** | 1. Sistem memotong otomatis kasbon aktif Rp 300.000,0000.<br>2. Nominal gaji bersih terbayar di DB tabel `payroll_gaji` = Rp 1.300.000,0000.<br>3. Status kasbon aktif di-update menjadi `'LUNAS'` di database. |
+| **Hasil Diharapkan** | 1. Sistem memotong otomatis kasbon aktif Rp 300.000,0000.<br>2. Nominal gaji bersih terbayar di DB tabel `payroll` = Rp 1.300.000,0000.<br>3. Status kasbon aktif di-update menjadi `'LUNAS'` di database. |
 | **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
 | **Catatan Tambahan** | Menolak piutang tak tertagih secara preventif. |
 
@@ -781,7 +782,7 @@ graph TD
 | **Prakondisi** | Karyawan `karyawan_id = 5` bertugas menyelesaikan pencetakan kustom dengan status pesanan selesai. |
 | **Data Uji (Test Data)** | `beban_transaksi = Decimal('200000.0000')`. |
 | **Langkah Uji** | Panggil pure function `hitung_komisi_poin(karyawan_id=5, nominal=Decimal('200000.0000'))` (Tier 1: 1% komisi). |
-| **Hasil Diharapkan** | 1. Fungsi mengembalikan poin insentif = `Decimal('2000.0000')` (komisi 1% dari Rp 200.000 = Rp 2.000).<br>2. Database tabel `poin_karyawan` bertambah 2000 poin secara transaksional. |
+| **Hasil Diharapkan** | 1. Fungsi mengembalikan poin insentif = `Decimal('2000.0000')` (komisi 1% dari Rp 200.000 = Rp 2.000).<br>2. Database tabel `poin_insentif` bertambah 2000 poin secara transaksional. |
 | **Hasil / Status Uji** | `*[Diisi saat eksekusi]*` / `*[Diisi saat eksekusi: PASS/FAIL]*` |
 | **Catatan Tambahan** | - |
 
@@ -1258,7 +1259,7 @@ graph TD
 - **Prakondisi**: Stok awal bahan baku tinta printer `barang_id = 5` = `Decimal('1.0000')` Liter.
 - **Data Uji**: Konsumsi bahan cetak kustom = `Decimal('0.0125')` Liter.
 - **Langkah Uji**: Pemicuan perubahan status antrian kustom menjadi selesai yang memotong otomatis stok tinta printer sebesar 0.0125 Liter.
-- **Expected Result**: Sisa stok bahan tinta printer di DB tabel `barang_stok` ter-update presisi menjadi tepat = `Decimal('0.9875')` Liter.
+- **Expected Result**: Sisa stok bahan tinta printer di DB tabel `barang` ter-update presisi menjadi tepat = `Decimal('0.9875')` Liter.
 
 ### 15.5. TC-DEC-005: Smart Payroll & Depresiasi Aset
 - **Langkah Uji & Data Uji**: Rujuk detail pada **TC-M4-002-01** (Smart Payroll Skenario B) dan **TC-M4-003-01** (UMR minimum protection upah Rp 1.600.000,0000).
