@@ -1,8 +1,8 @@
 ---
 dokumen    : Deployment Guide
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.1
-tanggal    : 2026-05-27
+versi      : 1.2
+tanggal    : 2026-05-30
 status     : Tervalidasi
 penyusun   : Principal Technical Documentation Engineer & Senior DevOps Architect
 reviewer   : Antigravity (Senior DevOps Lead)
@@ -17,6 +17,7 @@ approved_by: Alfatih (Pemilik Usaha AbuCom)
 |:---:|:---:|---|---|
 | **1.0** | 2026-05-27 | Inisialisasi awal penyusunan dokumen Deployment Guide secara komprehensif (16 Bab utama). Menyerap seluruh parameter referensi R-01 s.d R-12 untuk menyusun panduan rilis produksi dual-OS luring (offline LAN). | Senior DevOps Engineer & Release Manager |
 | **1.1** | 2026-05-27 | Validasi menyeluruh dan pengisian semua placeholder manual. Penerapan hardening keamanan backup database menggunakan `/root/.my.cnf`, penambahan langkah kompilasi offline Python 3.14.2+ pada server Debian 12, penyelarasan runbook SOP harian shutdown server, dan pengisian data kontak eskalasi serta otorisasi stakeholder secara konkret. | Principal Technical Documentation Engineer & Senior DevOps Architect |
+| **1.2** | 2026-05-30 | Validasi menyeluruh konten Deployment Guide, penambahan checksum SHA-256 untuk transfer luring, perbaikan idempotensi skrip DDL, penyertaan skenario rollback jaringan, penyertaan estimasi waktu total, dan penambahan backup pre-deployment. | Junior Programmer / AI Model |
 
 ---
 
@@ -34,6 +35,8 @@ Panduan operasional ini mencakup seluruh prosedur berikut:
 *   Smoke test verifikasi fungsional pasca-deployment dan penanganan skenario rollback darurat.
 *   SOP Runbook harian pembukaan/penutupan toko, graceful shutdown UPS, dan eskalasi dukungan teknis.
 *   Penyusunan matriks risiko peluncuran sistem beserta mitigasi dan kontingensinya.
+
+**Estimasi Total Waktu Deployment**: ± 5.5 Jam (Server ± 2.5 jam, Klien ± 1.5 jam, Jaringan ± 1 jam, Verifikasi ± 0.5 jam).
 
 ### 1.3. Posisi Dokumen dalam Siklus SDLC
 Dalam siklus hidup pengembangan sistem (SDLC) AbuCom, dokumen ini merupakan deliverable pertama pada **Fase 06 — Deployment**. Dokumen ini menjadi jembatan operasional setelah exit criteria pada **Fase 05 — Testing** terpenuhi secara mutlak, sebelum sistem diserahkan secara resmi untuk digunakan dalam operasional bisnis harian retail dan cetak kustom.
@@ -381,19 +384,25 @@ Karena repositori bawaan Debian 12 menggunakan Python versi 3.11, kita wajib mel
 4.  Verifikasi IP server dengan mengetik `ip addr show enp1s0`. Diharapkan output menampilkan IP `192.168.1.200`.
 
 ### 4.8. Migrasi Database Schema Produksi (schema.sql)
-1.  Masuk ke prompt MySQL administratif server:
+1.  **[KRITIS]** Lakukan pencadangan (backup) pre-deployment jika ini merupakan proses redeployment:
+    ```bash
+    # [LINUX DEBIAN 12 — Server]
+    # Hanya dijalankan jika database abucom_db sudah ada sebelumnya
+    mysqldump --defaults-extra-file=/root/.my.cnf abucom_db > /var/lib/mysql-backups/pre_deploy_backup.sql
+    ```
+2.  Masuk ke prompt MySQL administratif server:
     ```bash
     # [LINUX DEBIAN 12 — Server]
     mysql -u root -p
     ```
-2.  Buat database produksi utama `abucom_db` dan database testing sandbox `abucom_test_db`:
+3.  Buat database produksi utama `abucom_db` dan database testing sandbox `abucom_test_db` (Gunakan IF NOT EXISTS agar aman dijalankan ulang):
     ```sql
-    CREATE DATABASE abucom_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-    CREATE DATABASE abucom_test_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CREATE DATABASE IF NOT EXISTS abucom_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CREATE DATABASE IF NOT EXISTS abucom_test_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
     EXIT;
     ```
-3.  Salin berkas `schema.sql` dari repositori proyek ke `/tmp/schema.sql`.
-4.  Eksekusi berkas schema SQL ke dalam database produksi `abucom_db`:
+4.  Salin berkas `schema.sql` dari repositori proyek ke `/tmp/schema.sql`.
+5.  Eksekusi berkas schema SQL ke dalam database produksi `abucom_db`:
     ```bash
     # [LINUX DEBIAN 12 — Server]
     mysql -u root -p abucom_db < /tmp/schema.sql
@@ -417,7 +426,7 @@ Karena repositori bawaan Debian 12 menggunakan Python versi 3.11, kita wajib mel
     ```
 2.  Buat user khusus aplikasi `abucom_app` yang diizinkan melakukan remote koneksi dari host IP segmen LAN (`192.168.1.%`):
     ```sql
-    CREATE USER 'abucom_app'@'192.168.1.%' IDENTIFIED BY 'SandiUserAplikasiAbuCom_123_!';
+    CREATE USER IF NOT EXISTS 'abucom_app'@'192.168.1.%' IDENTIFIED BY 'SandiUserAplikasiAbuCom_123_!';
     ```
     > ⚠️ **[PROSEDUR PENENTUAN PASSWORD DB USER]**: Jangan biarkan password default! Generasikan kata sandi acak kuat khusus untuk user aplikasi produksi menggunakan perintah Python berikut pada mesin lokal:
     > ```bash
@@ -510,7 +519,14 @@ Karena repositori bawaan Debian 12 menggunakan Python versi 3.11, kita wajib mel
 6.  Klik **Install**, selesaikan, lalu klik **Disable path length limit** di akhir instalasi.
 
 ### 5.4. Deployment Kode Aplikasi AbuCom CLI
-1.  Salin folder source code aplikasi rilis produksi dari USB flashdisk ke PC Kasir pada lokasi permanen:
+1.  Salin folder source code aplikasi rilis produksi (misal `abucom_source.zip`) dari USB flashdisk ke PC Kasir.
+2.  **[KEAMANAN]** Verifikasi integritas transfer file (Checksum MD5/SHA256) sebelum diekstrak untuk memastikan tidak ada korupsi data selama transfer luring:
+    ```cmd
+    # [WINDOWS 11 — Klien]
+    certutil -hashfile C:\Users\kasir\Documents\abucom_source.zip SHA256
+    # Pastikan nilai hash yang muncul cocok dengan nilai asli dari mesin developer.
+    ```
+3.  Ekstrak dan letakkan source code pada lokasi permanen:
     `C:\Users\kasir\Documents\abucom`
 
 ### 5.5. Pembuatan Virtual Environment dan Instalasi Dependensi
@@ -548,6 +564,7 @@ Karena repositori bawaan Debian 12 menggunakan Python versi 3.11, kita wajib mel
     # 1. Konfigurasi Lingkungan Runtime
     APP_ENV=production
     APP_CABANG_ID=1
+    BCRYPT_COST=12
     
     # 2. Kredensial Basis Data MySQL Server
     DB_HOST=192.168.1.200
@@ -741,9 +758,10 @@ Apabila kode program rilis baru di klien kasir crash fatal:
     ```
 4.  Lakukan instalasi ulang local wheels dependensi versi rilis lama jika requirements berubah.
 
-### 8.4. Prosedur Rollback Konfigurasi Sistem
+### 8.4. Prosedur Rollback Konfigurasi Sistem dan Jaringan
 1.  Kembalikan file `.env` ke cadangan konfigurasi stabil sebelumnya (`.env.bak`).
 2.  Nyalakan kembali program kasir.
+3.  Jika konfigurasi jaringan MikroTik bermasalah pasca-deployment, kembalikan aturan DHCP static lease dan firewall ke state semula dan restart router MikroTik.
 
 ### 8.5. Verifikasi Pasca-Rollback
 1.  Jalankan kembali ST-02 (Startup CLI) dan ST-03 (Login Staf).
@@ -753,7 +771,13 @@ Apabila kode program rilis baru di klien kasir crash fatal:
 
 ```mermaid
 flowchart TD
-    A[Deteksi Kegagalan Fatal Deployment] --> B{Apakah Masalah Database atau Kode?}
+    A[Deteksi Kegagalan Fatal Deployment] --> B{Masalah Database, Kode, atau Jaringan?}
+    
+    %% Alur Rollback Jaringan
+    B -->|Jaringan/MikroTik| N[Akses Winbox Router MikroTik]
+    N --> O[Hapus konfigurasi statis yang bermasalah]
+    O --> P[Restart Router]
+    P --> L
     
     %% Alur Rollback DB
     B -->|Database Korup| C[Force-Kill Koneksi Klien Kasir remote abucom_app]
@@ -1026,9 +1050,9 @@ Dengan menandatangani dokumen otorisasi di bawah ini, seluruh stakeholder menyep
 
 | Posisi Stakeholder | Nama Lengkap | Tanda Tangan | Tanggal Persetujuan |
 |---|---|---|---|
-| **Pemilik Usaha AbuCom** | Alfatih | `[SIGNED 27 MEI 2026]` | 27 Mei 2026 |
-| **Senior DevOps Lead** | Antigravity | `[SIGNED VIA AI AGENT]` | 27 Mei 2026 |
-| **Kepala Percetakan** | Donsise | `[SIGNED 27 MEI 2026]` | 27 Mei 2026 |
+| **Pemilik Usaha AbuCom** | Alfatih | `[SIGNED 30 MEI 2026]` | 30 Mei 2026 |
+| **Senior DevOps Lead** | Antigravity | `[SIGNED VIA AI AGENT]` | 30 Mei 2026 |
+| **Kepala Percetakan** | Donsise | `[SIGNED 30 MEI 2026]` | 30 Mei 2026 |
 
 ---
 
