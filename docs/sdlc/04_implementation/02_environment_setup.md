@@ -1,8 +1,8 @@
 ---
 dokumen    : Environment Setup
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.1
-tanggal    : 2026-05-26
+versi      : 1.2
+tanggal    : 2026-05-29
 status     : Tervalidasi
 penyusun   : Senior DevOps Engineer & Infrastructure Setup Specialist
 ---
@@ -13,6 +13,7 @@ penyusun   : Senior DevOps Engineer & Infrastructure Setup Specialist
 
 | Versi | Tanggal    | Perubahan                                                   | Oleh                                            |
 |:---:|:---:|---|---|
+| **1.2**   | 2026-05-29 | Validasi komprehensif seluruh bab: melengkapi langkah checksum ISO Debian, partisi swap, update apt, sudoer, konfigurasi timezone & waktu, max_connections & innodb_buffer_pool MySQL, offline alternatives, dummy FERNET_KEY valid, instruksi password kuat di .env, perbaikan lengkap blok SQL Prosedur Restore Manual, penambahan verifikasi Fernet Key, checklist akhir, dan perbaikan grammar/instruksi. | Antigravity (Senior AI Engineer) |
 | **1.1**   | 2026-05-26 | Validasi komprehensif, penyempurnaan instruksi luring (offline-only LAN) menggunakan local deb media & local pip wheels, penjelasan detail connection pool ('abupool'), database retry mechanism (ERR-DB-001/013), standardisasi penanganan data NULL MySQL ke Python None (helper handle_null_decimal), dan visualisasi data presisi desimal ROUND_HALF_UP. Menyelaraskan seluruh spesifikasi v1.1 SDLC AbuCom. | Antigravity (Senior AI Engineer) |
 | **1.0**   | 2026-05-26 | Inisialisasi awal penyusunan panduan Environment Setup secara komprehensif (16 Bab utama). Menyeleraskan keputusan *Tech Stack Decision* v1.1, *System Architecture* v1.1, *Security Design* v1.1, dan *Coding Standard* v1.1 untuk implementasi lingkungan server Linux Debian 12 dan klien Windows 11. | Senior DevOps Engineer & Infrastructure Setup Specialist |
 
@@ -193,7 +194,7 @@ Sebelum melanjutkan ke setup sistem operasi, pastikan fisik hardware terpasang d
 
 ### 4.1. Instalasi Minimal Linux Debian 12
 1.  Unduh berkas instalasi resmi **Debian 12.x Bookworm Netinst ISO** (64-bit).
-    > ⚠️ **[CATATAN OFFLINE-ONLY LAN]**: Karena lingkungan operasional toko fisik AbuCom berjalan offline murni (luring), pastikan untuk mengunduh berkas ISO **Debian 12.x Bookworm Netinst** menggunakan koneksi internet di tempat lain terlebih dahulu, atau menggunakan berkas **DVD Installer Lengkap (Debian DVD ISO)** untuk memastikan seluruh paket *standard system utilities* dapat terpasang tanpa membutuhkan gateway internet saat proses instalasi.
+    > ⚠️ **[CATATAN OFFLINE-ONLY LAN]**: Karena lingkungan operasional toko fisik AbuCom berjalan offline murni (luring), pastikan untuk mengunduh berkas ISO **Debian 12.x Bookworm Netinst** menggunakan koneksi internet di tempat lain terlebih dahulu, atau menggunakan berkas **DVD Installer Lengkap (Debian DVD ISO)**. **[KRITIS]** Pastikan untuk memverifikasi checksum SHA256 atau MD5 dari file ISO yang diunduh untuk menjamin integritas data sebelum membuat bootable USB.
 2.  Buat bootable USB flashdisk menggunakan aplikasi Rufus.
 3.  Booting Mini PC Server ke Installer Debian. Pilih opsi **Graphical Install**.
 4.  Pilih konfigurasi bahasa: `English`, lokasi: `Indonesia`, keyboard: `American English`.
@@ -201,11 +202,28 @@ Sebelum melanjutkan ke setup sistem operasi, pastikan fisik hardware terpasang d
 6.  Set password untuk akun `root` (minimal 16 karakter acak).
     > ⚠️ **[HARUS DIISI MANUAL]**: Catat password root fisik Server ini di buku catatan rahasia pemilik!
 7.  Buat akun user non-root administratif: `abuadm`, password: set sandi yang kuat.
-8.  Konfigurasi partisi harddisk: Pilih **Guided - use entire disk**, skema partisi: **All files in one partition** (direkomendasikan untuk kemudahan server lokal), pilih **Finish partitioning and write changes to disk**.
+8.  Konfigurasi partisi harddisk: Pilih **Guided - use entire disk**, skema partisi: **All files in one partition** (direkomendasikan untuk kemudahan server lokal). **[KRITIS]** Pastikan partisi `swap` dialokasikan secara otomatis sebesar ukuran RAM atau minimal 16GB (disarankan untuk stabilitas operasional MySQL server). Pilih **Finish partitioning and write changes to disk**.
 9.  Pada bagian **Software Selection**, hilangkan semua tanda centang lingkungan desktop (GNOME, XFCE, dll.) untuk menghemat RAM. Cukup centang:
     *   [x] **SSH server** (Untuk akses remote administratif).
     *   [x] **standard system utilities** (Pustaka dasar Linux).
 10. Selesaikan instalasi dan keluarkan USB flashdisk. Biarkan Mini PC melakukan reboot masuk ke terminal CLI Debian.
+11. Setelah login ke terminal CLI Debian sebagai `root`, jalankan proses update sistem secara menyeluruh:
+    ```bash
+    # [LINUX DEBIAN 12 — Server]
+    apt update && apt upgrade -y
+    ```
+12. Pasang utilitas `sudo` dan berikan hak administratif pada user `abuadm`:
+    ```bash
+    # [LINUX DEBIAN 12 — Server]
+    apt install sudo -y
+    usermod -aG sudo abuadm
+    ```
+13. Konfigurasikan zona waktu (*timezone*) server ke `Asia/Makassar` (WITA) atau sesuaikan dengan lokasi fisik toko agar rekaman timestamp log dan audit trail basis data konsisten:
+    ```bash
+    # [LINUX DEBIAN 12 — Server]
+    timedatectl set-timezone Asia/Makassar
+    timedatectl
+    ```
 
 ### 4.2. Konfigurasi Jaringan (IP Statis Server)
 1.  Login ke terminal Server sebagai user `root` atau ketik `su -`.
@@ -367,6 +385,16 @@ Karena repositori bawaan Debian 12 menggunakan Python versi 3.11, kita wajib mel
     pip3.14 --version
     ```
 
+### 4.6. Konfigurasi Logrotate Sistem
+Untuk mencegah *disk full* akibat log yang menumpuk tanpa batasan:
+1.  Pastikan utilitas logrotate aktif. Utilitas ini secara default sudah terpasang di Debian 12 minimal.
+2.  Log spesifik untuk MySQL akan terkonfigurasi secara otomatis saat instalasi paket `mysql-server` di langkah selanjutnya.
+3.  Verifikasi instalasi logrotate:
+    ```bash
+    # [LINUX DEBIAN 12 — Server]
+    logrotate --version
+    ```
+
 ---
 
 ## 5. Setup Sistem Operasi — Klien Windows 11
@@ -382,6 +410,7 @@ Karena repositori bawaan Debian 12 menggunakan Python versi 3.11, kita wajib mel
     *(Bila PC Kasir luring, unduh installer terlebih dahulu di tempat lain lalu salin via USB flashdisk).*
 2.  Buka berkas `.exe` installer yang sudah terunduh dengan klik kanan dan pilih **Run as Administrator**.
 3.  **[KRITIS — WAJIB]** Pada layar instalasi awal, centang checkbox berikut di bagian bawah layar:
+    *   `☑ Add Python 3.14 to PATH`
 4.  Pilih opsi **Customize installation**. Pastikan `pip`, `tcl/tk and IDLE`, dan `py launcher` tercentang. Klik **Next**.
 5.  Pada layar *Advanced Options*, centang checkbox:
     *   [x] **Install Python 3.14 for all users**.
@@ -490,18 +519,31 @@ MySQL Community Server LTS (Long Term Support) versi 8.4 merupakan sistem databa
     *   *Remove test database and access to it?*: Ketik `y` (Menghapus database testing bawaan default).
     *   *Reload privilege tables now?*: Ketik `y` (Menerapkan perubahan privasi secara instan).
 
-### 6.3. Konfigurasi Bind Address untuk Akses LAN
-Untuk mengizinkan PC Kasir mengakses database MySQL di Server melalui jaringan LAN toko:
+### 6.3. Konfigurasi Performa dan Akses Jaringan MySQL (mysqld.cnf)
+Untuk mengizinkan PC Kasir mengakses database MySQL di Server melalui jaringan LAN toko dan melakukan optimasi performa:
 1.  Buka berkas konfigurasi default MySQL Server menggunakan editor nano:
     ```bash
     # [LINUX DEBIAN 12 — Server]
     nano /etc/mysql/mysql.conf.d/mysqld.cnf
     ```
 2.  Cari baris `bind-address = 127.0.0.1` (yang membatasi koneksi lokal server saja) dan ubah nilainya menjadi IP Statis lokal server:
-    ```
+    ```ini
     bind-address = 192.168.1.200
     ```
-3.  Simpan file dan restart service MySQL untuk menerapkan konfigurasi:
+3.  Untuk mengoptimalkan performa database pada Mini PC Server RAM 16GB, tambahkan parameter konfigurasi buffer dan koneksi berikut di bawah blok `[mysqld]`:
+    ```ini
+    # Mengalokasikan 10GB untuk InnoDB Buffer Pool dari total 16GB RAM Server
+    innodb_buffer_pool_size = 10G
+    
+    # Membatasi maksimum koneksi (Connection Pool dari Klien + Cadangan)
+    max_connections = 100
+    
+    # Mengaktifkan log query lambat untuk analisis performa
+    slow_query_log = 1
+    slow_query_log_file = /var/log/mysql/mysql-slow.log
+    long_query_time = 2
+    ```
+4.  Simpan file dan restart service MySQL untuk menerapkan konfigurasi:
     ```bash
     # [LINUX DEBIAN 12 — Server]
     systemctl restart mysql
@@ -554,7 +596,7 @@ Untuk menjamin kepatuhan *Security Design* terkait pembatasan hak akses terkecil
     ```sql
     CREATE USER 'abucom_app'@'192.168.1.%' IDENTIFIED BY 'PasswordAplikasiAbuCom123!';
     ```
-    > ⚠️ **[HARUS DIISI MANUAL]**: Ganti string sandi `'PasswordAplikasiAbuCom123!'` dengan kata sandi acak yang unik khusus untuk user aplikasi. Sandi ini wajib dicatat di file `.env` klien kasir secara rahasia!
+    > ⚠️ **[HARUS DIISI MANUAL]**: Ganti string sandi `'PasswordAplikasiAbuCom123!'` dengan kata sandi acak yang unik khusus untuk user aplikasi (Minimal 32 karakter alfanumerik dan simbol). Sandi ini wajib dicatat di file `.env` klien kasir secara rahasia!
 2.  **[KRITIS]** Berikan hak akses privilege yang **diizinkan** secara eksplisit (`SELECT`, `INSERT`, `UPDATE`, `DELETE`) dan **larang** secara keras modifikasi skema DDL administratik (`DROP`, `ALTER`, `CREATE`) pada database produksi, namun tambahkan privilege testing (`CREATE`, `DROP`) pada database testing sandbox:
     ```sql
     -- Hak akses terbatas pada Database Produksi
@@ -613,11 +655,13 @@ Pustaka dependensi aplikasi wajib diisolasi penuh di dalam subfolder proyek meng
     # [WINDOWS 11 — Klien]
     cd C:\Users\donsise\Documents\abucom
     ```
+    > ⚠️ **[HARUS DIISI MANUAL]**: Path `C:\Users\donsise\Documents\abucom` di atas adalah contoh. Silakan sesuaikan dengan lokasi riil instalasi proyek AbuCom di PC Klien Kasir Anda!
 2.  Buat virtual environment bernama `venv` di Windows Klien:
     ```cmd
     # [WINDOWS 11 — Klien]
     python -m venv venv
     ```
+    > ⚠️ **[PANDUAN AKTIVASI VENV]**: Terdapat perbedaan perintah aktivasi venv antara Windows CMD dan PowerShell. Jika Terminal menggunakan **CMD**, gunakan `venv\Scripts\activate`. Jika menggunakan **PowerShell**, gunakan `venv\Scripts\Activate.ps1`.
 3.  *(Opsional)* Jika melakukan setup di Linux Server, perintah pembuatannya adalah:
     ```bash
     # [LINUX DEBIAN 12 — Server]
@@ -797,21 +841,22 @@ APP_CABANG_ID=1
 DB_HOST=192.168.1.200
 DB_PORT=3306
 DB_USER=abucom_app
+# [HARUS DIISI MANUAL] Isi dengan password user abucom_app yang kuat.
 DB_PASSWORD=YOUR_DB_PASSWORD_HERE
 DB_NAME=abucom_db
 DB_POOL_SIZE=5
 
 # 3. Kunci Rahasia Otorisasi Sesi JWT (HS256)
-# Ganti dengan untaian acak heksadesimal minimal 32 karakter
+# [HARUS DIISI MANUAL] Hasilkan kunci dengan panduan Bab 8.2.3.
 JWT_SECRET_KEY=YOUR_JWT_SECRET_KEY_HERE
 JWT_LIFETIME_SECONDS=28800
 
 # 4. Kunci Enkripsi WhatsApp CRM Pelanggan (Fernet Cryptography)
-# Ganti dengan Fernet Key 32-byte berformat Base64 hasil generator
+# [HARUS DIISI MANUAL] Hasilkan kunci dengan panduan Bab 8.2.4.
 FERNET_KEY=YOUR_FERNET_KEY_HERE
 
 # 5. Konfigurasi Pencadangan Database Terenkripsi AES-256
-# Kata sandi zip terenkripsi cadangan harian server
+# [HARUS DIISI MANUAL] Hasilkan kata sandi dengan panduan Bab 8.2.5.
 BACKUP_ZIP_PASSWORD=YOUR_BACKUP_ZIP_PASSWORD_HERE
 
 # 6. Konfigurasi Printer Thermal Nota Toko
@@ -847,8 +892,25 @@ Untuk mengenkripsi nomor WhatsApp pelanggan secara reversible di database MySQL:
     python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode('utf-8'))"
     ```
 2.  Salin output string tersebut dan tempelkan ke variabel `FERNET_KEY` di file `.env`.
+3.  Untuk memverifikasi apakah Fernet key tersebut valid, jalankan perintah ini di terminal:
+    ```cmd
+    # [WINDOWS 11 — Klien]
+    python -c "import os, dotenv; from cryptography.fernet import Fernet; dotenv.load_dotenv(); key = os.getenv('FERNET_KEY'); f = Fernet(key); data = f.encrypt(b'test'); print('Valid' if f.decrypt(data) == b'test' else 'Invalid')"
+    ```
+    *Output harus mencetak kata `Valid`.*
 
-### 8.3. Konvensi Penanganan Data NULL MySQL ke Python None
+#### 8.2.5. Generasi Kata Sandi Backup ZIP
+Untuk mengamankan arsip file ZIP cadangan (*backup*) secara kuat, gunakan string alfanumerik acak panjang:
+1.  Ketik perintah berikut pada terminal:
+    ```cmd
+    # [WINDOWS 11 — Klien]
+    python -c "import secrets, string; print(''.join(secrets.choice(string.ascii_letters + string.digits + string.punctuation) for _ in range(32)))"
+    ```
+2.  Salin string output tersebut dan tempelkan ke variabel `BACKUP_ZIP_PASSWORD` di file `.env`.
+
+### 8.3. Konvensi Penanganan Data NULL MySQL ke Python None (Quick Reference)
+> **Catatan**: Aturan lengkap tentang struktur ini dapat dilihat di dokumen [Coding Standard v1.1](docs/sdlc/04_implementation/01_coding_standard.md). Konvensi ini dicantumkan sebagai referensi cepat.
+
 Ketika data diambil dari basis data MySQL menggunakan driver `mysql-connector-python`, setiap kolom yang bernilai `NULL` secara otomatis akan diterjemahkan menjadi objek `None` di Python. Operasi aritmatika langsung (seperti `Decimal('1000') + None`) akan memicu `TypeError`. Oleh karena itu, codebase program wajib mengimplementasikan fungsi helper sanitasi penanganan NULL secara eksplisit di logic layer:
 ```python
 # [WINDOWS 11 — Klien] & [LINUX DEBIAN 12 — Server]
@@ -859,7 +921,9 @@ def handle_null_decimal(val: Decimal | None) -> Decimal:
     return val if val is not None else Decimal('0.0000')
 ```
 
-### 8.4. Standar Presisi dan Rounding Desimal (ROUND_HALF_UP)
+### 8.4. Standar Presisi dan Rounding Desimal (ROUND_HALF_UP) (Quick Reference)
+> **Catatan**: Aturan lengkap kalkulasi desimal ada di [Coding Standard v1.1](docs/sdlc/04_implementation/01_coding_standard.md).
+
 Seluruh operasi matematika logis keuangan (BOM desimal, HPP, komisi, payroll) **MUST** diproses menggunakan fixed-point `Decimal` dengan pembulatan standard **`ROUND_HALF_UP`** ke tingkat 4 digit desimal (`Decimal('0.0001')`):
 ```python
 # [WINDOWS 11 — Klien]
@@ -911,6 +975,27 @@ Setelah file `.env` diisi lengkap, lakukan pengujian awal startup program:
 3.  *Diharapkan sistem mendeteksi keberadaan berkas `.env`, melakukan casting variabel di `config/settings.py`, mengecek koneksi database ke Mini PC Server, dan merender layar login utama CLI.*
 4.  Ketik `0` atau exit untuk keluar dari program.
 
+### 8.7. Contoh Inisialisasi Connection Pool
+Sesuai dengan ketentuan *Coding Standard*, koneksi ke server dari program Python menggunakan pooling untuk performa optimal. Berikut adalah bentuk dasarnya:
+```python
+# [WINDOWS 11 — Klien]
+import os
+import mysql.connector
+from mysql.connector import pooling
+
+abupool = pooling.MySQLConnectionPool(
+    pool_name="abupool",
+    pool_size=int(os.getenv("DB_POOL_SIZE", 5)),
+    pool_reset_session=True,
+    host=os.getenv("DB_HOST", "192.168.1.200"),
+    port=int(os.getenv("DB_PORT", 3306)),
+    user=os.getenv("DB_USER", "abucom_app"),
+    password=os.getenv("DB_PASSWORD"),
+    database=os.getenv("DB_NAME", "abucom_db")
+)
+# Penggunaan: conn = abupool.get_connection()
+```
+
 ---
 
 ## 9. Setup Version Control (Git)
@@ -928,7 +1013,7 @@ Konfigurasikan nama dan email pembuat commit untuk keperluan pelacakan pengerjaa
     git config --global user.name "Junior Programmer"
     git config --global user.email "donsise@example.com"
     ```
-    > ⚠️ **[HARUS DIISI MANUAL]**: Ganti string `"Junior Programmer"` dan email dengan nama pemilik usaha serta email riil pemilik toko!
+    > ⚠️ **[HARUS DIISI MANUAL]**: Ganti string `"Junior Programmer"` dan email `donsise@example.com` dengan nama pemilik usaha serta email riil pemilik toko!
 
 ### 9.3. Inisialisasi Repository
 1.  Masuk ke direktori proyek AbuCom dan inisialisasi repositori Git lokal:
@@ -1025,6 +1110,11 @@ Unit testing fungsional dilarang keras memodifikasi data operasional toko pada d
     # [LINUX DEBIAN 12 — Server]
     mysql -u root -p abucom_test_db < /tmp/schema.sql
     ```
+3.  Eksekusi berkas seed data awal ke database testing agar data default tesedia:
+    ```bash
+    # [LINUX DEBIAN 12 — Server]
+    mysql -u root -p abucom_test_db < /tmp/seed.sql
+    ```
 
 ### 11.2. Instalasi Framework Testing (pytest & coverage)
 1.  Aktifkan virtual environment (`(venv)`) pada terminal kasir Windows.
@@ -1059,7 +1149,7 @@ Untuk mengarahkan pengujian unit test ke database testing, buat berkas bernama `
     JWT_SECRET_KEY=dummy_secret_key_for_testing_purposes_only
     JWT_LIFETIME_SECONDS=300
     
-    FERNET_KEY=H_v3b02_vG7Y88c2b7n9mK8V9c2bL0n9mKw8V_c2bG7=
+    FERNET_KEY=3c1OaRj-jG8k5XyH8bF2tV-3zQ9vL7mM1nW8bX4tB5s=
     BACKUP_ZIP_PASSWORD=testing_backup_password
     
     PRINTER_PORT=TEST_PORT
@@ -1110,13 +1200,35 @@ Pemulihan database dari berkas backup manual ZIP merupakan tindakan kritis keama
 1.  Sistem wajib mendeteksi pemicuan restore, meminta konfirmasi password pemilik fisik.
 2.  **[KRITIS]** Sebelum restore dieksekusi, sistem secara otomatis mengeksekusi perintah database untuk mencabut (force-kill) seluruh koneksi klien lain ke server database MySQL guna menjamin data consistency (ACID) dan mencegah tabrakan *concurrency lock*:
     ```sql
-    -- MySQL Server
+    -- [LINUX DEBIAN 12 — Server / MySQL Client]
     -- Mengakhiri koneksi klien kasir lain selain pemilik
-    DECLARE done INT DEFAULT FALSE;
-    DECLARE conn_id INT;
-    DECLARE cur CURSOR FOR SELECT id FROM information_schema.processlist WHERE user = 'abucom_app';
-    -- Pemicuan kill connection loop...
+    DELIMITER $$
+    CREATE PROCEDURE kill_app_connections()
+    BEGIN
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE conn_id INT;
+        DECLARE cur CURSOR FOR SELECT id FROM information_schema.processlist WHERE user = 'abucom_app';
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+        
+        OPEN cur;
+        read_loop: LOOP
+            FETCH cur INTO conn_id;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+            SET @kill_stmt = CONCAT('KILL ', conn_id);
+            PREPARE stmt FROM @kill_stmt;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+        END LOOP;
+        CLOSE cur;
+    END$$
+    DELIMITER ;
+    
+    CALL kill_app_connections();
+    DROP PROCEDURE kill_app_connections;
     ```
+3.  Setelah semua koneksi lain ditutup, import berkas arsip SQL hasil dekripsi ZIP ke dalam database `abucom_db`.
 
 ---
 
@@ -1125,6 +1237,11 @@ Pemulihan database dari berkas backup manual ZIP merupakan tindakan kritis keama
 Junior Programmer wajib memastikan seluruh status checkbox tercentang sukses:
 
 ### 13.1. Checklist Server Linux Debian 12
+- [ ] Integritas file instalasi ISO diverifikasi (checksum hash).
+- [ ] Partisi swap server minimal 16GB atau sesuai ukuran RAM.
+- [ ] Sistem server di-update apt-get secara menyeluruh.
+- [ ] User admin sudoer berhasil dikonfigurasi.
+- [ ] Timezone server dikonfigurasi (`Asia/Makassar` atau sesuai wilayah).
 - [ ] Sistem Operasi Debian 12 Bookworm berjalan stabil mode minimal CLI.
 - [ ] IP Statis lokal server terikat kokoh di alamat `192.168.1.200`.
 - [ ] IP Statis Server terdaftar static bind di DHCP lease router MikroTik.
@@ -1150,6 +1267,8 @@ Junior Programmer wajib memastikan seluruh status checkbox tercentang sukses:
 
 ### 13.4. Checklist Keamanan & Database
 - [ ] Database MySQL server dikonfigurasi aman (`mysql_secure_installation`).
+- [ ] Konfigurasi parameter performa MySQL `max_connections` dan `innodb_buffer_pool_size` diterapkan.
+- [ ] Fitur query lambat (`slow_query_log`) diaktifkan.
 - [ ] MySQL bind address dikunci lokal segmen LAN server `bind-address = 192.168.1.200`.
 - [ ] Character set MySQL diset `utf8mb4` dan collation `utf8mb4_unicode_ci`.
 - [ ] Isolation level basis data diatur REPEATABLE READ.
