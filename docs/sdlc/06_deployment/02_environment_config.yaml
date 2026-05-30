@@ -1,0 +1,844 @@
+# ============================================================================
+# ENVIRONMENT CONFIG — AbuCom
+# Sistem Manajemen Terpadu Usaha Percetakan
+# ============================================================================
+
+# --- BAGIAN 0: YAML ANCHORS FOR DRY PRINCIPLE ---
+# Definisi anchor untuk penggunaan ulang data secara konsisten lintas sistem
+anchors:
+  server_ip: &server_ip "192.168.1.200" # IP Statis Server Database LAN
+  db_port: &db_port 3306 # Port standar MySQL
+  db_name_prod: &db_name_prod "abucom_db" # Nama database produksi utama
+  db_name_test: &db_name_test "abucom_test_db" # Nama database testing sandbox
+  db_user_app: &db_user_app "abucom_app" # User basis data level aplikasi (bukan root)
+  printer_port_prod: &printer_port_prod "USB001" # Port default printer thermal Windows (bisa COM1)
+  printer_width_prod: &printer_width_prod 58 # Lebar kertas thermal nota default (58mm)
+  jwt_lifetime: &jwt_lifetime 28800 # 8 Jam (28800 detik) masa aktif sesi staf
+  bcrypt_cost: &bcrypt_cost 12 # Cost factor algoritma hashing sandi bcrypt
+
+# --- BAGIAN 1: METADATA DOKUMEN ---
+metadata:
+  dokumen: "Environment Config"
+  proyek: "AbuCom — Sistem Manajemen Terpadu Usaha Percetakan"
+  versi: "1.2"
+  tanggal: "2026-05-29"
+  status: "Tervalidasi"
+  penyusun: "Senior DevOps Engineer & Infrastructure Configuration Specialist"
+  deskripsi: "File konfigurasi referensi tunggal (Single Source of Configuration Truth) untuk seluruh parameter, variabel lingkungan, kredensial, dan konfigurasi infrastruktur AbuCom."
+  posisi_sdlc: "Fase 06 — Deployment (Deliverable 2)"
+  format: "YAML (Declarative reference structure)"
+  referensi_dokumen:
+    - "R-01: Environment Setup"
+    - "R-02: Deployment Guide"
+    - "R-03: System Architecture"
+    - "R-04: Security Design"
+    - "R-05: Tech Stack Decision"
+    - "R-06: Coding Standard"
+    - "R-07: Database Schema"
+    - "R-08: Module Structure"
+    - "R-09: Git Workflow"
+  riwayat_perubahan:
+    - versi: "1.0"
+      tanggal: "2026-05-24"
+      deskripsi: "Inisialisasi awal konfigurasi."
+    - versi: "1.1"
+      tanggal: "2026-05-27"
+      deskripsi: "Validasi dan integrasi referensi R-01 s.d R-09."
+    - versi: "1.2"
+      tanggal: "2026-05-29"
+      deskripsi: "Audit komprehensif struktur YAML, standarisasi placeholder [HARUS DIISI MANUAL], perbaikan parameter keamanan JWT dan Fernet, serta penyelarasan nomenklatur SSoT sesuai isu #0088."
+
+# --- BAGIAN 2: KONFIGURASI LINGKUNGAN (ENVIRONMENTS) ---
+environments:
+  development:
+    deskripsi: "Lingkungan pengembangan lokal di PC Developer"
+    database:
+      host: "127.0.0.1"
+      port: *db_port
+      name: *db_name_test
+      user: "root"
+      password: "[HARUS DIISI MANUAL]" # Ganti dengan kata sandi root basis data lokal pengembang secara manual.
+      pool_name: "abupool"
+      pool_size: 1
+      retry_attempts: 0
+    security:
+      jwt_secret_key: "[HARUS DIISI MANUAL]" # Gunakan perintah: python -c "import secrets; print(secrets.token_hex(32))"
+      jwt_lifetime_seconds: 300 # 5 menit untuk testing
+      bcrypt_cost_factor: 4 # Cost factor minimal untuk mempercepat unit test
+      fernet_key: "[HARUS DIISI MANUAL]" # Gunakan perintah: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode('utf-8'))"
+      rate_limiting:
+        max_attempts: 999
+        lockout_minutes: 0
+    application:
+      env_file: ".env.test"
+      cabang_id: 1
+    output:
+      receipt_mode: "file"
+      receipt_path: "exports/receipts/" # Path POSIX (Lintas-OS)
+    logging:
+      audit_mode: "console"
+      level: "DEBUG"
+
+  staging:
+    deskripsi: "Lingkungan pengujian sandbox sebelum go-live di PC kasir toko"
+    database:
+      host: *server_ip
+      port: *db_port
+      name: *db_name_test
+      user: *db_user_app
+      password: "[HARUS DIISI MANUAL]" # [SENSITIF] Isi dengan kata sandi user database 'abucom_app' di lingkungan staging.
+      pool_name: "abupool"
+      pool_size: 2
+      retry_attempts: 3
+    security:
+      jwt_secret_key: "[HARUS DIISI MANUAL]" # Gunakan perintah: python -c "import secrets; print(secrets.token_hex(32))"
+      jwt_lifetime_seconds: 300
+      bcrypt_cost_factor: *bcrypt_cost
+      fernet_key: "[HARUS DIISI MANUAL]" # Gunakan perintah: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode('utf-8'))"
+      rate_limiting:
+        max_attempts: 5
+        lockout_minutes: 10
+    application:
+      env_file: ".env.test"
+      cabang_id: 1
+    output:
+      receipt_mode: "file"
+      receipt_path: "exports/receipts/" # Path POSIX (Lintas-OS)
+    logging:
+      audit_mode: "database"
+      level: "INFO"
+
+  production:
+    deskripsi: "Lingkungan produksi riil konter toko fisik percetakan AbuCom"
+    database:
+      host: *server_ip
+      port: *db_port
+      name: *db_name_prod
+      user: *db_user_app
+      password: "[HARUS DIISI MANUAL]" # [SENSITIF] Isi dengan kata sandi user database 'abucom_app' di produksi (Sama dengan database.users[0].password).
+      pool_name: "abupool"
+      pool_size: 5
+      retry_attempts: 3
+    security:
+      jwt_secret_key: "[HARUS DIISI MANUAL]" # [SENSITIF] Kunci rahasia signature JWT. Gunakan perintah: python -c "import secrets; print(secrets.token_hex(32))"
+      jwt_lifetime_seconds: *jwt_lifetime
+      bcrypt_cost_factor: *bcrypt_cost
+      fernet_key: "[HARUS DIISI MANUAL]" # [SENSITIF] Kunci enkripsi simetris Fernet (UU PDP). Gunakan perintah: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode('utf-8'))"
+      rate_limiting:
+        max_attempts: 5
+        lockout_minutes: 10
+    application:
+      env_file: ".env"
+      cabang_id: 1
+    output:
+      receipt_mode: "both" # Nota struk dicetak fisik + disimpan file lokal .txt
+      receipt_path: "exports/receipts/" # Path POSIX (Lintas-OS)
+    logging:
+      audit_mode: "database"
+      level: "WARNING"
+
+# --- BAGIAN 3: KONFIGURASI INFRASTRUKTUR FISIK ---
+infrastructure:
+  network:
+    topology: "Star Network (Topologi Bintang)"
+    media: "Kabel UTP Category 6 (Cat6) tembaga murni dengan pelindung RJ45"
+    mode: "100% luring (offline-only LAN tanpa internet)"
+    nodes:
+      server:
+        device: "Mini PC Server"
+        ip_address: *server_ip
+        role: "Database Server (Host MySQL)"
+      client:
+        device: "PC Desktop Kasir Utama"
+        ip_address: "DHCP (kunci sewa statis pada MikroTik leases)"
+        role: "Kasir & Runtime Program (Python CLI)"
+    devices:
+      switch:
+        model: "Gigabit Switch Hub 8-Port (Unmanaged, transfer rate 1 Gbps, low-latency)"
+        ports_active: [1, 2, 3] # Port 1: Router, Port 2: Server, Port 3: PC Kasir
+      router:
+        model: "Router Board MikroTik hEX lite"
+        role: "DHCP Server, IP Static Bind, Gateway LAN lokal"
+        default_gateway: "192.168.1.1"
+        admin_password: "[HARUS DIISI MANUAL]" # [SENSITIF] Sandi administrator Router Board MikroTik hEX lite.
+      ups:
+        - node: "server"
+          model: "UPS 600VA / 360W"
+          justifikasi: "Konsumsi daya Mini PC Server fanless <= 45W. Memberi daya cadangan >= 15 menit agar flushing biner MySQL log aman saat mati listrik."
+        - node: "client"
+          model: "UPS 600VA / 360W"
+          justifikasi: "Konsumsi daya PC Klien Kasir <= 180W. Memberi daya cadangan >= 15 menit untuk graceful shutdown kasir."
+  hardware:
+    server_specs:
+      processor: "Intel Core i5 Generasi ke-12 (Minimal 6 Cores, 12 Threads)"
+      ram: "16GB DDR4 3200MHz SODIMM"
+      storage: "512GB SSD NVMe M.2 PCIe Gen 4"
+      network_card: "1x RJ45 Gigabit Ethernet Port"
+      cooling_type: "Fanless (Industrial grade untuk meminimalkan penumpukan debu kertas)"
+    client_specs:
+      processor: "Intel Core i3 Generasi ke-10 ke atas atau AMD Ryzen 3"
+      ram: "8GB DDR4 2666MHz"
+      storage: "256GB SSD SATA III / NVMe M.2"
+      network_card: "1x RJ45 Gigabit Ethernet Port"
+    printer:
+      type: "Thermal Printer Struk Nota"
+      width: *printer_width_prod
+      port: *printer_port_prod
+      driver: "Generic / Text Only"
+      connection_type: "USB / Serial COM1"
+      cash_drawer:
+        connection: "RJ11 terhubung langsung ke Printer Thermal"
+        behavior: "Auto-open saat struk nota berhasil dicetak"
+
+# --- BAGIAN 4: KONFIGURASI SISTEM OPERASI ---
+operating_systems:
+  server:
+    os: "Linux Debian 12 Bookworm (Minimal CLI, Tanpa Desktop GUI)"
+    hostname: "abuserver"
+    users:
+      - username: "root"
+        password: "[HARUS DIISI MANUAL]" # [SENSITIF] Sandi user 'root' server Debian 12 (Catat di buku catatan fisik rahasia pemilik).
+        role: "Super Administrator"
+      - username: "abuadm"
+        password: "[HARUS DIISI MANUAL]" # [SENSITIF] Sandi user administratif non-root 'abuadm' server Debian 12.
+        role: "Non-Root Administrative User"
+    network_interface:
+      interface_name: "enp1s0"
+      address: *server_ip
+      netmask: "255.255.255.0"
+      gateway: "192.168.1.1"
+      dns_nameservers: ["8.8.8.8", "1.1.1.1"]
+    firewall:
+      engine: "ufw"
+      default_policy:
+        incoming: "deny"
+        outgoing: "allow"
+      rules:
+        - port: 22
+          protocol: "tcp"
+          from: "any"
+          action: "allow"
+          desc: "Akses SSH Administratif Lokal"
+        - port: 3306
+          protocol: "tcp"
+          from: "192.168.1.0/24"
+          action: "allow"
+          desc: "Remote Akses Basis Data MySQL dari Jaringan LAN Toko"
+    ssh:
+      port: 22
+      permit_root_login: false
+    directories:
+      - path: "/var/lib/mysql-backups"
+        owner: "root:root"
+        permission: "chmod 700"
+  client:
+    os: "Windows 11 Home / Pro 64-bit"
+    terminal:
+      application: "Windows Terminal (Microsoft Store)"
+      default_profile: "Command Prompt"
+      codepage: 65001 # Chcp 65001 untuk encoding UTF-8
+      startup_command: "cmd.exe /k \"chcp 65001\""
+    security:
+      account_type: "Standard User (Lokal Non-Administrator)"
+      usb_autoplay:
+        status: "Disabled"
+        registry_path: "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer"
+        registry_key: "NoDriveTypeAutoRun"
+        registry_value: "FF" # Hex FF = 255 Decimal
+    path_env:
+      - "C:\\Program Files\\Python314\\"
+      - "C:\\Program Files\\Python314\\Scripts\\"
+
+# --- BAGIAN 5: KONFIGURASI DATABASE ---
+database:
+  engine: "MySQL Community Server (LTS)"
+  version: "8.4"
+  service:
+    name: "mysql.service"
+    status: "enabled"
+  config_file: "/etc/mysql/mysql.conf.d/mysqld.cnf"
+  parameters:
+    bind_address: *server_ip
+    character_set_server: "utf8mb4"
+    collation_server: "utf8mb4_unicode_ci"
+    transaction_isolation: "REPEATABLE-READ"
+  databases:
+    - name: *db_name_prod
+      character_set: "utf8mb4"
+      collation: "utf8mb4_unicode_ci"
+      purpose: "Database Produksi Utama"
+    - name: *db_name_test
+      character_set: "utf8mb4"
+      collation: "utf8mb4_unicode_ci"
+      purpose: "Database Sandbox Testing"
+  users:
+    - username: *db_user_app
+      host: "192.168.1.%"
+      password: "[HARUS DIISI MANUAL]" # [SENSITIF] Sandi user database 'abucom_app' untuk remote koneksi dari host IP segmen LAN.
+  privileges:
+    production:
+      database: *db_name_prod
+      allowed_actions: ["SELECT", "INSERT", "UPDATE", "DELETE"]
+      denied_actions: ["CREATE", "DROP", "ALTER", "GRANT"]
+    testing:
+      database: *db_name_test
+      allowed_actions: ["SELECT", "INSERT", "UPDATE", "DELETE", "CREATE", "DROP"]
+  schema_files:
+    schema: "docs/sdlc/03_design/01_database_schema.sql" # Sumber skema basis data fisik (DDL) permanen di repositori.
+    seed: "docs/sdlc/03_design/01_database_schema.sql" # Sumber data master inisial (DML) permanen di repositori.
+
+# --- BAGIAN 6: KONFIGURASI RUNTIME PYTHON ---
+python_runtime:
+  version: "3.14.2+"
+  installation:
+    server:
+      method: "Compile dari source code resmi (Kompilasi Luring)"
+      dependencies_build:
+        - "build-essential"
+        - "zlib1g-dev"
+        - "libncurses5-dev"
+        - "libgdbm-dev"
+        - "libnss3-dev"
+        - "libssl-dev"
+        - "libreadline-dev"
+        - "libffi-dev"
+        - "libsqlite3-dev"
+        - "wget"
+        - "curl"
+        - "llvm"
+        - "libpcap-dev"
+        - "liblzma-dev"
+        - "tk-dev"
+        - "libbz2-dev"
+      configure_flags: "--enable-optimizations --with-ensurepip=install"
+      install_command: "make altinstall"
+      path_command: "python3.14"
+    client:
+      method: "Windows Installer (.exe 64-bit)"
+      flags: ["Install Python 3.14 for all users", "Add python.exe to PATH", "Disable path length limit"]
+      install_path: "C:\\Program Files\\Python314"
+  virtual_environment:
+    name: "venv"
+    path_client: "C:\\Users\\kasir\\Documents\\abucom\\venv"
+    path_server: "/home/abuadm/abucom/venv"
+    activation:
+      windows: "venv\\Scripts\\activate"
+      linux: "source venv/bin/activate"
+    pip_upgrade: "python -m pip install --upgrade pip"
+  dependencies:
+    mandatory:
+      - name: "mysql-connector-python"
+        version: "8.4.0"
+        desc: "Driver basis data MySQL resmi"
+      - name: "python-dotenv"
+        version: "1.0.1"
+        desc: "Pemuat kredensial berkas rahasia .env"
+      - name: "bcrypt"
+        version: "4.1.0"
+        desc: "Hashing kata sandi staf transaksional"
+      - name: "pyjwt"
+        version: "2.8.0"
+        desc: "Token otonom otonomi sesi stateless"
+      - name: "cryptography"
+        version: "42.0.5"
+        desc: "Enkripsi simetris Fernet (kepatuhan UU PDP)"
+    recommended:
+      - name: "rich"
+        version: "13.7.0"
+        desc: "Render visual ANSI kontras, panel, progress bar"
+      - name: "tabulate"
+        version: "0.9.0"
+        desc: "Pemformatan data tabular di terminal"
+    development:
+      - name: "pytest"
+        version: "8.2.0"
+        desc: "Framework unit testing otomatis"
+      - name: "coverage"
+        version: "7.5.1"
+        desc: "Penguji kerapatan baris kode teruji"
+    offline_install:
+      wheels_folder: "pip_wheels"
+      command: "pip install --no-index --find-links=pip_wheels -r requirements.txt"
+
+# --- BAGIAN 7: KONFIGURASI APLIKASI ---
+application:
+  entry_point: "main.py"
+  directory_structure:
+    root: "abucom/"
+    files:
+      - "main.py"
+      - "requirements.txt"
+      - ".env.example"
+      - ".gitignore"
+      - ".gitattributes"
+      - "setup_env.bat"
+    folders:
+      cli:
+        - "__init__.py"
+        - "dashboard.py"
+        - "menu_transaksi.py"
+        - "menu_inventaris.py"
+        - "menu_ppob_service.py"
+        - "menu_sdm_finansial.py"
+        - "menu_configs.py"
+      logic:
+        - "__init__.py"
+        - "bom_hpp.py"
+        - "smart_payroll.py"
+        - "financial_engine.py"
+        - "safety_validator.py"
+      db:
+        - "__init__.py"
+        - "db_connector.py"
+        - "query_builder.py"
+      middleware:
+        - "__init__.py"
+        - "auth_jwt.py"
+        - "rbac_guard.py"
+        - "audit_logger.py"
+      config:
+        - "__init__.py"
+        - "settings.py"
+      utils:
+        - "__init__.py"
+        - "crypto.py"
+        - "backup.py"
+        - "text_formatter.py"
+        - "backup_cron.sh"
+      exports:
+        - "backups/"
+        - "designs/"
+        - "receipts/"
+      tests:
+        - "__init__.py"
+        - "test_bom_hpp.py"
+        - "test_rbac_security.py"
+  env_template:
+    variables:
+      - name: "APP_ENV"
+        type: "string"
+        desc: "Karakteristik lingkungan runtime (production / staging / development)"
+        example: "production"
+      - name: "APP_CABANG_ID"
+        type: "integer"
+        desc: "Identitas cabang toko default"
+        example: 1
+      - name: "DB_HOST"
+        type: "string"
+        desc: "IP server basis data MySQL"
+        example: *server_ip
+      - name: "DB_PORT"
+        type: "integer"
+        desc: "Port MySQL default"
+        example: *db_port
+      - name: "DB_USER"
+        type: "string"
+        desc: "User basis data level aplikasi"
+        example: *db_user_app
+      - name: "DB_PASSWORD"
+        type: "string"
+        desc: "Kata sandi database"
+        example: "[HARUS DIISI MANUAL]" # [SENSITIF] Contoh isi password database.
+      - name: "DB_NAME"
+        type: "string"
+        desc: "Nama database utama"
+        example: *db_name_prod
+      - name: "DB_POOL_SIZE"
+        type: "integer"
+        desc: "Ukuran pool koneksi transaksional"
+        example: 5
+      - name: "JWT_SECRET_KEY"
+        type: "string"
+        desc: "Kunci rahasia signature JWT"
+        example: "[HARUS DIISI MANUAL]" # [SENSITIF] Contoh isi JWT secret key.
+      - name: "JWT_LIFETIME_SECONDS"
+        type: "integer"
+        desc: "Masa kedaluwarsa sesi token JWT"
+        example: *jwt_lifetime
+      - name: "FERNET_KEY"
+        type: "string"
+        desc: "Kunci enkripsi Fernet untuk data pribadi pelanggan"
+        example: "[HARUS DIISI MANUAL]" # [SENSITIF] Contoh isi Fernet key.
+      - name: "BACKUP_ZIP_PASSWORD"
+        type: "string"
+        desc: "Kata sandi ZIP cadangan terenkripsi"
+        example: "[HARUS DIISI MANUAL]" # [SENSITIF] Contoh isi password ZIP backup.
+      - name: "PRINTER_PORT"
+        type: "string"
+        desc: "Nama port printer thermal Windows kasir"
+        example: *printer_port_prod
+      - name: "PRINTER_WIDTH_MM"
+        type: "integer"
+        desc: "Lebar kertas thermal struk"
+        example: *printer_width_prod
+  env_example: |
+    # ==============================================================================
+    # TEMPLAT KONFIGURASI RUNTIME ABUCOM - .env.example
+    # Salin file ini menjadi '.env' di folder proyek kasir dan isi nilainya.
+    # ==============================================================================
+
+    # 1. Konfigurasi Lingkungan Runtime
+    APP_ENV=production
+    APP_CABANG_ID=1
+
+    # 2. Kredensial Basis Data MySQL Server
+    DB_HOST=192.168.1.200
+    DB_PORT=3306
+    DB_USER=abucom_app
+    DB_PASSWORD=[HARUS DIISI MANUAL]
+    DB_NAME=abucom_db
+    DB_POOL_SIZE=5
+
+    # 3. Kunci Rahasia Otorisasi Sesi JWT (HS256)
+    JWT_SECRET_KEY=[HARUS DIISI MANUAL]
+    JWT_LIFETIME_SECONDS=28800
+
+    # 4. Kunci Enkripsi WhatsApp CRM Pelanggan (Fernet Cryptography)
+    FERNET_KEY=[HARUS DIISI MANUAL]
+
+    # 5. Konfigurasi Pencadangan Database Terenkripsi AES-256
+    BACKUP_ZIP_PASSWORD=[HARUS DIISI MANUAL]
+
+    # 6. Konfigurasi Printer Thermal Nota Toko
+    PRINTER_PORT=USB001
+    PRINTER_WIDTH_MM=58
+
+# --- BAGIAN 8: KONFIGURASI KEAMANAN ---
+security:
+  authentication:
+    bcrypt:
+      cost_factor: *bcrypt_cost
+      salt_length_bytes: 16
+      algorithm: "bcrypt_blowfish"
+    jwt:
+      algorithm: "HS256"
+      secret_key_min_length: 32
+      lifetime_seconds: *jwt_lifetime
+      payload_fields: ["user_id", "username", "role", "cabang_id", "exp"]
+    rate_limiting:
+      max_attempts: 5
+      lockout_minutes: 10
+      db_columns: ["failed_login_attempts", "locked_until"]
+  authorization:
+    rbac_roles:
+      - role: "pemilik"
+        level: 1
+        desc: "Otoritas finansial mutlak, slip payroll, database recovery"
+      - role: "kepala_percetakan"
+        level: 2
+        desc: "Pengawas operasional, validasi opname, shift handover"
+      - role: "pramuniaga"
+        level: 3
+        desc: "Input nota penjualan retail, CRM pendaftaran pelanggan (Modul M.1 & M.8)"
+      - role: "kasir"
+        level: 3
+        desc: "Terima uang pembayaran, shift handover keluar (Modul M.1 & M.7)"
+      - role: "desainer"
+        level: 3
+        desc: "Ubah status antrian kerja, input direktori path file PDF (Modul M.5)"
+      - role: "produksi_cetak"
+        level: 3
+        desc: "Pemotong bahan kustom, catat log limbah kertas waste (Modul M.2)"
+      - role: "fotocopy_print"
+        level: 3
+        desc: "Pencatat cepat transaksi fotokopi retail (Modul M.1)"
+      - role: "gudang"
+        level: 3
+        desc: "Input barang, kelola supplier, stock opname fisik (Modul M.2)"
+  data_protection:
+    fernet_crm:
+      key_length_bytes: 32
+      format: "Base64"
+      compliance: "UU PDP No. 27 Tahun 2022 Republik Indonesia"
+      protected_field: "pelanggan.whatsapp"
+    backup_encryption:
+      algorithm: "AES-256"
+      format: "ZIP"
+    os_hardening:
+      server:
+        ufw: "Port 3306 MySQL terkunci segmen LAN only"
+        ssh: "PermitRootLogin no"
+        chmod: "Direktori var/lib/mysql-backups/ di-set 700"
+        bind_address: *server_ip
+        my_cnf: "/root/.my.cnf dikunci 600 untuk menyembunyikan sandi root"
+      client:
+        account_type: "Standard User Lokal"
+        usb_autoplay: "NoDriveTypeAutoRun registry dikunci ke FF (255)"
+
+# --- BAGIAN 9: KONFIGURASI BACKUP DAN RECOVERY ---
+backup:
+  schedule:
+    cron_expression: "0 21 * * *"
+    time: "21:00 WIB (Setiap hari kerja saat toko tutup)"
+  encryption:
+    algorithm: "AES-256"
+    password_source: "BACKUP_ZIP_PASSWORD dari .env"
+  retention:
+    server_retention_days: 30
+    cold_storage_retention_months: 12
+    auto_cleanup: "Hapus backup berumur >30 hari via find command"
+  directories:
+    server_backup_path: "/var/lib/mysql-backups" # Path POSIX
+    client_backup_path: "exports/backups" # Path POSIX Lintas-OS
+    owner: "root:root"
+    permission: "chmod 700"
+  cron_job:
+    script_path: "/home/abuadm/abucom/utils/backup_cron.sh"
+    log_file: "/var/log/abucom_backup.log"
+  disaster_recovery:
+    backup_hardware: "Mini PC server cadangan siap pakai dengan spesifikasi setara"
+    restore_procedure: "Drop DB, buat DB baru, dekripsi zip backup, restore SQL, update IP server"
+
+# --- BAGIAN 10: KONFIGURASI VERSION CONTROL ---
+version_control:
+  system: "Git"
+  identity:
+    user_name: "Junior Programmer" # Default baseline identity defined in R-01 & R-09.
+    user_email: "donsise@example.com" # Default baseline identity defined in R-01 & R-09.
+  branching:
+    main: "Stable release, lingkungan rilis stabil"
+    features: "feature/modul-fitur (fitur baru dikerjakan di branch terpisah)"
+  commit_convention:
+    standard: "Conventional Commits"
+    types:
+      feat: "Penambahan fitur bisnis baru"
+      fix: "Perbaikan bug / crash runtime"
+      docs: "Perubahan atau pembuatan dokumen SDLC"
+      chore: "Perubahan konfigurasi, dependensi, atau .gitignore"
+      test: "Penambahan unit test / integration test"
+  gitignore:
+    - ".env"
+    - ".env.test"
+    - "__pycache__/"
+    - "*.pyc"
+    - "*.pyo"
+    - "*.pyd"
+    - ".pytest_cache/"
+    - ".coverage"
+    - "htmlcov/"
+    - "venv/"
+    - "ENV/"
+    - "Thumbs.db"
+    - "Desktop.ini"
+    - ".DS_Store"
+  tagging:
+    format: "v{major}.{minor}.{patch} (Contoh: v1.0.0)"
+
+# --- BAGIAN 11: KONFIGURASI PRINTER DAN PERANGKAT ---
+peripheral_devices:
+  thermal_printer:
+    name: "AbuPrinterNota"
+    port: *printer_port_prod
+    width_mm: *printer_width_prod
+    driver_type: "Generic / Text Only"
+    encoding: "utf-8"
+  cash_drawer:
+    connection_type: "RJ11 terhubung langsung ke Printer Thermal"
+    trigger: "Auto-open saat struk nota berhasil dicetak"
+
+# --- BAGIAN 12: KONFIGURASI CONNECTION POOL DAN RETRY ---
+connection_management:
+  pool:
+    pool_name: "abupool"
+    production_size: 5
+    testing_size: 2
+    connector: "mysql-connector-python"
+  retry:
+    max_retries: 3
+    error_codes: [2006, 2013] # 2006: Server Gone Away, 2013: Lost Connection
+    backoff_type: "exponential"
+    backoff_formula: "2^n detik"
+
+# --- BAGIAN 13: KONFIGURASI LOGGING DAN MONITORING ---
+logging:
+  audit_trail:
+    table: "audit_logs"
+    engine: "InnoDB"
+    retention_months: 12
+    trigger_events:
+      - "INSERT/UPDATE/DELETE data sangat sensitif"
+      - "ACCESS_DENIED oleh decorator RBAC"
+      - "LOGIN_SUCCESS / LOGIN_FAILED / LOGOUT"
+      - "Eskalasi critical actions"
+      - "Backup dan Restore basis data manual"
+    format: "JSON string terstruktur (old_value, new_value)"
+  backup_logs:
+    table: "backup_logs"
+    desc: "Mencatat riwayat aktivitas backup database"
+  system_logs:
+    path: "/var/log/abucom_system.log"
+
+# --- BAGIAN 14: KONFIGURASI TESTING ---
+testing:
+  framework:
+    test_runner: "pytest==8.2.0"
+    coverage_tool: "coverage==7.5.1"
+  coverage:
+    target_percentage: 90
+    target_folders: ["logic/", "db/"]
+  sandbox:
+    database: *db_name_test
+    env_file: ".env.test"
+
+# --- BAGIAN 15: KODE ERROR DAN TROUBLESHOOTING ---
+error_codes:
+  authentication:
+    - code: "ERR-AUTH-001"
+      message: "ERR-AUTH-001: Kredensial tidak valid. Silakan coba kembali!"
+      desc: "Salah memasukkan username saat login"
+    - code: "ERR-AUTH-002"
+      message: "ERR-AUTH-002: Sandi Gagal: Akun ditangguhkan selama 10 menit akibat brute-force!"
+      desc: "Gagal login 5 kali berturut-turut"
+    - code: "ERR-AUTH-003"
+      message: "ERR-AUTH-003: Akses Ditolak: Hak Akses Pemilik Dibutuhkan!"
+      desc: "Peran staf mencoba mengakses menu pemilik"
+    - code: "ERR-AUTH-011"
+      message: "ERR-AUTH-011: Hak akses supervisor dibutuhkan untuk menyetujui Stock Opname!"
+      desc: "Peran staf non-supervisor mencoba menyetujui stock opname"
+    - code: "ERR-AUTH-029"
+      message: "ERR-AUTH-029: Verifikasi sandi Pemilik gagal. Pengeluaran besar dibatalkan!"
+      desc: "Salah sandi eskalasi pemilik pada pengeluaran > Rp 500rb"
+  session:
+    - code: "ERR-SESSION-001"
+      message: "ERR-SESSION-001: Sesi login tidak ditemukan. Harap login terlebih dahulu!"
+      desc: "Mencoba mengakses menu CLI tanpa session JWT aktif"
+    - code: "ERR-SESSION-002"
+      message: "ERR-SESSION-002: Sesi login tidak sah/rusak. Harap login kembali!"
+      desc: "Token signature tidak cocok atau kadaluwarsa (8 jam)"
+  database:
+    - code: "ERR-DB-001"
+      message: "ERR-DB-001: Koneksi terputus. Penyimpanan transaksi dibatalkan!"
+      desc: "lost connection ke database server MySQL lokal (Error 2006/2013)"
+    - code: "ERR-DB-002"
+      message: "ERR-DB-002: Pelanggaran integritas basis data. Transaksi dibatalkan!"
+      desc: "Kegagalan FK atau constraint CHECK saat eksekusi query"
+  file:
+    - code: "ERR-FILE-001"
+      message: "ERR-FILE-001: Berkas konfigurasi .env tidak ditemukan. Aplikasi ditutup!"
+      desc: "File .env hilang pada folder root"
+    - code: "ERR-FILE-039"
+      message: "ERR-FILE-039: Gagal memulihkan data. Berkas cadangan korup atau sandi enkripsi salah!"
+      desc: "Gagal restore database dari ZIP AES-256"
+  cash:
+    - code: "ERR-CASH-001"
+      message: "ERR-CASH-001: Selisih Gagal: Selisih Rp [Nominal] melebihi batas Rp 10.000!"
+      desc: "Kasir mencoba menutup shift secara mandiri dengan selisih kas > Rp 10.000"
+    - code: "ERR-CASH-004"
+      message: "ERR-CASH-004: Saldo kas laci kasir tidak mencukupi untuk pengembalian dana!"
+      desc: "Saldo kas tunai kasir minus saat pengembalian dana retur/batal"
+
+troubleshooting:
+  common_issues:
+    - issue: "Koneksi database terputus (Error 2003 atau ERR-DB-001)"
+      solutions:
+        - "Cek colokan fisik kabel LAN Cat6 dan status lampu hijau switch hub."
+        - "Uji ping remote database server (192.168.1.200)."
+        - "Cek status service MySQL server (systemctl status mysql)."
+        - "Periksa ufw firewall rules dan bind-address MySQL server Debian 12."
+    - issue: "Panel CLI berantakan atau glitch ANSI visual"
+      solutions:
+        - "Pastikan program CLI kasir dijalankan di Windows Terminal, bukan CMD warisan."
+        - "Jalankan perintah 'chcp 65001' secara manual untuk encoding UTF-8."
+    - issue: "UnicodeDecodeError saat file dipindahkan lintas OS"
+      solutions:
+        - "Pastikan semua fungsi open() Python mendefinisikan parameter encoding='utf-8' secara eksplisit."
+    - issue: "Pip install bcrypt/cryptography gagal di Windows Klien"
+      solutions:
+        - "Gunakan metode offline wheels: pip install --no-index --find-links=pip_wheels -r requirements.txt."
+    - issue: "Printer thermal struk nota mencetak karakter acak"
+      solutions:
+        - "Sesuaikan parameter PRINTER_PORT di berkas .env dengan nama port Windows (COM1 atau USB001)."
+        - "Pastikan driver printer Windows diset ke tipe Generic / Text Only."
+
+# --- BAGIAN 16: PARAMETER OPERASIONAL HARIAN ---
+operations:
+  startup_sop:
+    schedule: "07:45 WIB (Setiap hari kerja)"
+    steps:
+      - "Kepala percetakan membuka ruang server dan UPS."
+      - "Nyalakan Mini PC Server database Debian 12."
+      - "Nyalakan PC Kasir Windows 11."
+      - "Buka Windows Terminal, aktifkan venv, jalankan program CLI."
+      - "Kasir login, input kas modal awal (misal Rp 200.000), disetujui Kepala Percetakan."
+    responsible: "Kepala Percetakan & Kasir"
+  shutdown_sop:
+    schedule: "20:45 WIB s.d 21:05 WIB"
+    steps:
+      - "Kasir shift penutup menghitung laci kas, input ke program shift handover (M7-003)."
+      - "Kepala percetakan memverifikasi kas (jika selisih > Rp 10.000, Kepala input sandi supervisor + memo)."
+      - "Kasir shutdown PC Kasir Windows 11."
+      - "Backup otomatis cron job berjalan di server pukul 21:00 WIB."
+      - "Pukul 21:05 WIB (setelah backup success di log), admin login SSH server, jalankan 'sudo shutdown -h now'."
+      - "Matikan kedua unit UPS."
+    responsible: "Kasir, Kepala Percetakan & System Administrator"
+  maintenance:
+    weekly: "Bersihkan filter udara fanless Mini PC Server dari debu potongan kertas percetakan."
+    monthly: "Rotasi log file teks lokal klien kasir. Salin file log lama ke cold storage, kosongkan file log utama."
+    quarterly: "Jalankan simulasi disaster recovery restore database manual pada database sandbox (abucom_test_db)."
+  escalation:
+    first_fase: "Isolasi sistem kasir, catat manual memakai nota kertas fisik sementara agar antrian tidak terhenti."
+    contacts:
+      channel: "DevOps Technical Support Line"
+      whatsapp: "+62-812-3456-7890"
+      email: "support@abucom.com"
+      service_hours: "Setiap hari operasional toko pukul 08:00 s.d 21:30 WIB"
+
+# --- BAGIAN 17: REFERENSI DOKUMEN ---
+references:
+  - code: "R-01"
+    name: "Environment Setup"
+    path: "docs/sdlc/04_implementation/02_environment_setup.md"
+    version: "1.2"
+    priority: "PRIMER"
+    role: "Sumber data utama konfigurasi server/klien, requirements.txt, venv, printer port, backup, testing, and connection pool."
+  - code: "R-02"
+    name: "Deployment Guide"
+    path: "docs/sdlc/06_deployment/01_deployment_guide.md"
+    version: "1.2"
+    priority: "PRIMER"
+    role: "Sumber data perbedaan lingkungan, skrip backup cron, SOP runbook startup/shutdown, smoke test, and risk matrix."
+  - code: "R-03"
+    name: "System Architecture"
+    path: "docs/sdlc/03_design/03_system_architecture.md"
+    version: "1.2"
+    priority: "PRIMER"
+    role: "Sumber data topologi LAN, hardware server/klien, arsitektur 4-layer logis, connection pool, and multi-branch readiness."
+  - code: "R-04"
+    name: "Security Design"
+    path: "docs/sdlc/03_design/06_security_design.md"
+    version: "1.2"
+    priority: "PRIMER"
+    role: "Sumber data bcrypt, JWT lifetimes, rate limiting, matrix RBAC, Fernet CRM, error codes, and audit trail JSON."
+  - code: "R-05"
+    name: "Tech Stack Decision"
+    path: "docs/sdlc/01_planning/04_tech_stack_decision.md"
+    version: "1.2"
+    priority: "PRIMER"
+    role: "Sumber data platform runtime, database, standard libraries, locked versions requirements.txt, and hybrid methodology."
+  - code: "R-06"
+    name: "Coding Standard"
+    path: "docs/sdlc/04_implementation/01_coding_standard.md"
+    version: "1.2"
+    priority: "SEKUNDER"
+    role: "Sumber data directory modular structure, PEP 8 code style, PEP 257 docstring style, type hints annotations, and git workflow."
+  - code: "R-07"
+    name: "Database Schema"
+    path: "docs/sdlc/03_design/01_database_schema.sql"
+    version: "1.2"
+    priority: "SEKUNDER"
+    role: "Sumber data nama database utama/test, 28 daftar tabel InnoDB relasional, and application privilege user."
+  - code: "R-08"
+    name: "Module Structure"
+    path: "docs/sdlc/04_implementation/03_module_structure.md"
+    version: "1.2"
+    priority: "SEKUNDER"
+    role: "Sumber data modular separation and entry point path."
+  - code: "R-09"
+    name: "Git Workflow"
+    path: "docs/sdlc/04_implementation/04_git_workflow.md"
+    version: "1.2"
+    priority: "TERSIER"
+    role: "Sumber data branching convention feature/main, conventional commit styles, and tagging releases."
+
+# --- AKHIR DOKUMEN ---
+# Dokumen Environment Config AbuCom ini dinyatakan sah dan berlaku.
