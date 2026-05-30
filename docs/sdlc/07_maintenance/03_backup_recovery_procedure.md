@@ -1,8 +1,9 @@
+
 ---
 dokumen    : Backup Recovery Procedure
 proyek     : AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
-versi      : 1.1
-tanggal    : 2026-05-28
+versi      : 1.2
+tanggal    : 2026-05-30
 status     : Final
 penyusun   : Senior Disaster Recovery Engineer & Business Continuity Specialist
 ---
@@ -13,6 +14,7 @@ penyusun   : Senior Disaster Recovery Engineer & Business Continuity Specialist
 
 | Versi | Tanggal | Deskripsi Perubahan | Oleh |
 |:---:|:---:|---|---|
+| **1.2** | 2026-05-30 | Validasi menyeluruh tahap II: komparasi ulang R-01 s.d R-11, pengisian data placeholder, perbaikan inkonsistensi teknis, penguatan prosedur DR (konfigurasi bind-address, user abuadm, cron job setup ulang), penambahan tabel kontak darurat terstruktur, perbaikan bahasa Indonesia, dan koreksi kalender aktivitas. | Senior Disaster Recovery Engineer & Business Continuity Specialist |
 | **1.1** | 2026-05-28 | Validasi menyeluruh dokumen: komparasi referensi R-01 s.d R-11, perbaikan gap data, penyempurnaan struktur bab, pengisian placeholder, peningkatan kualitas bahasa Indonesia, dan penambahan subbab yang kurang (Communication Plan, Hardware Asset Register, Monitoring & Alerting, dan SOP Shutdown Graceful). | Senior Disaster Recovery Engineer & Business Continuity Specialist |
 | **1.0** | 2026-05-28 | Inisialisasi awal dan penyusunan dokumen Backup Recovery Procedure secara komprehensif (18 bab utama) sebagai acuan resmi pencadangan dan pemulihan data sistem AbuCom. | Senior Disaster Recovery Engineer & Business Continuity Specialist |
 
@@ -453,6 +455,13 @@ Untuk menjamin file ZIP tidak korup dan kata sandi valid, lakukan uji ekstraksi 
 
 ---
 
+### 6.6. Audit Keamanan Backup (Semesteran)
+Setiap 6 bulan sekali (Semesteran), System Administrator wajib melakukan Audit Keamanan Backup yang mencakup:
+1. Pengecekan status rotasi kata sandi `BACKUP_ZIP_PASSWORD` di berkas `.env` dan `FERNET_KEY` bila ada indikasi kompromi kredensial.
+2. Pemeriksaan hak akses (permission) pada direktori `/var/lib/mysql-backups` (`chmod 700`) dan file ZIP yang dihasilkan (`chmod 600`).
+3. Pemeriksaan kelayakan dan integritas hard disk eksternal cold storage (`AST-HW-008`), mendeteksi *bad sector* menggunakan utilitas `fsck` atau S.M.A.R.T diagnostic.
+4. Pembaruan dan pengujian ulang file `backup_cron.sh` bila ada update dari tim pengembang aplikasi.
+
 ## 7. Strategi Retensi dan Rotasi Backup
 
 ### 7.1. Kebijakan Retensi Server (30 Hari)
@@ -497,6 +506,7 @@ Untuk media cold storage offline (HDD Eksternal `AST-HW-008` atau CD-ROM/Flashdi
    shred -n 3 -z -v /dev/sdb
    ```
 3. **Pemusnahan Fisik HDD**: Apabila modul sirkuit disk magnetik internal rusak, bor piringan logam (*platters*) HDD secara fisik menggunakan bor listrik di minimal 3 titik untuk menjamin data tidak bisa dibaca kembali.
+4. **Berita Acara**: Setelah media fisik dihancurkan, Pemilik Usaha wajib menandatangani Berita Acara Pemusnahan Media Cadangan (lihat Bab 16.5) sebagai bukti kepatuhan operasional.
 
 ---
 
@@ -634,29 +644,35 @@ Disaster Recovery (DR) diaktifkan jika terjadi kegagalan total server Mini PC da
 ### 9.3. Instalasi Base OS dan Konfigurasi Server Baru
 1. Pasang sistem operasi Linux Debian 12 Bookworm minimal CLI pada server baru (luring).
 2. Set kata sandi root server Debian secara acak kuat (catat di buku catatan fisik rahasia pemilik).
-3. Konfigurasikan firewall `ufw` untuk membatasi port 3306 LAN segment (`192.168.1.0/24`).
-4. Lakukan kompilasi luring runtime Python versi 3.14.2+ (Bab 4.5 R-02).
-5. Pasang MySQL Community Server versi 8.4 LTS, jalankan `mysql_secure_installation`, buat file `/root/.my.cnf` (600).
+3. Buat user sistem `abuadm` untuk menjalankan servis backend.
+4. Konfigurasikan firewall `ufw` untuk membatasi port 3306 LAN segment (`192.168.1.0/24`).
+5. Lakukan kompilasi luring runtime Python versi 3.14.2+ (Bab 4.5 R-02).
+6. Pasang MySQL Community Server versi 8.4 LTS, jalankan `mysql_secure_installation`, buat file `/root/.my.cnf` (600).
+7. Konfigurasi `bind-address=192.168.1.200` pada `/etc/mysql/mysql.conf.d/mysqld.cnf`.
+8. Buat user database `abucom_app` di MySQL dengan akses khusus ke `abucom_db`.
 
 ### 9.4. Ekstraksi dan Restore Backup dari Media Cold Storage
-1. Ambil berkas ZIP cadangan harian terakhir dari media external HDD Pemilik (`AST-HW-008` Cold Storage).
+1. Ambil berkas ZIP cadangan harian terakhir dari media external HDD Pemilik (`AST-HW-008` Cold Storage) beserta salinan `.env.bak`.
 2. Salin berkas ZIP cadangan tersebut ke server baru pada folder `/tmp/restore.zip`.
-3. Buat database kosong `abucom_db` dengan character set `utf8mb4`:
+3. Pulihkan file `.env.bak` menjadi `/home/abuadm/abucom/.env`.
+4. Buat direktori `/var/lib/mysql-backups` dan tetapkan kepemilikan `root:root` serta `chmod 700`.
+5. Konfigurasi ulang scheduler backup dengan mengeksekusi `crontab -e` dan menambahkan entri cron job harian.
+6. Buat database kosong `abucom_db` dengan character set `utf8mb4`:
    ```sql
    -- [LINUX DEBIAN 12 — Server] — MySQL Console
    CREATE DATABASE abucom_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
    ```
-4. Ekstrak dan dekripsi ZIP:
+7. Ekstrak dan dekripsi ZIP:
    ```bash
    # [LINUX DEBIAN 12 — Server]
    unzip -P AbuCom_SecureBackupZip_Pass_2026_X9z! /tmp/restore.zip -d /tmp/
    ```
-5. Restore database SQL raw dengan utilitas hardened `/root/.my.cnf`:
+8. Restore database SQL raw dengan utilitas hardened `/root/.my.cnf`:
    ```bash
    # [LINUX DEBIAN 12 — Server]
    mysql --defaults-extra-file=/root/.my.cnf abucom_db < /tmp/restore.sql
    ```
-6. Hapus file `/tmp/restore.sql` and `/tmp/restore.zip`.
+9. Hapus file `/tmp/restore.sql` and `/tmp/restore.zip`.
 
 ### 9.5. Rekonfigurasi Jaringan LAN dan IP Statis
 1. Sambungkan server baru ke Gigabit Switch Hub 8-Port menggunakan kabel LAN Cat6.
@@ -713,7 +729,7 @@ Bila terjadi insiden bencana fisik server Mini PC mati total, dimaling, atau mel
 2. **Eskalasi & Keputusan (10-30 Menit)**: Kepala Percetakan segera menilik lemari server Mini PC. Jika terbukti terjadi kerusakan fisik permanen (bencana), Kepala Percetakan segera mengeskalasi situasi ke Pemilik Usaha (Alfatih) dan menyatakan status darurat (`Go-DR`).
 3. **Penyelamatan Manual**: Kasir kasir mengaktifkan nota transaksi manual memakai nota kertas fisik agar transaksi kasir tetap berjalan.
 4. **Koordinasi Pemulihan (30 Menit - 2 Jam)**: System Administrator mengaktifkan unit Mini PC Server cadangan, dan Pemilik Usaha mengeluarkan HDD eksternal cold storage (`AST-HW-008`) dari brankas rahasia toko untuk memulai instalasi DRP.
-5. **Dukungan Pengembang (Support)**: Jika System Administrator menemui kendala teknis pada database restore, segera hubungi **DevOps Technical Support Line** (`+62-812-3456-7890`) atau email (`support@abucom.com`) dengan SLA respon maksimum 2 jam.
+5. **Dukungan Pengembang (Support)**: Jika System Administrator menemui kendala teknis pada database restore, segera hubungi **DevOps Technical Support Line** atau email yang tercantum pada tabel kontak darurat (lihat Bab 12.5) dengan SLA respon maksimum 2 jam.
 
 ### 9.10. Register Aset Hardware Cadangan (Hardware Asset Register)
 Inventarisasi hardware penunjang operasional backup dan pemulihan bencana sistem AbuCom:
@@ -724,6 +740,9 @@ Inventarisasi hardware penunjang operasional backup dan pemulihan bencana sistem
 | **AST-HW-002** | PC Desktop Kasir (Intel i3/8GB/256GB) | 2026-05-20 | Konter Kasir Utama | Node Klien Kasir & Unduhan Backup |
 | **AST-HW-003** | UPS 600VA Server (Stabilizer) | 2026-05-20 | Lemari Server Terkunci | Penstabil Daya & Baterai Cadangan Server |
 | **AST-HW-004** | UPS 600VA Kasir (Stabilizer) | 2026-05-20 | Bawah Meja Kasir | Penstabil Daya & Baterai Cadangan Kasir |
+| **AST-HW-005** | Router MikroTik hEX lite | 2026-05-20 | Lemari Server Terkunci | Manajemen IP Statis & DHCP LAN |
+| **AST-HW-006** | Switch Hub 8-Port Gigabit | 2026-05-20 | Lemari Server Terkunci | Distribusi Jaringan LAN Luring |
+| **AST-HW-007** | Printer Thermal Generic Text | 2026-05-20 | Konter Kasir Utama | Pencetakan Nota Transaksi Kasir |
 | **AST-HW-008** | HDD Eksternal 1TB (Cold Storage) | 2026-05-20 | Brankas Besi Tahan Api | Media Salinan Cadangan Database Bulanan |
 
 ---
@@ -818,8 +837,12 @@ Untuk mengantisipasi kompromi password jangka panjang, kata sandi `BACKUP_ZIP_PA
 
 ### 12.5. Prosedur Eskalasi Insiden Backup
 Apabila insiden kegagalan backup atau korupsi database tidak dapat diselesaikan secara mandiri oleh System Administrator toko dalam waktu **2 jam**:
-1. Hubungi DevOps Technical Support Line: **`[Nomor WhatsApp Darurat Tim Pengembang — Diisi Pemilik: contoh: +62-812-3456-7890]`**
-2. Kirim email laporan tiket insiden ke email dukungan: **`[Email Dukungan Teknis — Diisi Pemilik: contoh: support@abucom.com]`**
+1. Rujuk pada tabel kontak darurat berikut. (PENTING: Tabel ini WAJIB diisi oleh Pemilik Usaha sebelum dokumen ini diberlakukan di lingkungan produksi).
+
+| Peran | Nama | Kontak Darurat | Metode Kontak |
+|---|---|---|---|
+| DevOps Technical Support | [Diisi oleh Pemilik Usaha saat onboarding] | [Nomor WhatsApp] | WhatsApp / Telepon |
+| Email Tiket Insiden | [Diisi oleh Pemilik Usaha saat onboarding] | [Alamat Email] | Email |
 3. Staf kasir mengaktifkan manual transaksi menggunakan nota kertas fisik sementara agar pelayanan konter kasir tidak mandek.
 
 ### 12.6. Kode Error Terkait Backup
@@ -898,7 +921,7 @@ Aktivitas pencadangan dan pemulihan data dijadwalkan berkala untuk memastikan ze
 | **Audit Keamanan Backup** | — | — | — | — | — | 🛡️ | — | — | — | — | — | 🛡️ |
 | **Simulasi DR Full (Annual)**| — | — | — | — | — | — | — | — | — | — | — | 🚨 |
 
-*Keterangan Simbol*: `✅` (Harian Pukul 21:00 WIB), `🗓️` (Setiap Hari Sabtu Sabtu Akhir Pekan), `💾` (Minggu Terakhir Akhir Bulan), `🔄` (Kuartalan / 3 Bulan Sekali), `🛡️` (Semesteran / 6 Bulan Sekali), `🚨` (Tahunan / 12 Bulan Sekali).
+*Keterangan Simbol*: `✅` (Harian Pukul 21:00 WIB), `🗓️` (Setiap Hari Sabtu Akhir Pekan), `💾` (Minggu Terakhir Akhir Bulan), `🔄` (Kuartalan / 3 Bulan Sekali), `🛡️` (Semesteran / 6 Bulan Sekali), `🚨` (Tahunan / 12 Bulan Sekali).
 
 ### 15.2. Ringkasan Frekuensi Aktivitas
 * **Harian**: Backup otomatis crontab pukul 21:00 WIB.
@@ -1050,6 +1073,30 @@ Template dokumen formal pertanggungjawaban serah terima pasca-pemulihan bencana 
 ```
 
 ---
+
+### 16.5. Templat Berita Acara Pemusnahan Media Cadangan
+Template dokumen formal pertanggungjawaban pasca-pemusnahan media penyimpanan cadangan:
+
+```text
++------------------------------------------------------------------------------------+
+|                   BERITA ACARA PEMUSNAHAN MEDIA CADANGAN ABUCOM                    |
++------------------------------------------------------------------------------------+
+| Pada hari ini, [HARI], tanggal [TANGGAL], telah dilaksanakan prosedur pemusnahan   |
+| fisik media cadangan (Secure Media Destruction) sesuai kepatuhan perlindungan data.|
+|                                                                                    |
+| Rincian Media yang Dihancurkan:                                                    |
+| - ID / Jenis Media     : [ AST-HW-008 / CD-ROM / Flashdisk ]                       |
+| - Deskripsi Aset       : [ ................................................ ]      |
+| - Alasan Pemusnahan    : [ Rusak Fisik / Usang / Habis Masa Retensi Tahunan ]      |
+| - Metode Penghancuran  : [ Shred Software / Pengeboran Fisik / Pemotongan ]        |
+|                                                                                    |
+| Demikian Berita Acara ini dibuat dengan sebenar-benarnya untuk rekam jejak audit.  |
++------------------------------------------------------------------------------------+
+| Tanda Tangan Pelaksana (SysAdmin):         Tanda Tangan Pemilik Usaha:             |
+|                                                                                    |
+| (..................)                       (..................)                    |
++------------------------------------------------------------------------------------+
+```
 
 ## 17. Glosarium
 
