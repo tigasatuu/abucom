@@ -8,6 +8,16 @@ penyusun   : Principal Business Analyst & Senior Technical PM
 ---
 
 # Project Charter — AbuCom
+---
+title: "Project Charter — AbuCom"
+dokumen: Project Charter
+proyek: AbuCom — Sistem Manajemen Terpadu Usaha Percetakan
+versi: 1.3
+tanggal: 2026-05-31
+status: Signed
+signed_date: 2026-05-31
+signed_by: Pemilik Usaha AbuCom
+---
 
 ## Riwayat Perubahan Dokumen
 
@@ -422,9 +432,11 @@ Dokumen Project Charter ini diajukan dan disetujui secara sadar sebagai acuan ke
 
 | Pihak Penandatangan | Jabatan / Peran | Tanda Tangan | Tanggal Persetujuan |
 |---------------------|-----------------|--------------|---------------------|
-| **Pemilik Usaha AbuCom** | Inisiator, Sponsor Proyek & Junior Programmer | *(Disetujui secara Digital)* | 2026-05-21 |
-| **Pemilik Usaha AbuCom** | Manajer Proyek & Penanggung Jawab Internal | *(Disetujui secara Digital)* | 2026-05-21 |
-| **Gemini 3.1 Pro (High)** | Lead Architect & Heavy Logic (Tim AI) | *(Disetujui secara Digital)* | 2026-05-28 |
+| Pemilik Usaha AbuCom | Inisiator, Sponsor Proyek & Junior Programmer | (Disetujui secara Digital) | 2026-05-31 |
+| Manajer Proyek (Pemilik) | Manajer Proyek & Penanggung Jawab Internal | (Disetujui secara Digital) | 2026-05-31 |
+| Saksi / Lead AI (placeholder) | Lead Architect AI / Reviewer | (Disetujui secara Digital) | 2026-05-31 |
+
+Referensi: docs/sdlc/01_planning/03_stakeholder_register.md
 
 ---
 
