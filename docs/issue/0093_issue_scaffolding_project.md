@@ -157,7 +157,7 @@ APP_ENV=production
 APP_CABANG_ID=1
 
 # 2. Kredensial Basis Data MySQL Server
-DB_HOST=192.168.1.200
+DB_HOST=10.10.10.10
 DB_PORT=3306
 DB_USER=abucom_app
 # [HARUS DIISI MANUAL] Isi dengan password user abucom_app yang kuat.
@@ -590,7 +590,7 @@ from dotenv import load_dotenv
 
 
 # Konstanta konfigurasi default
-DEFAULT_DB_HOST = '192.168.1.200'
+DEFAULT_DB_HOST = '10.10.10.10'
 DEFAULT_DB_PORT = 3306
 DEFAULT_DB_POOL_SIZE = 5
 DEFAULT_JWT_LIFETIME = 28800
@@ -725,7 +725,7 @@ def create_connection_pool(
     """Membuat connection pool database MySQL lokal.
 
     Args:
-        host (str): Alamat IP statis server database (default 192.168.1.200).
+        host (str): Alamat IP statis server database (default 10.10.10.10).
         port (int): Port database MySQL (default 3306).
         user (str): Username database (default abucom_app).
         password (str): Password database.
