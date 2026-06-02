@@ -1,0 +1,16 @@
+# ==============================================================================
+# ATRIBUSI LINE ENDING DUAL-OS ABUCOM
+# ==============================================================================
+
+# Atur default penanganan teks secara otomatis
+* text=auto
+
+# Paksa file Python, Markdown, SQL, dan Teks menggunakan line-feed (LF) khas Linux
+*.py text eol=lf
+*.md text eol=lf
+*.sql text eol=lf
+*.txt text eol=lf
+
+# Paksa file batch script Windows menggunakan carriage-return + line-feed (CRLF)
+*.bat text eol=crlf
+*.cmd text eol=crlf
