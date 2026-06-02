@@ -45,7 +45,9 @@ def main() -> None:
         sys.exit(1)
 
     # Tahap 2: Muat konfigurasi dari .env
-    # TODO: Implementasi pemanggilan config/settings.py
+    from config.settings import load_settings
+    settings = load_settings()
+    print(f"[INFO] Konfigurasi berhasil dimuat. Environment: {settings.app_env}")
 
     # Tahap 3: Inisialisasi koneksi database pool
     # TODO: Implementasi pemanggilan db/db_connector.py
