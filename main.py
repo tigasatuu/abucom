@@ -28,6 +28,13 @@ def validate_env_file() -> bool:
 
 def main() -> None:
     """Fungsi utama entry point aplikasi AbuCom CLI."""
+    if sys.platform.startswith('win'):
+        # Force UTF-8 encoding on Windows console to prevent UnicodeEncodeError with emojis
+        try:
+            sys.stdout.reconfigure(encoding='utf-8')
+        except AttributeError:
+            pass
+
     print("=" * 60)
     print("  AbuCom — Sistem Manajemen Terpadu Usaha Percetakan")
     print("=" * 60)
