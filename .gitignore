@@ -1,1 +1,41 @@
+# ==============================================================================
+# KONFIGURASI PENGABAIAN GIT ABUCOM
+# ==============================================================================
+
+# 1. Konfigurasi Rahasia & Kredensial (KEAMANAN SANGAT SENSITIF)
+.env
+.env.test
+
+# 2. Python Cache, Compiler & Runtime Environments
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+venv/
+ENV/
+pip_wheels/
+
+# 3. Hasil Backup, Desain, Struk Kasir Lokal & Handover Notes
+exports/backups/*
+exports/designs/*
+exports/receipts/*
+exports/handover/*
+!exports/backups/.gitkeep
+!exports/designs/.gitkeep
+!exports/receipts/.gitkeep
+!exports/handover/.gitkeep
+
+# 4. Berkas Temporary Sistem Operasi & IDE
+Thumbs.db
+Desktop.ini
+.DS_Store
+.vscode/
+.idea/
+*.log
+*.bak
+
+# di tambahkan manual secara pribadi oleh junior programmer
 .python-version
