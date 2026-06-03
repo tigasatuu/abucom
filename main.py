@@ -46,11 +46,25 @@ def main() -> None:
 
     # Tahap 2: Muat konfigurasi dari .env
     from config.settings import load_settings
-    settings = load_settings()
-    print(f"[INFO] Konfigurasi berhasil dimuat. Environment: {settings.app_env}")
+    config = load_settings()
+    print(f'[INFO] Konfigurasi dimuat. Cabang ID: {config.app_cabang_id}')
+    print(f'[INFO] Target database: {config.db_name}@{config.db_host}:{config.db_port}')
 
     # Tahap 3: Inisialisasi koneksi database pool
-    # TODO: Implementasi pemanggilan db/db_connector.py
+    from db.db_connector import create_connection_pool, close_connection_pool
+    pool_result = create_connection_pool(
+        host=config.db_host,
+        port=config.db_port,
+        user=config.db_user,
+        password=config.db_password,
+        database=config.db_name,
+        pool_size=config.db_pool_size,
+    )
+    if not pool_result.is_success:
+        print(f'⛔ {pool_result.error_msg}')
+        print('   Pastikan MySQL Server aktif dan kredensial di .env sudah benar.')
+        sys.exit(1)
+    print('[INFO] Connection pool database berhasil diinisialisasi (abupool).')
 
     # Tahap 4: Peluncuran antarmuka CLI login
     # TODO: Implementasi pemanggilan cli/__init__.py -> start_cli_app()
@@ -58,6 +72,9 @@ def main() -> None:
     print("[INFO] Scaffolding berhasil. Modul belum diimplementasikan.")
     print("[INFO] Tekan Enter untuk keluar...")
     input()
+
+    # Cleanup: Tutup connection pool saat aplikasi ditutup
+    close_connection_pool()
 
 
 if __name__ == '__main__':
