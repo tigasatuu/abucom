@@ -36,3 +36,6 @@ Desktop.ini
 .idea/
 *.log
 *.bak
+
+# di tambahkan manual secara pribadi oleh junior programmer
+.python-version
