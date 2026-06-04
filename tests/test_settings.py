@@ -71,7 +71,7 @@ def _make_valid_env() -> dict[str, str]:
         'DB_POOL_SIZE': '5',
         'JWT_SECRET_KEY': 'e837df26a91bb812b7a90f19c991f812cb71a9ee08311ab81ab65b1cd78201de',
         'JWT_LIFETIME_SECONDS': '28800',
-        'FERNET_KEY': 'Z2VtaW5pYW50aWdyYXZpdHlzZWN1cmVjcm1rZXkyMDI2',
+        'FERNET_KEY': 'Z2VtaW5pYW50aWdyYXZpdHlzZWN1cmVjcm1rZXkyMDI=',
         'BACKUP_ZIP_PASSWORD': 'AES256EncryptBackup2026#',
         'PRINTER_PORT': 'COM1',
         'PRINTER_WIDTH_MM': '58',
@@ -1252,7 +1252,7 @@ def test_load_settings_sukses_semua_variabel_lengkap(
     assert config.db_pool_size == 5
     assert config.jwt_secret_key == 'e837df26a91bb812b7a90f19c991f812cb71a9ee08311ab81ab65b1cd78201de'
     assert config.jwt_lifetime_seconds == 28800
-    assert config.fernet_key == 'Z2VtaW5pYW50aWdyYXZpdHlzZWN1cmVjcm1rZXkyMDI2'
+    assert config.fernet_key == 'Z2VtaW5pYW50aWdyYXZpdHlzZWN1cmVjcm1rZXkyMDI='
     assert config.backup_zip_password == 'AES256EncryptBackup2026#'
     assert config.printer_port == 'COM1'
     assert config.printer_width_mm == 58
@@ -1296,8 +1296,8 @@ def test_load_settings_sukses_menggunakan_default_values(
     mock_exists.return_value = True
     env_dict = {
         'DB_PASSWORD': 'SecurePassword!',
-        'JWT_SECRET_KEY': 'SecretKey123',
-        'FERNET_KEY': 'FernetKey123',
+        'JWT_SECRET_KEY': 'SecretKey123_456_789_012_345_678_901',
+        'FERNET_KEY': 'Z2VtaW5pYW50aWdyYXZpdHlzZWN1cmVjcm1rZXkyMDI=',
         'BACKUP_ZIP_PASSWORD': 'BackupPassword123'
     }
     mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
@@ -1508,3 +1508,244 @@ def test_load_settings_db_name_default_saat_tidak_diset(
 
     # Assert
     assert config.db_name == 'abucom_db'
+
+
+# ==============================================================================
+# GRUP K: Test Baru dari Issue #0102
+# ==============================================================================
+
+def test_validate_fernet_key_format_valid() -> None:
+    """Menguji _validate_fernet_key dengan kunci Fernet yang valid.
+
+    Tipe: Positif
+    Target: _validate_fernet_key
+    """
+    from cryptography.fernet import Fernet
+    valid_key = Fernet.generate_key().decode('utf-8')
+    assert settings_mod._validate_fernet_key(valid_key) is True
+
+
+def test_validate_fernet_key_format_tidak_valid() -> None:
+    """Menguji _validate_fernet_key dengan kunci Fernet yang tidak valid.
+
+    Tipe: Negatif
+    Target: _validate_fernet_key
+    """
+    invalid_key = "kunci_tidak_valid_123"
+    assert settings_mod._validate_fernet_key(invalid_key) is False
+
+
+def test_validate_db_host_valid_ip_dan_hostname() -> None:
+    """Menguji _validate_db_host dengan IP address dan hostname yang valid.
+
+    Tipe: Positif
+    Target: _validate_db_host
+    """
+    assert settings_mod._validate_db_host("192.168.1.200") is True
+    assert settings_mod._validate_db_host("localhost") is True
+    assert settings_mod._validate_db_host("db.abucom.local") is True
+    assert settings_mod._validate_db_host("127.0.0.1") is True
+
+
+def test_validate_db_host_tidak_valid() -> None:
+    """Menguji _validate_db_host dengan string host yang tidak valid.
+
+    Tipe: Negatif
+    Target: _validate_db_host
+    """
+    assert settings_mod._validate_db_host("") is False
+    assert settings_mod._validate_db_host("256.300.1.1") is False
+    assert settings_mod._validate_db_host("invalid_host#name") is False
+    assert settings_mod._validate_db_host("-host.com") is False
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_gagal_app_cabang_id_nol_atau_negatif(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings gagal jika APP_CABANG_ID bernilai 0 atau negatif.
+
+    Tipe: Negatif
+    Target: load_settings
+    """
+    mock_exists.return_value = True
+
+    # Skenario 1: Cabang ID = 0
+    env_dict = _make_valid_env()
+    env_dict['APP_CABANG_ID'] = '0'
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+    with pytest.raises(SystemExit) as exc_info:
+        load_settings()
+    assert exc_info.value.code == 1
+
+    # Skenario 2: Cabang ID = -5
+    env_dict = _make_valid_env()
+    env_dict['APP_CABANG_ID'] = '-5'
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+    with pytest.raises(SystemExit) as exc_info:
+        load_settings()
+    assert exc_info.value.code == 1
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_gagal_db_host_tidak_valid(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings gagal jika DB_HOST tidak valid.
+
+    Tipe: Negatif
+    Target: load_settings
+    """
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    env_dict['DB_HOST'] = 'invalid_host#name'
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+    with pytest.raises(SystemExit) as exc_info:
+        load_settings()
+    assert exc_info.value.code == 1
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_gagal_db_user_kosong(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings gagal jika DB_USER kosong.
+
+    Tipe: Negatif
+    Target: load_settings
+    """
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    env_dict['DB_USER'] = ''
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+    with pytest.raises(SystemExit) as exc_info:
+        load_settings()
+    assert exc_info.value.code == 1
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_gagal_db_name_kosong(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings gagal jika DB_NAME kosong.
+
+    Tipe: Negatif
+    Target: load_settings
+    """
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    env_dict['DB_NAME'] = ''
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+    with pytest.raises(SystemExit) as exc_info:
+        load_settings()
+    assert exc_info.value.code == 1
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_gagal_printer_port_kosong(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings gagal jika PRINTER_PORT kosong.
+
+    Tipe: Negatif
+    Target: load_settings
+    """
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    env_dict['PRINTER_PORT'] = ''
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+    with pytest.raises(SystemExit) as exc_info:
+        load_settings()
+    assert exc_info.value.code == 1
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_gagal_fernet_key_tidak_valid(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings gagal jika format FERNET_KEY tidak valid.
+
+    Tipe: Negatif
+    Target: load_settings
+    """
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    env_dict['FERNET_KEY'] = 'kunci_fernet_salah'
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+    with pytest.raises(SystemExit) as exc_info:
+        load_settings()
+    assert exc_info.value.code == 1
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_jwt_secret_key_terlalu_pendek_dev_vs_prod(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji JWT_SECRET_KEY terlalu pendek di lingkungan dev (warning) dan prod (error).
+
+    Tipe: Positif & Negatif
+    Target: load_settings
+    """
+    mock_exists.return_value = True
+
+    # Skenario 1: Dev mode (harus lolos meskipun key pendek)
+    env_dict = _make_valid_env()
+    env_dict['APP_ENV'] = 'development'
+    env_dict['JWT_SECRET_KEY'] = 'short_key_123'
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+    config = load_settings()
+    assert config.jwt_secret_key == 'short_key_123'
+
+    # Skenario 2: Prod mode (harus gagal SystemExit karena key pendek)
+    env_dict = _make_valid_env()
+    env_dict['APP_ENV'] = 'production'
+    env_dict['JWT_SECRET_KEY'] = 'short_key_123'
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+    with pytest.raises(SystemExit) as exc_info:
+        load_settings()
+    assert exc_info.value.code == 1
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_backup_zip_password_terlalu_pendek_dev_vs_prod(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji BACKUP_ZIP_PASSWORD terlalu pendek di lingkungan dev (warning) dan prod (error).
+
+    Tipe: Positif & Negatif
+    Target: load_settings
+    """
+    mock_exists.return_value = True
+
+    # Skenario 1: Dev mode (harus lolos meskipun password pendek)
+    env_dict = _make_valid_env()
+    env_dict['APP_ENV'] = 'development'
+    env_dict['BACKUP_ZIP_PASSWORD'] = 'short'
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+    config = load_settings()
+    assert config.backup_zip_password == 'short'
+
+    # Skenario 2: Prod mode (harus gagal SystemExit karena password pendek)
+    env_dict = _make_valid_env()
+    env_dict['APP_ENV'] = 'production'
+    env_dict['BACKUP_ZIP_PASSWORD'] = 'short'
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+    with pytest.raises(SystemExit) as exc_info:
+        load_settings()
+    assert exc_info.value.code == 1
