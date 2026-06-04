@@ -12,20 +12,6 @@ import os
 from pathlib import Path
 
 
-def validate_env_file() -> bool:
-    """Memvalidasi keberadaan file konfigurasi .env di root proyek.
-
-    Returns:
-        bool: True jika file .env ditemukan, False jika tidak.
-    """
-    env_path = Path(__file__).parent / '.env'
-    if not env_path.exists():
-        print("⛔ ERR-FILE-001: File .env tidak ditemukan di root proyek.")
-        print("   Salin file .env.example menjadi .env dan lengkapi kredensial.")
-        return False
-    return True
-
-
 def main() -> None:
     """Fungsi utama entry point aplikasi AbuCom CLI."""
     if sys.platform.startswith('win'):
@@ -40,11 +26,7 @@ def main() -> None:
     print("=" * 60)
     print()
 
-    # Tahap 1: Validasi keberadaan file konfigurasi .env
-    if not validate_env_file():
-        sys.exit(1)
-
-    # Tahap 2: Muat konfigurasi dari .env
+    # Tahap 1: Muat dan validasi konfigurasi dari .env
     from config.settings import load_settings
     config = load_settings()
     print(f'[INFO] Konfigurasi dimuat. Cabang ID: {config.app_cabang_id}')
