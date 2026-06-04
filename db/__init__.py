@@ -8,3 +8,5 @@ Tanggal: 2026-06-03
 
 from db.db_connector import create_connection_pool, get_db_connection, close_connection_pool
 from db.schema_initializer import run_full_initialization, verify_schema_integrity
+from db.seed_data import run_seed_all, verify_seed_integrity
+
