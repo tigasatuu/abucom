@@ -901,3 +901,622 @@ def test_run_seed_all_rollback_exception_handling(mock_gen_hash) -> None:
     mock_conn.rollback.assert_called_once()
     mock_cursor.close.assert_called_once()
 
+
+# ==============================================================================
+# Skenario Test Tambahan — Issue #0097
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# GRUP A: generate_default_password_hash — Edge Cases Tambahan
+# ------------------------------------------------------------------------------
+
+def test_generate_default_password_hash_karakter_unicode() -> None:
+    """Memverifikasi bahwa bcrypt mampu meng-hash password dengan karakter unicode/spesial.
+
+    Skenario: Positif / Edge Case
+    Target: generate_default_password_hash
+    """
+    res = generate_default_password_hash("P@$$wörd_日本語!#2026")
+    assert res.is_success is True
+    assert res.data.startswith('$2b$12$')
+    assert res.error_msg is None
+    assert len(res.data) >= 59
+
+
+def test_generate_default_password_hash_panjang_72_bytes() -> None:
+    """Memverifikasi bahwa bcrypt bekerja pada batas maksimum 72 bytes input.
+
+    Skenario: Edge Case / Boundary
+    Target: generate_default_password_hash
+    """
+    password_panjang = "A" * 72
+    res = generate_default_password_hash(password_panjang)
+    assert res.is_success is True
+    assert res.data.startswith('$2b$12$')
+
+
+def test_generate_default_password_hash_whitespace_only() -> None:
+    """Memverifikasi bahwa whitespace-only dianggap password valid (karena pengecekan hanya if not password).
+
+    Skenario: Edge Case
+    Target: generate_default_password_hash
+    """
+    res = generate_default_password_hash("   ")
+    assert res.is_success is True
+    assert res.data.startswith('$2b$12$')
+
+
+# ------------------------------------------------------------------------------
+# GRUP B: seed_cabang_default — Edge Cases Tambahan
+# ------------------------------------------------------------------------------
+
+def test_seed_cabang_default_verifikasi_query_insert_exact() -> None:
+    """Validasi keakuratan query SQL parameterized yang dikirim ke database untuk cabang default.
+
+    Skenario: Validasi Input
+    Target: seed_cabang_default
+    """
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = (0,)
+
+    res = seed_cabang_default(mock_cursor)
+    assert res.is_success is True
+    assert mock_cursor.execute.call_count == 2
+    mock_cursor.execute.assert_any_call("SELECT COUNT(*) FROM cabang WHERE id = %s", (1,))
+    mock_cursor.execute.assert_any_call(
+        "INSERT INTO cabang (id, nama_cabang, alamat, telp) VALUES (%s, %s, %s, %s)",
+        DEFAULT_CABANG_DATA
+    )
+    assert DEFAULT_CABANG_DATA[0] == 1
+    assert DEFAULT_CABANG_DATA[1] == 'Toko Pusat Bandung'
+    assert '0227654321' in DEFAULT_CABANG_DATA
+
+
+def test_seed_cabang_default_skip_return_data_nol() -> None:
+    """Verifikasi idempoten dengan jumlah cabang di database lebih dari 1.
+
+    Skenario: Positif
+    Target: seed_cabang_default
+    """
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = (5,)
+
+    res = seed_cabang_default(mock_cursor)
+    assert res.is_success is True
+    assert res.data == 0
+    assert res.error_msg is None
+
+
+# ------------------------------------------------------------------------------
+# GRUP C: seed_pengguna_default — Edge Cases Tambahan
+# ------------------------------------------------------------------------------
+
+def test_seed_pengguna_default_verifikasi_urutan_params_insert() -> None:
+    """Memastikan urutan kolom INSERT sesuai skema database dan locked_until diisi None.
+
+    Skenario: Validasi Input
+    Target: seed_pengguna_default
+    """
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = (0,)
+    hash_val = "$2b$12$testHashSample1234567890"
+
+    res = seed_pengguna_default(mock_cursor, hash_val)
+    assert res.is_success is True
+
+    assert mock_cursor.execute.call_count == 2
+    calls = mock_cursor.execute.call_args_list
+    insert_args = calls[1][0]
+    query, params = insert_args
+    assert params == (1, 'Pemilik Usaha AbuCom', 'pemilik', hash_val, 'pemilik', 0, None, 1)
+    assert params[6] is None
+    assert params[7] == 1
+
+
+def test_seed_pengguna_default_hash_kosong_string() -> None:
+    """Membuktikan seed_pengguna_default tidak memvalidasi format hash password.
+
+    Skenario: Edge Case
+    Target: seed_pengguna_default
+    """
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = (0,)
+
+    res = seed_pengguna_default(mock_cursor, "")
+    assert res.is_success is True
+    assert res.data == 1
+
+
+# ------------------------------------------------------------------------------
+# GRUP D: seed_saldo_ppob_default — Edge Cases Tambahan
+# ------------------------------------------------------------------------------
+
+def test_seed_saldo_ppob_default_jumlah_execute_calls() -> None:
+    """Memverifikasi jumlah query yang dieksekusi sesuai jumlah baris data saldo PPOB.
+
+    Skenario: Validasi Input
+    Target: seed_saldo_ppob_default
+    """
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = (0,)
+    mock_cursor.rowcount = 1
+
+    res = seed_saldo_ppob_default(mock_cursor)
+    assert res.is_success is True
+    assert mock_cursor.execute.call_count == 3
+    assert res.data == 2
+
+
+def test_seed_saldo_ppob_default_skip_jika_partial_1() -> None:
+    """Memverifikasi perilaku ketika data partial PPOB ada, fungsi tetap melakukan insert.
+
+    Skenario: Edge Case / Boundary
+    Target: seed_saldo_ppob_default
+    """
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = (1,)
+    mock_cursor.rowcount = 1
+
+    res = seed_saldo_ppob_default(mock_cursor)
+    assert res.is_success is True
+    assert res.data == 2
+
+
+# ------------------------------------------------------------------------------
+# GRUP E: seed_saldo_ewallet_default — Edge Cases Tambahan
+# ------------------------------------------------------------------------------
+
+def test_seed_saldo_ewallet_default_jumlah_execute_calls_detail() -> None:
+    """Memverifikasi semua 6 akun e-wallet diinsert dengan query INSERT IGNORE yang benar.
+
+    Skenario: Validasi Input
+    Target: seed_saldo_ewallet_default
+    """
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = (0,)
+    mock_cursor.rowcount = 1
+
+    res = seed_saldo_ewallet_default(mock_cursor)
+    assert res.is_success is True
+    assert mock_cursor.execute.call_count == 7
+
+    calls = mock_cursor.execute.call_args_list[1:]
+    for c in calls:
+        query, params = c[0]
+        assert "INSERT IGNORE INTO saldo_ewallet" in query
+        assert "nama_ewallet, saldo_terakhir, biaya_admin_flat, biaya_admin_persen, limit_harian, cabang_id" in query
+    assert res.data == 6
+
+
+def test_seed_saldo_ewallet_default_verifikasi_nama_ewallet() -> None:
+    """Memastikan seluruh 6 nama akun e-wallet terdaftar secara tepat.
+
+    Skenario: Validasi Input
+    Target: seed_saldo_ewallet_default
+    """
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = (0,)
+    mock_cursor.rowcount = 1
+
+    seed_saldo_ewallet_default(mock_cursor)
+    calls = mock_cursor.execute.call_args_list[1:]
+    names = [c[0][1][0] for c in calls]
+    assert names == ['Mandiri Agen', 'Dana', 'Gopay', 'LinkAja', 'ShopeePay', 'OVO']
+
+
+def test_seed_saldo_ewallet_default_skip_jika_partial_5() -> None:
+    """Boundary test — memverifikasi perilaku saat data saldo e-wallet mendekati threshold.
+
+    Skenario: Edge Case / Boundary
+    Target: seed_saldo_ewallet_default
+    """
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = (5,)
+    mock_cursor.rowcount = 1
+
+    res = seed_saldo_ewallet_default(mock_cursor)
+    assert res.is_success is True
+    assert res.data == 6
+
+
+# ------------------------------------------------------------------------------
+# GRUP F: seed_system_configs_default — Edge Cases Tambahan
+# ------------------------------------------------------------------------------
+
+def test_seed_system_configs_default_verifikasi_semua_parameter_keys() -> None:
+    """Memastikan semua 13 parameter konfigurasi bisnis AbuCom terdaftar tanpa terlewat.
+
+    Skenario: Validasi Input
+    Target: seed_system_configs_default
+    """
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = (0,)
+    mock_cursor.rowcount = 1
+
+    seed_system_configs_default(mock_cursor)
+    calls = mock_cursor.execute.call_args_list[1:]
+    keys = [c[0][1][0] for c in calls]
+    expected_keys = [
+        'target_laba_payroll',
+        'porsi_gaji_laba',
+        'limit_kasbon_staf',
+        'threshold_saldo_ppob',
+        'min_topup_ppob',
+        'toleransi_selisih_kas',
+        'poin_tier_1_rupiah',
+        'poin_tier_2_rupiah',
+        'poin_tier_3_rupiah',
+        'poin_tier_4_rupiah',
+        'threshold_pengeluaran',
+        'umr_daerah',
+        'dana_cadangan_darurat'
+    ]
+    assert keys == expected_keys
+    assert len(keys) == 13
+
+
+def test_seed_system_configs_default_decimal_cast_to_string() -> None:
+    """Memastikan konversi Decimal ke string dilakukan sebelum query DML.
+
+    Skenario: Validasi Input
+    Target: seed_system_configs_default
+    """
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = (0,)
+    mock_cursor.rowcount = 1
+
+    seed_system_configs_default(mock_cursor)
+    calls = mock_cursor.execute.call_args_list[1:]
+    for c in calls:
+        query, params = c[0]
+        val = params[1]
+        assert isinstance(val, str)
+        d_val = Decimal(val)
+        assert isinstance(d_val, Decimal)
+
+    params_by_key = {c[0][1][0]: c[0][1][1] for c in calls}
+    assert params_by_key['target_laba_payroll'] == '15000000.0000'
+    assert params_by_key['porsi_gaji_laba'] == '0.2500'
+
+
+def test_seed_system_configs_default_tipe_data_selalu_decimal() -> None:
+    """Memastikan semua baris default_system_configs bertipe data DECIMAL.
+
+    Skenario: Validasi Input
+    Target: DEFAULT_SYSTEM_CONFIGS_DATA
+    """
+    for row in DEFAULT_SYSTEM_CONFIGS_DATA:
+        assert row[2] == 'DECIMAL'
+
+
+def test_seed_system_configs_default_cabang_id_selalu_1() -> None:
+    """Memastikan semua parameter configs default terikat ke cabang_id = 1.
+
+    Skenario: Validasi Input
+    Target: DEFAULT_SYSTEM_CONFIGS_DATA
+    """
+    for row in DEFAULT_SYSTEM_CONFIGS_DATA:
+        assert row[4] == 1
+
+
+def test_seed_system_configs_default_skip_jika_partial_12() -> None:
+    """Boundary test — memverifikasi jika terdapat 12 baris configs, sistem tetap menginsert.
+
+    Skenario: Edge Case / Boundary
+    Target: seed_system_configs_default
+    """
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = (12,)
+    mock_cursor.rowcount = 1
+
+    res = seed_system_configs_default(mock_cursor)
+    assert res.is_success is True
+    assert res.data == 13
+
+
+# ------------------------------------------------------------------------------
+# GRUP G: verify_seed_integrity — Edge Cases Tambahan
+# ------------------------------------------------------------------------------
+
+def test_verify_seed_integrity_multiple_errors_combined() -> None:
+    """Membuktikan fungsi verify_seed_integrity mengumpulkan semua error yang ditemukan.
+
+    Skenario: Negatif
+    Target: verify_seed_integrity
+    """
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.side_effect = [(0,), (0,), (0,), (0,), (0,), None, (0,)]
+
+    res = verify_seed_integrity(mock_cursor)
+    assert res.is_success is False
+    assert "cabang" in res.error_msg
+    assert "pengguna" in res.error_msg
+    assert "akun pemilik default id = 1 tidak ditemukan" in res.error_msg
+
+
+def test_verify_seed_integrity_report_dict_on_failure() -> None:
+    """Verifikasi bahwa report dict dikembalikan meskipun terjadi kegagalan integritas.
+
+    Skenario: Negatif
+    Target: verify_seed_integrity
+    """
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.side_effect = [(1,), (1,), (2,), (6,), (10,), ('$2b$12$valid',), (13,)]
+
+    res = verify_seed_integrity(mock_cursor)
+    assert res.is_success is False
+    assert res.data is not None
+    assert res.data['system_configs'] == 10
+
+
+def test_verify_seed_integrity_password_hash_kosong() -> None:
+    """Verifikasi deteksi kegagalan integritas jika password hash bernilai string kosong.
+
+    Skenario: Edge Case
+    Target: verify_seed_integrity
+    """
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.side_effect = [(1,), (1,), (2,), (6,), (13,), ('',), (13,)]
+
+    res = verify_seed_integrity(mock_cursor)
+    assert res.is_success is False
+    assert "bcrypt Cost 12" in res.error_msg
+
+
+# ------------------------------------------------------------------------------
+# GRUP H: run_seed_all — Edge Cases Tambahan
+# ------------------------------------------------------------------------------
+
+@patch('db.seed_data.generate_default_password_hash')
+@patch('db.seed_data.seed_cabang_default')
+@patch('db.seed_data.seed_pengguna_default')
+@patch('db.seed_data.seed_saldo_ppob_default')
+@patch('db.seed_data.seed_saldo_ewallet_default')
+@patch('db.seed_data.seed_system_configs_default')
+@patch('db.seed_data.verify_seed_integrity')
+def test_run_seed_all_urutan_pemanggilan_benar(
+    mock_verify, mock_configs, mock_ewallet, mock_ppob, mock_pengguna, mock_cabang, mock_gen_hash
+) -> None:
+    """Memverifikasi seluruh fungsi sub-seed dipanggil sesuai urutan dependensi database yang benar.
+
+    Skenario: Positif
+    Target: run_seed_all
+    """
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_conn.cursor.return_value = mock_cursor
+
+    mock_gen_hash.return_value = Result(True, "$2b$12$hashed", None)
+    mock_cabang.return_value = Result(True, 1, None)
+    mock_pengguna.return_value = Result(True, 1, None)
+    mock_ppob.return_value = Result(True, 2, None)
+    mock_ewallet.return_value = Result(True, 6, None)
+    mock_configs.return_value = Result(True, 13, None)
+    mock_verify.return_value = Result(True, EXPECTED_SEED_COUNTS, None)
+
+    manager = MagicMock()
+    manager.attach_mock(mock_gen_hash, 'gen_hash')
+    manager.attach_mock(mock_cabang, 'cabang')
+    manager.attach_mock(mock_pengguna, 'pengguna')
+    manager.attach_mock(mock_ppob, 'ppob')
+    manager.attach_mock(mock_ewallet, 'ewallet')
+    manager.attach_mock(mock_configs, 'configs')
+    manager.attach_mock(mock_verify, 'verify')
+
+    res = run_seed_all(mock_conn)
+    assert res.is_success is True
+
+    calls = manager.mock_calls
+    names = [c[0] for c in calls]
+    sub_seed_names = [n for n in names if n in ('gen_hash', 'cabang', 'pengguna', 'ppob', 'ewallet', 'configs', 'verify')]
+    assert sub_seed_names == ['gen_hash', 'cabang', 'pengguna', 'ppob', 'ewallet', 'configs', 'verify']
+
+
+@patch('db.seed_data.generate_default_password_hash')
+@patch('db.seed_data.seed_cabang_default')
+@patch('db.seed_data.seed_pengguna_default')
+@patch('db.seed_data.seed_saldo_ppob_default')
+@patch('db.seed_data.seed_saldo_ewallet_default')
+@patch('db.seed_data.seed_system_configs_default')
+@patch('db.seed_data.verify_seed_integrity')
+def test_run_seed_all_stats_dict_lengkap(
+    mock_verify, mock_configs, mock_ewallet, mock_ppob, mock_pengguna, mock_cabang, mock_gen_hash
+) -> None:
+    """Memverifikasi bahwa stats dictionary hasil seeding lengkap dan akurat pada saat sukses.
+
+    Skenario: Positif
+    Target: run_seed_all
+    """
+    mock_conn = MagicMock()
+
+    mock_gen_hash.return_value = Result(True, "$2b$12$hashed", None)
+    mock_cabang.return_value = Result(True, 1, None)
+    mock_pengguna.return_value = Result(True, 2, None)
+    mock_ppob.return_value = Result(True, 3, None)
+    mock_ewallet.return_value = Result(True, 4, None)
+    mock_configs.return_value = Result(True, 5, None)
+    mock_verify.return_value = Result(True, EXPECTED_SEED_COUNTS, None)
+
+    res = run_seed_all(mock_conn)
+    assert res.is_success is True
+    assert res.data == {
+        'cabang_inserted': 1,
+        'pengguna_inserted': 2,
+        'saldo_ppob_inserted': 3,
+        'saldo_ewallet_inserted': 4,
+        'system_configs_inserted': 5,
+        'report': EXPECTED_SEED_COUNTS
+    }
+    assert len(res.data) == 6
+
+
+@patch('db.seed_data.generate_default_password_hash')
+@patch('db.seed_data.seed_cabang_default')
+@patch('db.seed_data.seed_pengguna_default')
+@patch('db.seed_data.seed_saldo_ppob_default')
+@patch('db.seed_data.seed_saldo_ewallet_default')
+@patch('db.seed_data.seed_system_configs_default')
+def test_run_seed_all_cursor_close_saat_commit_error(
+    mock_configs, mock_ewallet, mock_ppob, mock_pengguna, mock_cabang, mock_gen_hash
+) -> None:
+    """Memverifikasi bahwa cursor tetap ditutup dan transaksi di-rollback jika commit database error.
+
+    Skenario: Negatif
+    Target: run_seed_all
+    """
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_conn.cursor.return_value = mock_cursor
+
+    mock_gen_hash.return_value = Result(True, "$2b$12$hashedpwd", None)
+    mock_cabang.return_value = Result(True, 1, None)
+    mock_pengguna.return_value = Result(True, 1, None)
+    mock_ppob.return_value = Result(True, 2, None)
+    mock_ewallet.return_value = Result(True, 6, None)
+    mock_configs.return_value = Result(True, 13, None)
+
+    mock_conn.commit.side_effect = RuntimeError("Commit crash")
+
+    res = run_seed_all(mock_conn)
+    assert res.is_success is False
+    mock_cursor.close.assert_called_once()
+    mock_conn.rollback.assert_called_once()
+
+
+@patch('db.seed_data.generate_default_password_hash')
+@patch('db.seed_data.seed_cabang_default')
+@patch('db.seed_data.seed_pengguna_default')
+@patch('db.seed_data.seed_saldo_ppob_default')
+@patch('db.seed_data.seed_saldo_ewallet_default')
+@patch('db.seed_data.seed_system_configs_default')
+@patch('db.seed_data.verify_seed_integrity')
+def test_run_seed_all_idempoten_semua_data_sudah_ada(
+    mock_verify, mock_configs, mock_ewallet, mock_ppob, mock_pengguna, mock_cabang, mock_gen_hash
+) -> None:
+    """Memverifikasi run_seed_all bersifat idempoten jika seluruh data seed sudah terisi lengkap di db.
+
+    Skenario: Positif / Idempoten
+    Target: run_seed_all
+    """
+    mock_conn = MagicMock()
+
+    mock_gen_hash.return_value = Result(True, "$2b$12$hashedpwd", None)
+    mock_cabang.return_value = Result(True, 0, None)
+    mock_pengguna.return_value = Result(True, 0, None)
+    mock_ppob.return_value = Result(True, 0, None)
+    mock_ewallet.return_value = Result(True, 0, None)
+    mock_configs.return_value = Result(True, 0, None)
+    mock_verify.return_value = Result(True, EXPECTED_SEED_COUNTS, None)
+
+    res = run_seed_all(mock_conn)
+    assert res.is_success is True
+    assert res.data['cabang_inserted'] == 0
+    assert res.data['pengguna_inserted'] == 0
+    assert res.data['saldo_ppob_inserted'] == 0
+    assert res.data['saldo_ewallet_inserted'] == 0
+    assert res.data['system_configs_inserted'] == 0
+
+
+# ------------------------------------------------------------------------------
+# GRUP I: Konstanta Data — Validasi Lanjutan
+# ------------------------------------------------------------------------------
+
+def test_konstanta_system_configs_presisi_4_digit_decimal() -> None:
+    """Memverifikasi semua parameter nilai desimal system_configs memiliki presisi tepat 4 digit desimal.
+
+    Skenario: Validasi Input
+    Target: DEFAULT_SYSTEM_CONFIGS_DATA
+    """
+    for row in DEFAULT_SYSTEM_CONFIGS_DATA:
+        val = row[1]
+        parts = str(val).split('.')
+        assert len(parts) == 2
+        assert len(parts[1]) == 4
+
+
+def test_konstanta_system_configs_nilai_bisnis_kritis() -> None:
+    """Memverifikasi nilai parameter bisnis kritis sesuai dengan spesifikasi SRS.
+
+    Skenario: Validasi Input
+    Target: DEFAULT_SYSTEM_CONFIGS_DATA
+    """
+    d = {row[0]: row[1] for row in DEFAULT_SYSTEM_CONFIGS_DATA}
+    assert d['target_laba_payroll'] == Decimal('15000000.0000')
+    assert d['porsi_gaji_laba'] == Decimal('0.2500')
+    assert d['toleransi_selisih_kas'] == Decimal('10000.0000')
+    assert d['umr_daerah'] == Decimal('3200000.0000')
+    assert d['threshold_pengeluaran'] == Decimal('500000.0000')
+    assert d['poin_tier_1_rupiah'] == Decimal('500.0000')
+    assert d['poin_tier_2_rupiah'] == Decimal('1500.0000')
+    assert d['poin_tier_3_rupiah'] == Decimal('2500.0000')
+    assert d['poin_tier_4_rupiah'] == Decimal('5000.0000')
+    assert d['dana_cadangan_darurat'] == Decimal('4500000.0000')
+
+
+def test_konstanta_default_cabang_data_lengkap() -> None:
+    """Memverifikasi kelengkapan dan format data cabang default.
+
+    Skenario: Validasi Input
+    Target: DEFAULT_CABANG_DATA
+    """
+    assert len(DEFAULT_CABANG_DATA) == 4
+    assert DEFAULT_CABANG_DATA[0] == 1
+    assert isinstance(DEFAULT_CABANG_DATA[1], str)
+    assert isinstance(DEFAULT_CABANG_DATA[2], str)
+    assert isinstance(DEFAULT_CABANG_DATA[3], str)
+    assert len(DEFAULT_CABANG_DATA[1]) > 0
+    assert len(DEFAULT_CABANG_DATA[2]) > 0
+    assert len(DEFAULT_CABANG_DATA[3]) > 0
+
+
+def test_konstanta_default_pengguna_data_lengkap() -> None:
+    """Memverifikasi kelengkapan data pengguna default untuk akun pemilik.
+
+    Skenario: Validasi Input
+    Target: DEFAULT_PENGGUNA_DATA
+    """
+    assert len(DEFAULT_PENGGUNA_DATA) == 6
+    assert DEFAULT_PENGGUNA_DATA[0] == 1
+    assert DEFAULT_PENGGUNA_DATA[2] == 'pemilik'
+    assert DEFAULT_PENGGUNA_DATA[3] == 'pemilik'
+    assert DEFAULT_PENGGUNA_DATA[4] == 0
+    assert DEFAULT_PENGGUNA_DATA[5] == 1
+
+
+def test_konstanta_saldo_ppob_nilai_dan_tipe() -> None:
+    """Memverifikasi tipe akun dan nominal saldo awal PPOB sesuai kebutuhan bisnis.
+
+    Skenario: Validasi Input
+    Target: DEFAULT_SALDO_PPOB_DATA
+    """
+    assert len(DEFAULT_SALDO_PPOB_DATA) == 2
+    assert DEFAULT_SALDO_PPOB_DATA[0][0] == 'Pulsa_Data'
+    assert DEFAULT_SALDO_PPOB_DATA[1][0] == 'Token_Tagihan'
+    assert DEFAULT_SALDO_PPOB_DATA[0][1] == Decimal('1000000.0000')
+    assert DEFAULT_SALDO_PPOB_DATA[1][1] == Decimal('1500000.0000')
+    assert DEFAULT_SALDO_PPOB_DATA[0][2] == 1
+    assert DEFAULT_SALDO_PPOB_DATA[1][2] == 1
+
+
+def test_konstanta_expected_seed_counts_total_dan_keys() -> None:
+    """Memverifikasi keakuratan dictionary total baris yang diharapkan per tabel seed.
+
+    Skenario: Validasi Input
+    Target: EXPECTED_SEED_COUNTS
+    """
+    assert len(EXPECTED_SEED_COUNTS) == 5
+    assert set(EXPECTED_SEED_COUNTS.keys()) == {'cabang', 'pengguna', 'saldo_ppob', 'saldo_ewallet', 'system_configs'}
+    assert sum(EXPECTED_SEED_COUNTS.values()) == 23
+
+
+def test_konstanta_default_password_valid() -> None:
+    """Memverifikasi default password bertipe string dan tidak kosong.
+
+    Skenario: Validasi Input
+    Target: DEFAULT_PASSWORD
+    """
+    assert isinstance(DEFAULT_PASSWORD, str)
+    assert len(DEFAULT_PASSWORD) > 0
+    assert DEFAULT_PASSWORD == 'admin123'
+
+
