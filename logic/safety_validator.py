@@ -6,6 +6,7 @@ Author: GPT-OSS 120B (STK-014)
 Tanggal: 2026-06-03
 """
 
+import re
 from collections import namedtuple
 
 # NamedTuple Definition
@@ -25,13 +26,47 @@ def sanitasi_input_cli(raw_input: str) -> str:
 
 
 def validasi_kekuatan_sandi(password: str) -> ValidationStatus:
-    """Validasi kriteria sandi aman (min 8 karakter, uppercase, lowercase, numerik, spesial).
+    """Validasi kriteria sandi aman sesuai Security Design v1.2.
+
+    Kriteria wajib:
+    - Minimal 8 karakter.
+    - Mengandung minimal 1 huruf besar (A-Z).
+    - Mengandung minimal 1 huruf kecil (a-z).
+    - Mengandung minimal 1 angka (0-9).
+    - Mengandung minimal 1 karakter spesial (!@#$%^&*()_+-=[]{}|;':\",./<>?).
 
     Args:
         password (str): Kata sandi polos yang ingin divalidasi.
 
     Returns:
-        ValidationStatus: Status validasi beserta pesan error jika tidak valid.
+        ValidationStatus: NamedTuple berisi is_valid (bool), sanitized_data (str),
+                          dan error_msg (str | None).
+
+    Example:
+        >>> validasi_kekuatan_sandi('SandiKuat123!')
+        ValidationStatus(is_valid=True, sanitized_data='SandiKuat123!', error_msg=None)
+        >>> validasi_kekuatan_sandi('lemah')
+        ValidationStatus(is_valid=False, sanitized_data='lemah', error_msg='ERR-VAL-001: ...')
     """
-    # TODO: Implementasi regex/kriteria validasi password kuat
-    return ValidationStatus(False, password, 'ERR-VAL-001: Validasi sandi belum diimplementasikan.')
+    errors: list[str] = []
+
+    if len(password) < 8:
+        errors.append('minimal 8 karakter')
+    if not re.search(r'[A-Z]', password):
+        errors.append('minimal 1 huruf besar (A-Z)')
+    if not re.search(r'[a-z]', password):
+        errors.append('minimal 1 huruf kecil (a-z)')
+    if not re.search(r'[0-9]', password):
+        errors.append('minimal 1 angka (0-9)')
+    if not re.search(r'[!@#$%^&*()_+\-=\[\]{}|;\':",./<>?]', password):
+        errors.append('minimal 1 karakter spesial')
+
+    if errors:
+        detail = ', '.join(errors)
+        return ValidationStatus(
+            False,
+            password,
+            f'ERR-VAL-001: Sandi Lemah: Kata sandi harus memenuhi kriteria: {detail}!'
+        )
+
+    return ValidationStatus(True, password, None)
