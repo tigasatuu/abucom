@@ -30,8 +30,10 @@ def hash_password(password_polos: str) -> str:
         >>> result.startswith('$2b$12$')
         True
     """
+    # FIXME: Truncate password to 72 bytes to prevent ValueError in bcrypt >= 4.0.0
+    password_bytes = password_polos.encode('utf-8')[:72]
     salt = bcrypt.gensalt(rounds=BCRYPT_COST_FACTOR)
-    hashed = bcrypt.hashpw(password_polos.encode('utf-8'), salt)
+    hashed = bcrypt.hashpw(password_bytes, salt)
     return hashed.decode('utf-8')
 
 
@@ -54,8 +56,10 @@ def verify_password(password_polos: str, password_hash: str) -> bool:
         >>> verify_password('SandiSalah', hashed)
         False
     """
+    # FIXME: Truncate password to 72 bytes to prevent ValueError in bcrypt >= 4.0.0
+    password_bytes = password_polos.encode('utf-8')[:72]
     return bcrypt.checkpw(
-        password_polos.encode('utf-8'),
+        password_bytes,
         password_hash.encode('utf-8')
     )
 
