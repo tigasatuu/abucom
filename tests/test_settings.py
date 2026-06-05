@@ -33,6 +33,8 @@ from config.settings import (
     DEFAULT_DB_POOL_SIZE,
     DEFAULT_JWT_LIFETIME,
     DEFAULT_PRINTER_WIDTH,
+    MIN_JWT_KEY_LENGTH,
+    MIN_BACKUP_PASSWORD_LENGTH,
 )
 
 
@@ -1749,3 +1751,1107 @@ def test_load_settings_backup_zip_password_terlalu_pendek_dev_vs_prod(
     with pytest.raises(SystemExit) as exc_info:
         load_settings()
     assert exc_info.value.code == 1
+
+
+# ==============================================================================
+# GRUP L: Skenario Baru Berdasarkan Issue #0103
+# ==============================================================================
+
+def test_min_jwt_key_length_bernilai_32() -> None:
+    """Menguji konstanta MIN_JWT_KEY_LENGTH bernilai tepat 32.
+
+    Tipe: Validasi
+    Target: MIN_JWT_KEY_LENGTH
+    """
+    # Arrange & Act & Assert
+    assert MIN_JWT_KEY_LENGTH == 32
+
+
+def test_min_backup_password_length_bernilai_8() -> None:
+    """Menguji konstanta MIN_BACKUP_PASSWORD_LENGTH bernilai tepat 8.
+
+    Tipe: Validasi
+    Target: MIN_BACKUP_PASSWORD_LENGTH
+    """
+    # Arrange & Act & Assert
+    assert MIN_BACKUP_PASSWORD_LENGTH == 8
+
+
+def test_safe_int_cast_sukses_string_besar() -> None:
+    """Menguji casting string integer bernilai besar berhasil.
+
+    Tipe: Positif
+    Target: _safe_int_cast
+    """
+    # Arrange
+    val = '999999'
+
+    # Act
+    result = _safe_int_cast(val, 10, 'TEST_VAR')
+
+    # Assert
+    assert result == 999999
+
+
+def test_safe_int_cast_gagal_string_spasi() -> None:
+    """Menguji casting string berisi spasi memicu SystemExit 1.
+
+    Tipe: Edge Case
+    Target: _safe_int_cast
+    """
+    # Arrange & Act & Assert
+    with pytest.raises(SystemExit) as exc_info:
+        _safe_int_cast('  ', 10, 'TEST_VAR')
+    assert exc_info.value.code == 1
+
+
+def test_safe_int_cast_gagal_string_campuran() -> None:
+    """Menguji casting string campuran huruf dan angka memicu SystemExit 1.
+
+    Tipe: Edge Case
+    Target: _safe_int_cast
+    """
+    # Arrange & Act & Assert
+    with pytest.raises(SystemExit) as exc_info:
+        _safe_int_cast('12abc', 10, 'TEST_VAR')
+    assert exc_info.value.code == 1
+
+
+def test_safe_int_cast_dengan_errors_list_mengumpulkan_error() -> None:
+    """Menguji casting aman dengan parameter errors list mengumpulkan pesan error tanpa keluar program.
+
+    Tipe: Positif
+    Target: _safe_int_cast
+    """
+    # Arrange
+    errors: list[str] = []
+
+    # Act
+    result = _safe_int_cast('abc', 10, 'TEST_VAR', errors)
+
+    # Assert
+    assert result == 10
+    assert len(errors) == 1
+    assert 'ERR-FILE-003' in errors[0]
+
+
+def test_safe_int_cast_dengan_errors_list_sukses_tidak_menambah() -> None:
+    """Menguji casting aman sukses dengan parameter errors list tidak menambah error baru.
+
+    Tipe: Positif
+    Target: _safe_int_cast
+    """
+    # Arrange
+    errors: list[str] = []
+
+    # Act
+    result = _safe_int_cast('10', 5, 'TEST_VAR', errors)
+
+    # Assert
+    assert result == 10
+    assert len(errors) == 0
+
+
+def test_validate_int_range_dengan_errors_list_mengumpulkan_error() -> None:
+    """Menguji validasi rentang dengan parameter errors list mengumpulkan pesan error jika di luar rentang.
+
+    Tipe: Positif
+    Target: _validate_int_range
+    """
+    # Arrange
+    errors: list[str] = []
+
+    # Act
+    result = _validate_int_range(0, 1, 100, 'TEST_VAR', errors)
+
+    # Assert
+    assert result == 0
+    assert len(errors) == 1
+    assert 'ERR-FILE-004' in errors[0]
+
+
+def test_validate_int_range_dengan_errors_list_sukses_tidak_menambah() -> None:
+    """Menguji validasi rentang dengan parameter errors list tidak menambah error jika berada di dalam rentang.
+
+    Tipe: Positif
+    Target: _validate_int_range
+    """
+    # Arrange
+    errors: list[str] = []
+
+    # Act
+    result = _validate_int_range(50, 1, 100, 'TEST_VAR', errors)
+
+    # Assert
+    assert result == 50
+    assert len(errors) == 0
+
+
+def test_validate_fernet_key_string_kosong() -> None:
+    """Menguji _validate_fernet_key dengan string kosong menghasilkan False.
+
+    Tipe: Edge Case
+    Target: _validate_fernet_key
+    """
+    # Arrange & Act & Assert
+    assert settings_mod._validate_fernet_key('') is False
+
+
+def test_validate_fernet_key_string_base64_bukan_fernet() -> None:
+    """Menguji _validate_fernet_key dengan string base64 valid tapi bukan kunci Fernet menghasilkan False.
+
+    Tipe: Edge Case
+    Target: _validate_fernet_key
+    """
+    # Arrange
+    val = 'dGVzdDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5'
+
+    # Act & Assert
+    assert settings_mod._validate_fernet_key(val) is False
+
+
+def test_validate_fernet_key_string_acak_panjang() -> None:
+    """Menguji _validate_fernet_key dengan string acak sepanjang 44 karakter menghasilkan False.
+
+    Tipe: Edge Case
+    Target: _validate_fernet_key
+    """
+    # Arrange
+    val = 'a' * 44
+
+    # Act & Assert
+    assert settings_mod._validate_fernet_key(val) is False
+
+
+def test_validate_jwt_key_strength_valid_panjang_64_karakter() -> None:
+    """Menguji _validate_jwt_key_strength dengan key panjang 64 karakter di production mengembalikan None.
+
+    Tipe: Positif
+    Target: _validate_jwt_key_strength
+    """
+    # Arrange
+    key = 'e' * 64
+
+    # Act
+    result = settings_mod._validate_jwt_key_strength(key, 'production')
+
+    # Assert
+    assert result is None
+
+
+def test_validate_jwt_key_strength_valid_tepat_32_karakter() -> None:
+    """Menguji _validate_jwt_key_strength dengan key tepat 32 karakter di production mengembalikan None.
+
+    Tipe: Boundary
+    Target: _validate_jwt_key_strength
+    """
+    # Arrange
+    key = 'e' * 32
+
+    # Act
+    result = settings_mod._validate_jwt_key_strength(key, 'production')
+
+    # Assert
+    assert result is None
+
+
+def test_validate_jwt_key_strength_pendek_di_development() -> None:
+    """Menguji _validate_jwt_key_strength dengan key pendek di development mengembalikan None (hanya warning).
+
+    Tipe: Positif
+    Target: _validate_jwt_key_strength
+    """
+    # Arrange
+    key = 'short'
+
+    # Act
+    result = settings_mod._validate_jwt_key_strength(key, 'development')
+
+    # Assert
+    assert result is None
+
+
+def test_validate_jwt_key_strength_pendek_di_production() -> None:
+    """Menguji _validate_jwt_key_strength dengan key pendek di production menghasilkan error ERR-FILE-006.
+
+    Tipe: Negatif
+    Target: _validate_jwt_key_strength
+    """
+    # Arrange
+    key = 'short'
+
+    # Act
+    result = settings_mod._validate_jwt_key_strength(key, 'production')
+
+    # Assert
+    assert result is not None
+    assert 'ERR-FILE-006' in result
+
+
+def test_validate_jwt_key_strength_31_karakter_di_production() -> None:
+    """Menguji _validate_jwt_key_strength dengan key 31 karakter di production menghasilkan error ERR-FILE-006.
+
+    Tipe: Boundary
+    Target: _validate_jwt_key_strength
+    """
+    # Arrange
+    key = 'e' * 31
+
+    # Act
+    result = settings_mod._validate_jwt_key_strength(key, 'production')
+
+    # Assert
+    assert result is not None
+    assert 'ERR-FILE-006' in result
+
+
+def test_validate_jwt_key_strength_1_karakter_di_production() -> None:
+    """Menguji _validate_jwt_key_strength dengan key 1 karakter di production menghasilkan error ERR-FILE-006.
+
+    Tipe: Edge Case
+    Target: _validate_jwt_key_strength
+    """
+    # Arrange
+    key = 'e'
+
+    # Act
+    result = settings_mod._validate_jwt_key_strength(key, 'production')
+
+    # Assert
+    assert result is not None
+    assert 'ERR-FILE-006' in result
+
+
+def test_validate_db_host_valid_ip_standar() -> None:
+    """Menguji _validate_db_host dengan IP address standar mengembalikan True.
+
+    Tipe: Positif
+    Target: _validate_db_host
+    """
+    # Arrange & Act & Assert
+    assert settings_mod._validate_db_host('192.168.1.200') is True
+
+
+def test_validate_db_host_valid_ip_localhost() -> None:
+    """Menguji _validate_db_host dengan IP localhost mengembalikan True.
+
+    Tipe: Positif
+    Target: _validate_db_host
+    """
+    # Arrange & Act & Assert
+    assert settings_mod._validate_db_host('127.0.0.1') is True
+
+
+def test_validate_db_host_valid_hostname_localhost() -> None:
+    """Menguji _validate_db_host dengan hostname localhost mengembalikan True.
+
+    Tipe: Positif
+    Target: _validate_db_host
+    """
+    # Arrange & Act & Assert
+    assert settings_mod._validate_db_host('localhost') is True
+
+
+def test_validate_db_host_valid_hostname_fqdn() -> None:
+    """Menguji _validate_db_host dengan hostname FQDN mengembalikan True.
+
+    Tipe: Positif
+    Target: _validate_db_host
+    """
+    # Arrange & Act & Assert
+    assert settings_mod._validate_db_host('db.abucom.local') is True
+
+
+def test_validate_db_host_valid_ip_batas_atas() -> None:
+    """Menguji _validate_db_host dengan IP batas atas 255.255.255.255 mengembalikan True.
+
+    Tipe: Boundary
+    Target: _validate_db_host
+    """
+    # Arrange & Act & Assert
+    assert settings_mod._validate_db_host('255.255.255.255') is True
+
+
+def test_validate_db_host_valid_ip_batas_bawah() -> None:
+    """Menguji _validate_db_host dengan IP batas bawah 0.0.0.0 mengembalikan True.
+
+    Tipe: Boundary
+    Target: _validate_db_host
+    """
+    # Arrange & Act & Assert
+    assert settings_mod._validate_db_host('0.0.0.0') is True
+
+
+def test_validate_db_host_invalid_string_kosong() -> None:
+    """Menguji _validate_db_host dengan string kosong mengembalikan False.
+
+    Tipe: Negatif
+    Target: _validate_db_host
+    """
+    # Arrange & Act & Assert
+    assert settings_mod._validate_db_host('') is False
+
+
+def test_validate_db_host_invalid_ip_oktet_256() -> None:
+    """Menguji _validate_db_host dengan IP mengandung oktet 256/300 mengembalikan False.
+
+    Tipe: Negatif
+    Target: _validate_db_host
+    """
+    # Arrange & Act & Assert
+    assert settings_mod._validate_db_host('256.300.1.1') is False
+
+
+def test_validate_db_host_invalid_karakter_khusus() -> None:
+    """Menguji _validate_db_host dengan hostname mengandung karakter khusus mengembalikan False.
+
+    Tipe: Negatif
+    Target: _validate_db_host
+    """
+    # Arrange & Act & Assert
+    assert settings_mod._validate_db_host('invalid_host#name') is False
+
+
+def test_validate_db_host_invalid_awalan_strip() -> None:
+    """Menguji _validate_db_host dengan label diawali tanda hubung mengembalikan False.
+
+    Tipe: Negatif
+    Target: _validate_db_host
+    """
+    # Arrange & Act & Assert
+    assert settings_mod._validate_db_host('-host.com') is False
+
+
+def test_validate_db_host_invalid_ip_3_oktet() -> None:
+    """Menguji _validate_db_host dengan IP hanya 3 oktet mengembalikan False.
+
+    Tipe: Edge Case
+    Target: _validate_db_host
+    """
+    # Arrange & Act & Assert
+    assert settings_mod._validate_db_host('192.168.1') is False
+
+
+def test_validate_db_host_invalid_ip_5_oktet() -> None:
+    """Menguji _validate_db_host dengan IP memiliki 5 oktet mengembalikan False.
+
+    Tipe: Edge Case
+    Target: _validate_db_host
+    """
+    # Arrange & Act & Assert
+    assert settings_mod._validate_db_host('192.168.1.1.1') is False
+
+
+def test_validate_db_host_invalid_ip_leading_zero() -> None:
+    """Menguji _validate_db_host dengan IP oktet memiliki leading zero mengembalikan False.
+
+    Tipe: Edge Case
+    Target: _validate_db_host
+    """
+    # Arrange & Act & Assert
+    assert settings_mod._validate_db_host('192.168.01.200') is False
+
+
+def test_validate_db_host_invalid_hostname_terlalu_panjang() -> None:
+    """Menguji _validate_db_host dengan hostname melebihi 253 karakter mengembalikan False.
+
+    Tipe: Edge Case
+    Target: _validate_db_host
+    """
+    # Arrange
+    val = 'a' * 254
+
+    # Act & Assert
+    assert settings_mod._validate_db_host(val) is False
+
+
+def test_validate_db_host_invalid_label_lebih_63_karakter() -> None:
+    """Menguji _validate_db_host dengan label hostname melebihi 63 karakter mengembalikan False.
+
+    Tipe: Edge Case
+    Target: _validate_db_host
+    """
+    # Arrange
+    val = ('a' * 64) + '.com'
+
+    # Act & Assert
+    assert settings_mod._validate_db_host(val) is False
+
+
+def test_validate_db_host_valid_hostname_trailing_dot() -> None:
+    """Menguji _validate_db_host dengan hostname berakhiran titik mengembalikan True.
+
+    Tipe: Edge Case
+    Target: _validate_db_host
+    """
+    # Arrange & Act & Assert
+    assert settings_mod._validate_db_host('host.local.') is True
+
+
+def test_validate_db_host_invalid_label_akhir_strip() -> None:
+    """Menguji _validate_db_host dengan label diakhiri tanda hubung mengembalikan False.
+
+    Tipe: Negatif
+    Target: _validate_db_host
+    """
+    # Arrange & Act & Assert
+    assert settings_mod._validate_db_host('host-.com') is False
+
+
+def test_validate_db_host_invalid_ip_negatif() -> None:
+    """Menguji _validate_db_host dengan IP oktet bernilai negatif mengembalikan False.
+
+    Tipe: Negatif
+    Target: _validate_db_host
+    """
+    # Arrange & Act & Assert
+    assert settings_mod._validate_db_host('-1.0.0.1') is False
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_gagal_semua_variabel_wajib_kosong(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings gagal jika semua 4 variabel wajib diset kosong.
+
+    Tipe: Negatif
+    Target: load_settings
+    """
+    # Arrange
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    for var in REQUIRED_ENV_VARS:
+        env_dict[var] = ''
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+
+    # Act & Assert
+    with pytest.raises(SystemExit) as exc_info:
+        load_settings()
+    assert exc_info.value.code == 1
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_gagal_semua_variabel_wajib_placeholder(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings gagal jika semua 4 variabel wajib bernilai placeholder.
+
+    Tipe: Negatif
+    Target: load_settings
+    """
+    # Arrange
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    for var in REQUIRED_ENV_VARS:
+        env_dict[var] = f'YOUR_{var}_HERE'
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+
+    # Act & Assert
+    with pytest.raises(SystemExit) as exc_info:
+        load_settings()
+    assert exc_info.value.code == 1
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_app_env_default_production(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings default APP_ENV ke 'production' jika tidak disediakan di env.
+
+    Tipe: Positif
+    Target: load_settings
+    """
+    # Arrange
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    env_dict.pop('APP_ENV', None)
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+
+    # Act
+    config = load_settings()
+
+    # Assert
+    assert config.app_env == 'production'
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_gagal_app_env_spasi(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings gagal jika APP_ENV diset '  production  ' (mengandung spasi).
+
+    Tipe: Edge Case
+    Target: load_settings
+    """
+    # Arrange
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    env_dict['APP_ENV'] = '  production  '
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+
+    # Act & Assert
+    with pytest.raises(SystemExit) as exc_info:
+        load_settings()
+    assert exc_info.value.code == 1
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_sukses_db_pool_size_batas_bawah_1(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings sukses saat DB_POOL_SIZE bernilai 1.
+
+    Tipe: Boundary
+    Target: load_settings
+    """
+    # Arrange
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    env_dict['DB_POOL_SIZE'] = '1'
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+
+    # Act
+    config = load_settings()
+
+    # Assert
+    assert config.db_pool_size == 1
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_sukses_db_pool_size_batas_atas_100(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings sukses saat DB_POOL_SIZE bernilai 100.
+
+    Tipe: Boundary
+    Target: load_settings
+    """
+    # Arrange
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    env_dict['DB_POOL_SIZE'] = '100'
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+
+    # Act
+    config = load_settings()
+
+    # Assert
+    assert config.db_pool_size == 100
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_sukses_jwt_lifetime_1_detik(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings sukses saat JWT_LIFETIME_SECONDS bernilai 1.
+
+    Tipe: Boundary
+    Target: load_settings
+    """
+    # Arrange
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    env_dict['JWT_LIFETIME_SECONDS'] = '1'
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+
+    # Act
+    config = load_settings()
+
+    # Assert
+    assert config.jwt_lifetime_seconds == 1
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_sukses_printer_width_58mm(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings sukses saat PRINTER_WIDTH_MM bernilai 58.
+
+    Tipe: Positif
+    Target: load_settings
+    """
+    # Arrange
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    env_dict['PRINTER_WIDTH_MM'] = '58'
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+
+    # Act
+    config = load_settings()
+
+    # Assert
+    assert config.printer_width_mm == 58
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_printer_width_negatif_fallback(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings fallback ke 58 jika PRINTER_WIDTH_MM bernilai negatif.
+
+    Tipe: Edge Case
+    Target: load_settings
+    """
+    # Arrange
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    env_dict['PRINTER_WIDTH_MM'] = '-1'
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+
+    # Act
+    config = load_settings()
+
+    # Assert
+    assert config.printer_width_mm == 58
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_gagal_app_cabang_id_nol(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings gagal jika APP_CABANG_ID bernilai 0.
+
+    Tipe: Negatif
+    Target: load_settings
+    """
+    # Arrange
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    env_dict['APP_CABANG_ID'] = '0'
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+
+    # Act & Assert
+    with pytest.raises(SystemExit) as exc_info:
+        load_settings()
+    assert exc_info.value.code == 1
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_gagal_app_cabang_id_negatif(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings gagal jika APP_CABANG_ID bernilai negatif.
+
+    Tipe: Negatif
+    Target: load_settings
+    """
+    # Arrange
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    env_dict['APP_CABANG_ID'] = '-5'
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+
+    # Act & Assert
+    with pytest.raises(SystemExit) as exc_info:
+        load_settings()
+    assert exc_info.value.code == 1
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_jwt_secret_key_terlalu_pendek_dev_warning(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings warning saja jika JWT_SECRET_KEY terlalu pendek di development.
+
+    Tipe: Positif
+    Target: load_settings
+    """
+    # Arrange
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    env_dict['APP_ENV'] = 'development'
+    env_dict['JWT_SECRET_KEY'] = 'short_key_123'
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+
+    # Act
+    config = load_settings()
+
+    # Assert
+    assert config.jwt_secret_key == 'short_key_123'
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_jwt_secret_key_terlalu_pendek_prod_error(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings gagal jika JWT_SECRET_KEY terlalu pendek di production.
+
+    Tipe: Negatif
+    Target: load_settings
+    """
+    # Arrange
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    env_dict['APP_ENV'] = 'production'
+    env_dict['JWT_SECRET_KEY'] = 'short_key_123'
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+
+    # Act & Assert
+    with pytest.raises(SystemExit) as exc_info:
+        load_settings()
+    assert exc_info.value.code == 1
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_backup_zip_password_terlalu_pendek_dev_warning(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings warning saja jika BACKUP_ZIP_PASSWORD terlalu pendek di development.
+
+    Tipe: Positif
+    Target: load_settings
+    """
+    # Arrange
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    env_dict['APP_ENV'] = 'development'
+    env_dict['BACKUP_ZIP_PASSWORD'] = 'short'
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+
+    # Act
+    config = load_settings()
+
+    # Assert
+    assert config.backup_zip_password == 'short'
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_backup_zip_password_terlalu_pendek_prod_error(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings gagal jika BACKUP_ZIP_PASSWORD terlalu pendek di production.
+
+    Tipe: Negatif
+    Target: load_settings
+    """
+    # Arrange
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    env_dict['APP_ENV'] = 'production'
+    env_dict['BACKUP_ZIP_PASSWORD'] = 'short'
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+
+    # Act & Assert
+    with pytest.raises(SystemExit) as exc_info:
+        load_settings()
+    assert exc_info.value.code == 1
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_db_user_default_saat_tidak_diset(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings memuat default 'abucom_app' jika DB_USER tidak diset.
+
+    Tipe: Positif
+    Target: load_settings
+    """
+    # Arrange
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    env_dict.pop('DB_USER', None)
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+
+    # Act
+    config = load_settings()
+
+    # Assert
+    assert config.db_user == 'abucom_app'
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_printer_port_default_saat_tidak_diset(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings memuat default 'COM1' jika PRINTER_PORT tidak diset.
+
+    Tipe: Positif
+    Target: load_settings
+    """
+    # Arrange
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    env_dict.pop('PRINTER_PORT', None)
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+
+    # Act
+    config = load_settings()
+
+    # Assert
+    assert config.printer_port == 'COM1'
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_gagal_multi_error_teragregasi(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings mencetak semua error sekaligus (fail-aggregated) dan keluar.
+
+    Tipe: Negatif
+    Target: load_settings
+    """
+    # Arrange
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    env_dict['DB_PASSWORD'] = ''  # error 1: kosong
+    env_dict['APP_ENV'] = 'invalid_env'  # error 2: env invalid
+    env_dict['DB_PORT'] = 'abc'  # error 3: non-numeric
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+
+    # Act & Assert
+    with pytest.raises(SystemExit) as exc_info:
+        load_settings()
+    assert exc_info.value.code == 1
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_db_password_lemah_warning_tidak_gagal(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings tetap sukses (hanya warning) jika DB_PASSWORD lemah tapi terisi.
+
+    Tipe: Edge Case
+    Target: load_settings
+    """
+    # Arrange
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    env_dict['DB_PASSWORD'] = 'weak'
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+
+    # Act
+    config = load_settings()
+
+    # Assert
+    assert config.db_password == 'weak'
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_sukses_db_host_valid_ip_private(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings sukses saat DB_HOST diisi IP privat valid.
+
+    Tipe: Positif
+    Target: load_settings
+    """
+    # Arrange
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    env_dict['DB_HOST'] = '10.10.10.10'
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+
+    # Act
+    config = load_settings()
+
+    # Assert
+    assert config.db_host == '10.10.10.10'
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_sukses_db_host_hostname(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings sukses saat DB_HOST diisi hostname localhost.
+
+    Tipe: Positif
+    Target: load_settings
+    """
+    # Arrange
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    env_dict['DB_HOST'] = 'localhost'
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+
+    # Act
+    config = load_settings()
+
+    # Assert
+    assert config.db_host == 'localhost'
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_gagal_db_host_ip_invalid_oktet(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings gagal jika DB_HOST diisi IP dengan oktet tidak valid (>255).
+
+    Tipe: Negatif
+    Target: load_settings
+    """
+    # Arrange
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    env_dict['DB_HOST'] = '999.0.0.1'
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+
+    # Act & Assert
+    with pytest.raises(SystemExit) as exc_info:
+        load_settings()
+    assert exc_info.value.code == 1
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_sukses_jwt_key_tepat_32_karakter_prod(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings sukses dengan JWT_SECRET_KEY tepat 32 karakter di production.
+
+    Tipe: Boundary
+    Target: load_settings
+    """
+    # Arrange
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    env_dict['APP_ENV'] = 'production'
+    env_dict['JWT_SECRET_KEY'] = 'k' * 32
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+
+    # Act
+    config = load_settings()
+
+    # Assert
+    assert config.jwt_secret_key == 'k' * 32
+
+
+@patch('config.settings.Path.exists')
+@patch('config.settings.load_dotenv')
+@patch('config.settings.os.getenv')
+def test_load_settings_sukses_backup_password_tepat_8_karakter_prod(
+    mock_getenv: MagicMock, mock_load_dotenv: MagicMock, mock_exists: MagicMock
+) -> None:
+    """Menguji load_settings sukses dengan BACKUP_ZIP_PASSWORD tepat 8 karakter di production.
+
+    Tipe: Boundary
+    Target: load_settings
+    """
+    # Arrange
+    mock_exists.return_value = True
+    env_dict = _make_valid_env()
+    env_dict['APP_ENV'] = 'production'
+    env_dict['BACKUP_ZIP_PASSWORD'] = 'p' * 8
+    mock_getenv.side_effect = _mock_getenv_from_dict(env_dict)
+
+    # Act
+    config = load_settings()
+
+    # Assert
+    assert config.backup_zip_password == 'p' * 8
+
+
+def test_safe_int_cast_mode_agregasi_error_tidak_exit() -> None:
+    """Menguji _safe_int_cast dalam mode agregasi (errors list diisi) tidak melakukan exit jika input invalid.
+
+    Tipe: Positif
+    Target: _safe_int_cast
+    """
+    # Arrange
+    errors: list[str] = []
+
+    # Act
+    result = _safe_int_cast('xyz', 10, 'TEST_VAR', errors)
+
+    # Assert
+    assert result == 10
+    assert len(errors) == 1
+    assert 'ERR-FILE-003' in errors[0]
+
+
+def test_validate_int_range_mode_agregasi_error_tidak_exit() -> None:
+    """Menguji _validate_int_range dalam mode agregasi tidak melakukan exit jika input di luar rentang.
+
+    Tipe: Positif
+    Target: _validate_int_range
+    """
+    # Arrange
+    errors: list[str] = []
+
+    # Act
+    result = _validate_int_range(0, 1, 100, 'TEST_VAR', errors)
+
+    # Assert
+    assert result == 0
+    assert len(errors) == 1
+    assert 'ERR-FILE-004' in errors[0]
+
+
+def test_safe_int_cast_mode_langsung_exit_tanpa_errors_param() -> None:
+    """Menguji _safe_int_cast melakukan exit langsung jika errors list bernilai None (default).
+
+    Tipe: Negatif
+    Target: _safe_int_cast
+    """
+    # Arrange, Act & Assert
+    with pytest.raises(SystemExit) as exc_info:
+        _safe_int_cast('xyz', 10, 'TEST_VAR')
+    assert exc_info.value.code == 1
+
+
+def test_validate_int_range_mode_langsung_exit_tanpa_errors_param() -> None:
+    """Menguji _validate_int_range melakukan exit langsung jika errors list bernilai None (default).
+
+    Tipe: Negatif
+    Target: _validate_int_range
+    """
+    # Arrange, Act & Assert
+    with pytest.raises(SystemExit) as exc_info:
+        _validate_int_range(0, 1, 100, 'TEST_VAR')
+    assert exc_info.value.code == 1
+
+
+def test_validate_db_host_invalid_ip_empty_oktet() -> None:
+    """Menguji _validate_db_host dengan IP address yang memiliki oktet kosong (ValueError saat casting).
+
+    Tipe: Edge Case
+    Target: _validate_db_host
+    """
+    # Arrange & Act & Assert
+    assert settings_mod._validate_db_host('192.168..1') is False
+
+
