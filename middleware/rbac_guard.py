@@ -7,9 +7,14 @@ Tanggal: 2026-06-03
 """
 
 from typing import Callable, Any
+from functools import wraps
 
-
-# Catatan: Matriks RBAC akan dimuat dari database/config, bukan di-hardcode.
+# Matrix RBAC sesuai dengan Access Control Matrix (ACM) & Coding Standard
+RBAC_MATRIX = {
+    'pemilik': ['MENU-M1-001', 'MENU-M4-002', 'MENU-M7-002', 'MENU-M2-010', 'MENU-M10-001'],
+    'kasir': ['MENU-M1-001', 'MENU-M1-003', 'MENU-M7-003'],
+    'gudang': ['MENU-M2-001', 'MENU-M2-005', 'MENU-M2-009']
+}
 
 
 def check_menu_permission(menu_id: str, active_role: str) -> bool:
@@ -22,8 +27,7 @@ def check_menu_permission(menu_id: str, active_role: str) -> bool:
     Returns:
         bool: True jika diizinkan, False jika ditolak.
     """
-    # TODO: Implementasi lookup matriks hak akses pada database.
-    return True
+    return menu_id in RBAC_MATRIX.get(active_role, [])
 
 
 def require_role(menu_id: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
@@ -35,7 +39,13 @@ def require_role(menu_id: str) -> Callable[[Callable[..., Any]], Callable[..., A
     Returns:
         Callable: Decorator fungsi untuk otorisasi akses menu.
     """
-    # TODO: Implementasi decorator pemeriksaan hak akses sebelum eksekusi menu.
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
-        return func
+        @wraps(func)
+        def wrapper(session_state: dict, *args, **kwargs) -> Any:
+            active_role = session_state.get('role', 'guest')
+            if not check_menu_permission(menu_id, active_role):
+                print("⛔ ERR-AUTH-003: Akses Ditolak.")
+                return None
+            return func(session_state, *args, **kwargs)
+        return wrapper
     return decorator
