@@ -6,7 +6,11 @@ Author: GPT-OSS 120B (STK-014)
 Tanggal: 2026-06-03
 """
 
+import json
+import logging
 from typing import Any
+
+_logger = logging.getLogger('abucom.middleware.audit_logger')
 
 
 def log_audit_trail(
@@ -29,5 +33,20 @@ def log_audit_trail(
         cabang_id (int): ID cabang tempat modifikasi dilakukan.
         db_connection: Koneksi database aktif.
     """
-    # TODO: Implementasi insertion log ke tabel audit_logs format JSON.
-    pass
+    cursor = None
+    try:
+        old_val_json = json.dumps(old_val) if old_val is not None else None
+        new_val_json = json.dumps(new_val) if new_val is not None else None
+
+        query = (
+            "INSERT INTO audit_logs (pengguna_id, action_type, target_table, old_value, new_value, cabang_id) "
+            "VALUES (%s, %s, %s, %s, %s, %s)"
+        )
+        cursor = db_connection.cursor()
+        cursor.execute(query, (pengguna_id, action_type, target_table, old_val_json, new_val_json, cabang_id))
+        db_connection.commit()
+    except Exception as e:
+        _logger.error(f"Gagal mencatat audit trail ke database: {str(e)}")
+    finally:
+        if cursor:
+            cursor.close()

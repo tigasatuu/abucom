@@ -48,6 +48,26 @@ def main() -> None:
         sys.exit(1)
     print('[INFO] Connection pool database berhasil diinisialisasi (abupool).')
 
+    # Muat parameter runtime bisnis dari database ke cache memori lokal
+    from db.db_connector import get_db_connection
+    from db.config_cache import load_all_configs
+    conn_res = get_db_connection()
+    if not conn_res.is_success:
+        print(f"⛔ {conn_res.error_msg}")
+        sys.exit(1)
+    db_connection = conn_res.data
+    
+    config_result = load_all_configs(db_connection, config.app_cabang_id)
+    try:
+        db_connection.close()  # Kembalikan koneksi ke pool
+    except Exception:
+        pass
+
+    if not config_result.is_success:
+        print(f"⛔ {config_result.error_msg}")
+        sys.exit(1)
+    print(f'[INFO] Config runtime: {config_result.data} parameter berhasil dimuat ke cache.')
+
     # Tahap 4: Peluncuran antarmuka CLI login
     # TODO: Implementasi pemanggilan cli/__init__.py -> start_cli_app()
 
