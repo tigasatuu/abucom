@@ -6,7 +6,13 @@ Author: GPT-OSS 120B (STK-014)
 Tanggal: 2026-06-03
 """
 
+import datetime
+import os
+
 import bcrypt
+import jwt
+
+from config.settings import load_settings
 
 # Konstanta Keamanan
 BCRYPT_COST_FACTOR = 12
@@ -64,19 +70,33 @@ def verify_password(password_polos: str, password_hash: str) -> bool:
     )
 
 
-def create_jwt_session(user_id: int, role: str, cabang_id: int) -> str:
+def create_jwt_session(user_id: int, username: str, role: str, cabang_id: int) -> str:
     """Membuat token stateless session JWT dengan tanda tangan HS256.
+
+    Menggunakan secret key dan lifetime dari settings.
+    (Catatan: Signature fungsi diubah untuk menambahkan parameter username).
 
     Args:
         user_id (int): ID pengguna unik dari database.
+        username (str): Username pengguna.
         role (str): Peran pengguna untuk otorisasi menu.
         cabang_id (int): ID cabang aktif pengguna.
 
     Returns:
         str: Token JWT sebagai representasi sesi aktif.
     """
-    # TODO: Implementasi pembuatan token JWT dengan masa aktif 8 jam.
-    return ""
+    settings = load_settings()
+    secret_key = settings.jwt_secret_key
+    lifetime = settings.jwt_lifetime_seconds
+
+    payload = {
+        'user_id': user_id,
+        'username': username,
+        'role': role,
+        'cabang_id': cabang_id,
+        'exp': datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=lifetime)
+    }
+    return jwt.encode(payload, secret_key, algorithm=JWT_ALGORITHM)
 
 
 def verify_jwt_session(token: str) -> dict | None:
@@ -88,5 +108,9 @@ def verify_jwt_session(token: str) -> dict | None:
     Returns:
         dict | None: Dictionary data sesi jika valid, None jika kadaluwarsa/salah.
     """
-    # TODO: Implementasi verifikasi tanda tangan dan waktu kadaluwarsa JWT.
-    return None
+    settings = load_settings()
+    secret_key = settings.jwt_secret_key
+    try:
+        return jwt.decode(token, secret_key, algorithms=[JWT_ALGORITHM])
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+        return None

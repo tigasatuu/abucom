@@ -69,11 +69,10 @@ def main() -> None:
     print(f'[INFO] Config runtime: {config_result.data} parameter berhasil dimuat ke cache.')
 
     # Tahap 4: Peluncuran antarmuka CLI login
-    # TODO: Implementasi pemanggilan cli/__init__.py -> start_cli_app()
-
-    print("[INFO] Scaffolding berhasil. Modul belum diimplementasikan.")
-    print("[INFO] Tekan Enter untuk keluar...")
-    input()
+    from cli import start_cli_app
+    print('[INFO] Meluncurkan antarmuka CLI login...')
+    print()
+    start_cli_app()
 
     # Cleanup: Tutup connection pool saat aplikasi ditutup
     close_connection_pool()
