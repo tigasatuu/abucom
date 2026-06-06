@@ -172,7 +172,6 @@ def start_cli_app() -> None:
                 session_state = {}
                 print("Sesi berakhir. Kembali ke layar login.")
                 input("Tekan Enter untuk melanjutkan...")
-                continue
 
     except KeyboardInterrupt:
         print()
