@@ -66,7 +66,15 @@ def login_user(username: str, password: str, db_conn: Any) -> Result:
 
     # 5. Jika password salah
     if not is_valid:
-        attempts = user['failed_login_attempts'] + 1
+        raw_attempts = user.get('failed_login_attempts')
+        if raw_attempts is None or raw_attempts == '':
+            failed_attempts = 0
+        else:
+            try:
+                failed_attempts = int(raw_attempts)
+            except (ValueError, TypeError):
+                failed_attempts = 0
+        attempts = failed_attempts + 1
         if attempts >= 5:
             locked_until = datetime.datetime.now() + datetime.timedelta(minutes=10)
             update_failed_login(user['id'], 5, locked_until, db_conn)
