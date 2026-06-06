@@ -123,3 +123,119 @@ def insert_pengguna(
                 cursor.close()
             except Exception:
                 pass
+
+
+def get_pengguna_by_username(username: str, db_conn: Any) -> Result:
+    """Mengambil data kredensial pengguna dari tabel pengguna secara case-sensitive.
+
+    Args:
+        username (str): Username pengguna yang dicari.
+        db_conn: Objek koneksi database MySQL.
+
+    Returns:
+        Result: is_success=True dengan data=dict data pengguna jika ditemukan,
+                is_success=False dengan data=None jika tidak ditemukan,
+                atau is_success=False dengan error_msg jika terjadi database error.
+    """
+    cursor = None
+    try:
+        cursor = db_conn.cursor(dictionary=True)
+        query = """
+            SELECT id, nama_lengkap, username, password_hash, role, failed_login_attempts, locked_until, cabang_id
+            FROM pengguna
+            WHERE BINARY username = %s
+        """
+        cursor.execute(query, (username,))
+        row = cursor.fetchone()
+        if not row:
+            return Result(False, None, None)
+        return Result(True, row, None)
+    except Exception as e:
+        return Result(
+            False,
+            None,
+            f'ERR-DB-001: Kegagalan Database: Gagal mencari pengguna. Detail: {str(e)}'
+        )
+    finally:
+        if cursor:
+            try:
+                cursor.close()
+            except Exception:
+                pass
+
+
+def update_failed_login(user_id: int, new_attempts: int, locked_until_val: Any, db_conn: Any) -> Result:
+    """Mencatat jumlah kegagalan login dan waktu lockout pengguna ke database secara transaksional.
+
+    Args:
+        user_id (int): ID pengguna yang akan di-update.
+        new_attempts (int): Jumlah percobaan login gagal yang baru.
+        locked_until_val (datetime.datetime | None): Waktu akun dikunci (lockout).
+        db_conn: Objek koneksi database MySQL.
+
+    Returns:
+        Result: is_success=True jika berhasil,
+                is_success=False dengan error_msg jika gagal.
+    """
+    cursor = None
+    try:
+        db_conn.start_transaction()
+        cursor = db_conn.cursor()
+        query = "UPDATE pengguna SET failed_login_attempts = %s, locked_until = %s WHERE id = %s"
+        cursor.execute(query, (new_attempts, locked_until_val, user_id))
+        db_conn.commit()
+        return Result(True, None, None)
+    except Exception as e:
+        try:
+            db_conn.rollback()
+        except Exception:
+            pass
+        return Result(
+            False,
+            None,
+            f'ERR-DB-002: Pelanggaran integritas basis data. Detail: {str(e)}'
+        )
+    finally:
+        if cursor:
+            try:
+                cursor.close()
+            except Exception:
+                pass
+
+
+def reset_failed_login(user_id: int, db_conn: Any) -> Result:
+    """Me-reset failed login attempts menjadi 0 dan locked_until menjadi NULL secara transaksional.
+
+    Args:
+        user_id (int): ID pengguna yang akan di-reset.
+        db_conn: Objek koneksi database MySQL.
+
+    Returns:
+        Result: is_success=True jika berhasil,
+                is_success=False dengan error_msg jika gagal.
+    """
+    cursor = None
+    try:
+        db_conn.start_transaction()
+        cursor = db_conn.cursor()
+        query = "UPDATE pengguna SET failed_login_attempts = 0, locked_until = NULL WHERE id = %s"
+        cursor.execute(query, (user_id,))
+        db_conn.commit()
+        return Result(True, None, None)
+    except Exception as e:
+        try:
+            db_conn.rollback()
+        except Exception:
+            pass
+        return Result(
+            False,
+            None,
+            f'ERR-DB-002: Pelanggaran integritas basis data. Detail: {str(e)}'
+        )
+    finally:
+        if cursor:
+            try:
+                cursor.close()
+            except Exception:
+                pass
+
