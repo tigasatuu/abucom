@@ -221,9 +221,9 @@ def test_validate_decimal_input_non_numeric(mock_db, mock_console, mock_input) -
 # Uji pembatasan akses RBAC
 def test_rbac_check_menu_permission() -> None:
     """Memverifikasi pemetaan peran pada matriks RBAC."""
-    assert check_menu_permission('MENU-M10-001', 'pemilik') is True
-    assert check_menu_permission('MENU-M10-001', 'kasir') is False
-    assert check_menu_permission('MENU-M10-001', 'gudang') is False
+    assert check_menu_permission('MENU-M10-001', 'pemilik') == 'FULL'
+    assert check_menu_permission('MENU-M10-001', 'kasir') == 'DENY'
+    assert check_menu_permission('MENU-M10-001', 'gudang') == 'DENY'
 
 
 def test_rbac_require_role_decorator() -> None:
@@ -240,7 +240,8 @@ def test_rbac_require_role_decorator() -> None:
     assert res_pemilik == "SUCCESS"
     assert call_tracker.call_count == 1
     
-    # Peran kasir ditolak (returns None)
+    # Peran kasir ditolak (returns Result)
     res_kasir = dummy_configs_function({'role': 'kasir'})
-    assert res_kasir is None
+    assert res_kasir.is_success is False
+    assert "ERR-AUTH-003" in res_kasir.error_msg
     assert call_tracker.call_count == 1  # tidak bertambah

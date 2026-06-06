@@ -150,13 +150,13 @@ def test_form_update_parameter_confirm_no(mock_db, mock_console) -> None:
 def test_rbac_check_menu_permission_configs() -> None:
     """B.1.1: Memverifikasi otorisasi matriks RBAC untuk menu konfigurasi M.10."""
     # Hanya pemilik yang boleh mengakses
-    assert check_menu_permission('MENU-M10-001', 'pemilik') is True
+    assert check_menu_permission('MENU-M10-001', 'pemilik') == 'FULL'
     
     # Peran lain wajib ditolak
-    assert check_menu_permission('MENU-M10-001', 'kasir') is False
-    assert check_menu_permission('MENU-M10-001', 'gudang') is False
-    assert check_menu_permission('MENU-M10-001', 'desainer') is False
-    assert check_menu_permission('MENU-M10-001', 'operator') is False
+    assert check_menu_permission('MENU-M10-001', 'kasir') == 'DENY'
+    assert check_menu_permission('MENU-M10-001', 'gudang') == 'DENY'
+    assert check_menu_permission('MENU-M10-001', 'desainer') == 'DENY'
+    assert check_menu_permission('MENU-M10-001', 'operator') == 'DENY'
 
 
 def test_rbac_require_role_decorator_configs() -> None:
@@ -173,9 +173,10 @@ def test_rbac_require_role_decorator_configs() -> None:
     assert res_pemilik == "AUTHORIZED"
     assert call_tracker.call_count == 1
     
-    # Kasir ditolak (fungsi mengembalikan None dan tidak dieksekusi)
+    # Kasir ditolak (returns Result)
     res_kasir = test_target_function({'role': 'kasir'})
-    assert res_kasir is None
+    assert res_kasir.is_success is False
+    assert "ERR-AUTH-003" in res_kasir.error_msg
     assert call_tracker.call_count == 1  # call_count tidak bertambah
 
 

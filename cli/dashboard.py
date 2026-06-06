@@ -21,7 +21,23 @@ except ImportError:
 from db.db_connector import get_db_connection
 from logic.auth_handler import logout_user
 from middleware.auth_jwt import validate_session_token
+from middleware.rbac_guard import get_visible_menus
 from utils.text_formatter import clear_terminal
+
+
+# Map nama modul untuk pengelompokan menu visual (Ref: ACM Bab 3.1)
+MODULE_NAMES = {
+    'M1': 'Modul M.1 — Transaksi & Kebijakan Harga',
+    'M2': 'Modul M.2 — Inventaris, BOM & Stock Opname',
+    'M3': 'Modul M.3 — Layanan Keuangan, PPOB & Jasa Service',
+    'M4': 'Modul M.4 — SDM, Penggajian & Poin Karyawan',
+    'M5': 'Modul M.5 — Antrian & Pelacakan Desain',
+    'M6': 'Modul M.6 — Pinjaman, Aset & Pengeluaran',
+    'M7': 'Modul M.7 — Keamanan, Audit Trail & Hak Akses',
+    'M8': 'Modul M.8 — CRM Pelanggan',
+    'M9': 'Modul M.9 — Skalabilitas Multi-Cabang',
+    'M10': 'Modul M.10 — Konfigurasi Sistem Runtime'
+}
 
 
 def render_dashboard(session_state: dict) -> None:
@@ -68,6 +84,9 @@ def render_dashboard(session_state: dict) -> None:
         title_text = "DASHBOARD UTAMA — AbuCom"
         info_text = f"Pengguna: {username} | Peran: {role} | Cabang ID: {cabang_id}"
 
+        # Dapatkan menu-menu yang dapat diakses oleh peran aktif
+        visible_menus = get_visible_menus(role)
+
         if HAS_RICH:
             _console.print(Panel(
                 info_text,
@@ -77,6 +96,21 @@ def render_dashboard(session_state: dict) -> None:
             ))
             print()
             _console.print("[bold white]PILIHAN MENU:[/]")
+            
+            current_mod = None
+            for idx, (menu_id, label, level) in enumerate(visible_menus, start=1):
+                parts = menu_id.split('-')
+                if len(parts) >= 2:
+                    mod_key = parts[1]
+                    if mod_key != current_mod:
+                        current_mod = mod_key
+                        mod_name = MODULE_NAMES.get(mod_key, f"Modul {mod_key}")
+                        _console.print(f"\n[bold cyan]● {mod_name}[/]")
+                
+                level_indicator = f"[{level}]"
+                _console.print(f"  [{idx}] {label} [bold green]{level_indicator}[/]")
+                
+            print()
             _console.print("  [0] Logout")
             print()
         else:
@@ -86,6 +120,20 @@ def render_dashboard(session_state: dict) -> None:
             print(f"  {info_text}")
             print(border)
             print(" PILIHAN MENU:")
+            
+            current_mod = None
+            for idx, (menu_id, label, level) in enumerate(visible_menus, start=1):
+                parts = menu_id.split('-')
+                if len(parts) >= 2:
+                    mod_key = parts[1]
+                    if mod_key != current_mod:
+                        current_mod = mod_key
+                        mod_name = MODULE_NAMES.get(mod_key, f"Modul {mod_key}")
+                        print(f"\n● {mod_name}")
+                
+                print(f"  [{idx}] {label} [{level}]")
+                
+            print()
             print("  [0] Logout")
             print()
 
@@ -137,21 +185,33 @@ def render_dashboard(session_state: dict) -> None:
             input("Tekan Enter untuk melanjutkan...")
             return
         else:
-            # Panggil handle_navigation
-            session_state = handle_navigation(session_state, pilihan)
+            # Cari menu_id berdasarkan pilihan indeks
+            try:
+                val_idx = int(pilihan)
+                if 1 <= val_idx <= len(visible_menus):
+                    menu_id = visible_menus[val_idx - 1][0]
+                    # Panggil handle_navigation dengan menu_id
+                    session_state = handle_navigation(session_state, menu_id)
+                else:
+                    print(f"⛔ Pilihan '{pilihan}' tidak valid.")
+                    input("Tekan Enter untuk melanjutkan...")
+            except ValueError:
+                print(f"⛔ Pilihan '{pilihan}' tidak valid. Harap masukkan angka.")
+                input("Tekan Enter untuk melanjutkan...")
+
             # Jika token kedaluwarsa saat navigasi, loop berikutnya akan mendeteksi token=None dan return
             if session_state.get('token') is None:
                 return
 
 
-def handle_navigation(session_state: dict, pilihan: str) -> dict:
-    """Menangani aksi routing navigasi hotkey keyboard dari dashboard.
+def handle_navigation(session_state: dict, menu_id: str) -> dict:
+    """Menangani aksi routing navigasi dari dashboard berdasarkan Menu ID.
 
     (Ref: Module Structure Bab 4.2)
 
     Args:
         session_state (dict): Status sesi aktif pengguna.
-        pilihan (str): Karakter pilihan navigasi dari keyboard.
+        menu_id (str): Kode identifikasi menu target.
 
     Returns:
         dict: Sesi terupdate setelah perpindahan navigasi.
@@ -178,8 +238,13 @@ def handle_navigation(session_state: dict, pilihan: str) -> dict:
         input("Tekan Enter untuk melanjutkan...")
         return session_state
 
-    # Karena sub-menu lain belum diimplementasikan di issue ini, tampilkan placeholder
-    # dan kembali ke dashboard
-    print(f"Pilihan '{pilihan}' tidak valid atau belum diimplementasikan.")
-    input("Tekan Enter untuk melanjutkan...")
+    # Rute pemanggilan fungsi menu target
+    if menu_id == 'MENU-M10-001':
+        from cli.menu_configs import show_menu_configs
+        show_menu_configs(session_state)
+    else:
+        # Tampilkan placeholder untuk menu yang belum diimplementasikan
+        print("Menu ini belum diimplementasikan.")
+        input("Tekan Enter untuk melanjutkan...")
+
     return session_state
