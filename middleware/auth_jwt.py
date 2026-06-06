@@ -18,6 +18,19 @@ from config.settings import load_settings
 # Konstanta Keamanan
 BCRYPT_COST_FACTOR = 12
 JWT_ALGORITHM = 'HS256'
+VALID_ROLES = (
+    'pemilik',
+    'kepala_percetakan',
+    'pramuniaga',
+    'kasir',
+    'desainer',
+    'produksi_cetak',
+    'fotocopy_print',
+    'gudang',
+)
+
+REQUIRED_JWT_CLAIMS = ('user_id', 'username', 'role', 'cabang_id', 'exp')
+
 Result = namedtuple('Result', ['is_success', 'data', 'error_msg'])
 
 
@@ -105,29 +118,68 @@ def create_jwt_session(user_id: int, username: str, role: str, cabang_id: int) -
 
 
 def verify_jwt_session(token: str) -> dict | None:
-    """Memvalidasi token JWT dan mengembalikan klaim data sesi jika sah.
+    """Memvalidasi dan mendekode token JWT session pengguna.
+
+    Melakukan 4 tahap validasi secara berurutan:
+    1. Dekode token dan verifikasi signature HS256 terhadap secret key.
+    2. Verifikasi masa aktif token belum kedaluwarsa (exp claim).
+    3. Validasi kelengkapan 5 klaim wajib di payload.
+    4. Validasi tipe data dan nilai klaim (role harus termasuk 8 peran valid).
+
+    (Ref: Security Design v1.2 Bab 4.2, Coding Standard v1.2 Bab 10.3)
 
     Args:
-        token (str): Token JWT dari sesi pengguna.
+        token (str): String token JWT dari sesi pengguna aktif.
 
     Returns:
-        dict | None: Dictionary data sesi jika valid, None jika kadaluwarsa/salah.
+        dict | None: Dictionary payload klaim JWT jika seluruh validasi lolos,
+                     None jika token kedaluwarsa, signature salah, format rusak,
+                     klaim tidak lengkap, atau role tidak valid.
+
+    Example:
+        >>> payload = verify_jwt_session('eyJhbGciOi...')
+        >>> payload['user_id']
+        1
+        >>> payload['role']
+        'kasir'
     """
     settings = load_settings()
     secret_key = settings.jwt_secret_key
     try:
-        return jwt.decode(token, secret_key, algorithms=[JWT_ALGORITHM])
+        payload = jwt.decode(token, secret_key, algorithms=[JWT_ALGORITHM])
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         return None
+
+    # Validasi kelengkapan klaim wajib
+    for claim in REQUIRED_JWT_CLAIMS:
+        if claim not in payload:
+            return None
+
+    # Validasi tipe data klaim
+    if not isinstance(payload.get('user_id'), int):
+        return None
+    if not isinstance(payload.get('username'), str):
+        return None
+    if not isinstance(payload.get('role'), str):
+        return None
+    if not isinstance(payload.get('cabang_id'), int):
+        return None
+
+    # Validasi role terhadap daftar peran valid
+    if payload.get('role') not in VALID_ROLES:
+        return None
+
+    return payload
 
 
 def validate_session_token(session_state: dict | None) -> Result:
     """Memvalidasi token JWT dari session state pengguna aktif.
 
     Fungsi guard terpusat yang dipanggil sebelum setiap operasi menu CLI.
-    Memeriksa keberadaan token dan memverifikasi tanda tangan serta masa aktifnya.
+    Memeriksa keberadaan token, memverifikasi tanda tangan, masa aktif,
+    kelengkapan payload, dan keabsahan role pengguna.
 
-    (Ref: Security Design Bab 4.2 & Coding Standard Bab 10.3)
+    (Ref: Security Design v1.2 Bab 4.2 & Coding Standard v1.2 Bab 10.3)
 
     Args:
         session_state (dict | None): Dictionary sesi pengguna berisi kunci 'token'.
@@ -135,7 +187,8 @@ def validate_session_token(session_state: dict | None) -> Result:
     Returns:
         Result: is_success=True dengan data=dict payload JWT jika valid,
                 is_success=False dengan error_msg ERR-SESSION-001 jika token kosong,
-                is_success=False dengan error_msg ERR-SESSION-002 jika token invalid/kadaluwarsa.
+                is_success=False dengan error_msg ERR-SESSION-002 jika token invalid/
+                kedaluwarsa/payload tidak lengkap/role tidak valid.
 
     Example:
         >>> session = {'token': 'valid_jwt_string', 'user_id': 1, 'role': 'kasir'}
