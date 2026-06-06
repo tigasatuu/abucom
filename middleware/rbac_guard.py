@@ -421,7 +421,10 @@ def verify_supervisor_escalation(
     if verify_password(password_input, supervisor['password_hash']):
         return Result(True, {'supervisor_id': supervisor['id'], 'cabang_id': supervisor['cabang_id']}, None)
     else:
-        return Result(False, None, "ERR-AUTH-003: Akses Ditolak: Sandi supervisor salah!")
+        if supervisor_role == 'pemilik':
+            return Result(False, None, "ERR-AUTH-029: Verifikasi sandi Pemilik gagal. Pengeluaran besar dibatalkan!")
+        else:
+            return Result(False, None, "ERR-AUTH-003: Akses Ditolak: Sandi supervisor salah!")
 
 
 def get_visible_menus(active_role: str) -> list[tuple[str, str, str]]:
