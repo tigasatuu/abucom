@@ -17,7 +17,9 @@ from config.settings import AppConfig
 from middleware.auth_jwt import (
     create_jwt_session,
     verify_jwt_session,
-    validate_session_token
+    validate_session_token,
+    hash_password,
+    verify_password
 )
 from logic.auth_handler import login_user, Result as AuthResult
 
@@ -225,3 +227,147 @@ def test_login_empty_input_returns_error(mocker, mock_jwt_env: AppConfig) -> Non
     # 5. Test password bernilai None
     with pytest.raises((TypeError, AttributeError)):
         login_user("kasir_andi", None, db_conn)
+
+
+def test_hash_and_verify_password() -> None:
+    """Memverifikasi fungsi hash_password dan verify_password dengan bcrypt."""
+    pw = "SandiRahasia123!"
+    hashed = hash_password(pw)
+    assert isinstance(hashed, str)
+    assert hashed != pw
+    assert verify_password(pw, hashed) is True
+    assert verify_password("SandiSalah", hashed) is False
+
+
+def test_verify_jwt_session_missing_claims(mock_jwt_env: AppConfig) -> None:
+    """Memastikan verify_jwt_session mengembalikan None jika salah satu klaim wajib absen."""
+    secret = mock_jwt_env.jwt_secret_key
+    base_payload = {
+        'user_id': 1,
+        'username': 'kasir_andi',
+        'role': 'kasir',
+        'cabang_id': 1,
+        'exp': datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1)
+    }
+    
+    # Hapus satu per satu klaim wajib
+    for claim in ['user_id', 'username', 'role', 'cabang_id', 'exp']:
+        payload = base_payload.copy()
+        payload.pop(claim)
+        token = jwt.encode(payload, secret, algorithm='HS256')
+        assert verify_jwt_session(token) is None
+
+
+def test_verify_jwt_session_invalid_claim_types(mock_jwt_env: AppConfig) -> None:
+    """Memastikan verify_jwt_session mengembalikan None jika tipe data klaim tidak sesuai."""
+    secret = mock_jwt_env.jwt_secret_key
+    
+    # 1. user_id bukan int
+    payload = {
+        'user_id': '1',  # string instead of int
+        'username': 'kasir_andi',
+        'role': 'kasir',
+        'cabang_id': 1,
+        'exp': datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1)
+    }
+    token = jwt.encode(payload, secret, algorithm='HS256')
+    assert verify_jwt_session(token) is None
+
+    # 2. username bukan str
+    payload = {
+        'user_id': 1,
+        'username': 123,  # int instead of str
+        'role': 'kasir',
+        'cabang_id': 1,
+        'exp': datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1)
+    }
+    token = jwt.encode(payload, secret, algorithm='HS256')
+    assert verify_jwt_session(token) is None
+
+    # 3. role bukan str
+    payload = {
+        'user_id': 1,
+        'username': 'kasir_andi',
+        'role': True,  # bool instead of str
+        'cabang_id': 1,
+        'exp': datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1)
+    }
+    token = jwt.encode(payload, secret, algorithm='HS256')
+    assert verify_jwt_session(token) is None
+
+    # 4. cabang_id bukan int
+    payload = {
+        'user_id': 1,
+        'username': 'kasir_andi',
+        'role': 'kasir',
+        'cabang_id': '1',  # string instead of int
+        'exp': datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1)
+    }
+    token = jwt.encode(payload, secret, algorithm='HS256')
+    assert verify_jwt_session(token) is None
+
+
+def test_verify_jwt_session_invalid_role(mock_jwt_env: AppConfig) -> None:
+    """Memastikan verify_jwt_session mengembalikan None jika peran tidak terdaftar dalam VALID_ROLES."""
+    secret = mock_jwt_env.jwt_secret_key
+    payload = {
+        'user_id': 1,
+        'username': 'kasir_andi',
+        'role': 'admin_palsu',  # tidak ada di VALID_ROLES
+        'cabang_id': 1,
+        'exp': datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1)
+    }
+    token = jwt.encode(payload, secret, algorithm='HS256')
+    assert verify_jwt_session(token) is None
+
+
+def test_validate_session_token_scenarios(mock_jwt_env: AppConfig) -> None:
+    """Menguji berbagai skenario fungsi validate_session_token."""
+    # Skenario 1: session_state None
+    res = validate_session_token(None)
+    assert res.is_success is False
+    assert res.data is None
+    assert "ERR-SESSION-001" in res.error_msg
+
+    # Skenario 2: session_state bukan dict
+    res = validate_session_token("bukan_dict")  # type: ignore
+    assert res.is_success is False
+    assert res.data is None
+    assert "ERR-SESSION-001" in res.error_msg
+
+    # Skenario 3: token tidak ada di session_state
+    res = validate_session_token({'user_id': 1})
+    assert res.is_success is False
+    assert res.data is None
+    assert "ERR-SESSION-001" in res.error_msg
+
+    # Skenario 4: token kosong/None
+    res = validate_session_token({'token': ''})
+    assert res.is_success is False
+    assert res.data is None
+    assert "ERR-SESSION-001" in res.error_msg
+
+    res = validate_session_token({'token': None})
+    assert res.is_success is False
+    assert res.data is None
+    assert "ERR-SESSION-001" in res.error_msg
+
+    # Skenario 5: token tidak valid (gagal verify_jwt_session)
+    res = validate_session_token({'token': 'token.invalid.palsu'})
+    assert res.is_success is False
+    assert res.data is None
+    assert "ERR-SESSION-002" in res.error_msg
+
+    # Skenario 6: token valid (sukses)
+    token = create_jwt_session(
+        user_id=1,
+        username='kasir_andi',
+        role='kasir',
+        cabang_id=1
+    )
+    res = validate_session_token({'token': token})
+    assert res.is_success is True
+    assert res.error_msg is None
+    assert res.data['user_id'] == 1
+    assert res.data['username'] == 'kasir_andi'
+    assert res.data['role'] == 'kasir'
