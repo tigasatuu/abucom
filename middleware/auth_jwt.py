@@ -87,6 +87,9 @@ def create_jwt_session(user_id: int, username: str, role: str, cabang_id: int) -
     Returns:
         str: Token JWT sebagai representasi sesi aktif.
     """
+    if user_id is None or not username or not role or cabang_id is None:
+        raise ValueError("Parameter esensial (user_id, username, role, cabang_id) tidak boleh kosong atau None")
+
     settings = load_settings()
     secret_key = settings.jwt_secret_key
     lifetime = settings.jwt_lifetime_seconds
