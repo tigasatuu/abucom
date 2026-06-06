@@ -167,6 +167,12 @@ def start_cli_app() -> None:
                 pass
             except Exception as e:
                 print(f"Terjadi kesalahan saat merender dashboard: {str(e)}", file=sys.stderr)
+            finally:
+                # Pembersihan session_state
+                session_state = {}
+                print("Sesi berakhir. Kembali ke layar login.")
+                input("Tekan Enter untuk melanjutkan...")
+                continue
 
     except KeyboardInterrupt:
         print()

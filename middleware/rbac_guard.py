@@ -9,6 +9,8 @@ Tanggal: 2026-06-03
 from typing import Callable, Any
 from functools import wraps
 
+from middleware.auth_jwt import validate_session_token
+
 # Matrix RBAC sesuai dengan Access Control Matrix (ACM) & Coding Standard
 RBAC_MATRIX = {
     'pemilik': ['MENU-M1-001', 'MENU-M4-002', 'MENU-M7-002', 'MENU-M2-010', 'MENU-M10-001'],
@@ -33,6 +35,9 @@ def check_menu_permission(menu_id: str, active_role: str) -> bool:
 def require_role(menu_id: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator fungsional pembungkus fungsi menu CLI untuk proteksi akses.
 
+    Memeriksa keabsahan token JWT terlebih dahulu sebelum melakukan otorisasi
+    berdasarkan Access Control Matrix (ACM).
+
     Args:
         menu_id (str): Kode identifikasi menu CLI yang diproteksi.
 
@@ -42,6 +47,13 @@ def require_role(menu_id: str) -> Callable[[Callable[..., Any]], Callable[..., A
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(func)
         def wrapper(session_state: dict, *args, **kwargs) -> Any:
+            # 1. Validasi token sesi JWT
+            val_res = validate_session_token(session_state)
+            if not val_res.is_success:
+                print(f"⛔ {val_res.error_msg}")
+                return None
+
+            # 2. Cek otorisasi menu berdasarkan peran
             active_role = session_state.get('role', 'guest')
             if not check_menu_permission(menu_id, active_role):
                 print("⛔ ERR-AUTH-003: Akses Ditolak.")
