@@ -318,3 +318,53 @@ def test_logout_user_sukses(mocker, mock_db_conn):
         cabang_id=1,
         db_connection=mock_db_conn
     )
+
+
+def test_logout_user_dengan_session_state_minimal(mocker, mock_db_conn):
+    """Menjamin logout tetap berhasil meskipun session_state hanya berisi field wajib."""
+    mock_audit = mocker.patch('logic.auth_handler.log_audit_trail')
+    session_state = {
+        'user_id': 1,
+        'username': 'pemilik_utama',
+        'role': 'pemilik',
+        'cabang_id': 1,
+        'token': 'some_jwt_token'
+    }
+
+    res = logout_user(session_state, mock_db_conn)
+
+    assert res.is_success is True
+    mock_audit.assert_called_once_with(
+        pengguna_id=1,
+        action_type='LOGOUT',
+        target_table='pengguna',
+        old_val=None,
+        new_val={'status': 'LOGOUT'},
+        cabang_id=1,
+        db_connection=mock_db_conn
+    )
+
+
+def test_logout_user_audit_trail_gagal_database_terganggu(mocker, mock_db_conn):
+    """Menjamin logout tetap sukses meskipun database terganggu saat menulis audit trail.
+
+    Audit logger menangani exception secara internal (try-except di audit_logger.py),
+    sehingga logout_user() tidak boleh crash.
+    """
+    mock_cursor = MagicMock()
+    mock_cursor.execute.side_effect = Exception("DB Connection Lost")
+    mock_db_conn.cursor.return_value = mock_cursor
+
+    session_state = {
+        'user_id': 42,
+        'username': 'kasir_uji',
+        'role': 'kasir',
+        'cabang_id': 1,
+        'token': 'mock_token'
+    }
+
+    # Panggil logout_user dengan database yang error pada execute
+    res = logout_user(session_state, mock_db_conn)
+    assert res.is_success is True
+    # Pastikan cursor ditutup dengan benar di blok finally
+    mock_cursor.close.assert_called_once()

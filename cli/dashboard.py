@@ -32,6 +32,8 @@ def render_dashboard(session_state: dict) -> None:
     Args:
         session_state (dict): Status sesi aktif pengguna.
     """
+    # TODO: Implementasi mekanisme idle timeout 30 menit tanpa aktivitas keyboard
+    # untuk memicu logout otomatis secara aman (Ref: Security Design Bab 4.4).
     while True:
         # 1. Validasi token sesi di awal setiap iterasi
         val_res = validate_session_token(session_state)
@@ -93,6 +95,17 @@ def render_dashboard(session_state: dict) -> None:
             pilihan = '0'
 
         if pilihan == '0':
+            # Konfirmasi logout sesuai CLI Flow UC-042 langkah 2-3
+            try:
+                konfirmasi = input("Apakah Anda yakin ingin logout? [Y/N]: ").strip().lower()
+            except (EOFError, KeyboardInterrupt):
+                konfirmasi = 'y'  # Graceful exit → anggap logout
+
+            if konfirmasi != 'y':
+                # Pengguna membatalkan logout, kembali ke loop dashboard
+                continue
+
+            # Proses logout: catat audit trail ke database (best effort / fail-secure)
             conn_res = get_db_connection()
             if conn_res.is_success:
                 db_conn = conn_res.data
@@ -103,15 +116,20 @@ def render_dashboard(session_state: dict) -> None:
                         db_conn.close()
                     except Exception:
                         pass
-            
-            # Hapus token JWT string dari dictionary session_state
+
+            # Hapus token JWT string dari dictionary session_state secara permanen
+            # (Ref: Security Design Bab 4.4 langkah 1)
             session_state['user_id'] = None
             session_state['username'] = None
             session_state['role'] = None
             session_state['cabang_id'] = None
             session_state['token'] = None
-            
-            success_msg = "✓ Logout Berhasil! Sesi telah dihapus."
+
+            # Bersihkan layar terminal (Ref: Security Design Bab 4.4 langkah 3)
+            clear_terminal()
+
+            # Tampilkan pesan sukses logout (Ref: CLI Flow Bab 4.2 langkah 5)
+            success_msg = "✓ Anda telah berhasil logout secara aman."
             if HAS_RICH:
                 _console.print(f"[bold green]{success_msg}[/]")
             else:
