@@ -33,7 +33,12 @@ def run_before_and_after_tests():
     _config_cache['target_laba_payroll'] = '15000000.0000'
     _config_cache['porsi_gaji_laba'] = '0.2500'
     _config_cache['limit_kasbon_staf'] = '1000000.0000'
-    yield
+    
+    with patch('middleware.rbac_guard.validate_session_token') as mock_val:
+        from middleware.auth_jwt import Result
+        mock_val.return_value = Result(True, {}, None)
+        yield
+        
     _config_cache.clear()
 
 

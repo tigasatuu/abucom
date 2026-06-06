@@ -38,7 +38,12 @@ def clean_config_cache_state():
     _config_cache['toleransi_kasir'] = '50000.0000'
     _config_cache['batas_hari_kasbon'] = '30'
     _config_cache['nama_toko'] = 'AbuCom Bandung'
-    yield
+    
+    with patch('middleware.rbac_guard.validate_session_token') as mock_val:
+        from middleware.auth_jwt import Result
+        mock_val.return_value = Result(True, {}, None)
+        yield
+        
     _config_cache.clear()
 
 
