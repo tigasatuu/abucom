@@ -7,6 +7,7 @@ Tanggal: 2026-06-03
 """
 
 import datetime
+from collections import namedtuple
 import os
 
 import bcrypt
@@ -17,6 +18,7 @@ from config.settings import load_settings
 # Konstanta Keamanan
 BCRYPT_COST_FACTOR = 12
 JWT_ALGORITHM = 'HS256'
+Result = namedtuple('Result', ['is_success', 'data', 'error_msg'])
 
 
 def hash_password(password_polos: str) -> str:
@@ -114,3 +116,51 @@ def verify_jwt_session(token: str) -> dict | None:
         return jwt.decode(token, secret_key, algorithms=[JWT_ALGORITHM])
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         return None
+
+
+def validate_session_token(session_state: dict | None) -> Result:
+    """Memvalidasi token JWT dari session state pengguna aktif.
+
+    Fungsi guard terpusat yang dipanggil sebelum setiap operasi menu CLI.
+    Memeriksa keberadaan token dan memverifikasi tanda tangan serta masa aktifnya.
+
+    (Ref: Security Design Bab 4.2 & Coding Standard Bab 10.3)
+
+    Args:
+        session_state (dict | None): Dictionary sesi pengguna berisi kunci 'token'.
+
+    Returns:
+        Result: is_success=True dengan data=dict payload JWT jika valid,
+                is_success=False dengan error_msg ERR-SESSION-001 jika token kosong,
+                is_success=False dengan error_msg ERR-SESSION-002 jika token invalid/kadaluwarsa.
+
+    Example:
+        >>> session = {'token': 'valid_jwt_string', 'user_id': 1, 'role': 'kasir'}
+        >>> result = validate_session_token(session)
+        >>> result.is_success
+        True
+    """
+    if not session_state or not isinstance(session_state, dict):
+        return Result(
+            False,
+            None,
+            'ERR-SESSION-001: Sesi login tidak ditemukan. Harap login terlebih dahulu!'
+        )
+
+    token = session_state.get('token')
+    if not token:
+        return Result(
+            False,
+            None,
+            'ERR-SESSION-001: Sesi login tidak ditemukan. Harap login terlebih dahulu!'
+        )
+
+    payload = verify_jwt_session(token)
+    if payload is None:
+        return Result(
+            False,
+            None,
+            'ERR-SESSION-002: Sesi login tidak sah/rusak. Harap login kembali!'
+        )
+
+    return Result(True, payload, None)
