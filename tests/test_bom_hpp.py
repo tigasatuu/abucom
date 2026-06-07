@@ -100,7 +100,7 @@ class TestBOMHPPLogic(unittest.TestCase):
         biaya3 = hitung_biaya_komponen(Decimal('0.3333'), Decimal('100.0000'))
         self.assertEqual(biaya3, Decimal('33.3300'))
 
-    def test_hitung_hpp_produk(self):
+    def test_kalkulasi_hpp_bom_sukses(self):
         """Skenario Positif: Perhitungan HPP total dari beberapa komponen."""
         comp1 = BOMKomponen(bahan_baku_id=5, nama_barang="Karet Flash", kuantitas=Decimal("0.0025"), harga_beli=Decimal("100000.00"))
         comp2 = BOMKomponen(bahan_baku_id=6, nama_barang="Gagang Stempel", kuantitas=Decimal("1.0000"), harga_beli=Decimal("4500.00"))
@@ -108,8 +108,41 @@ class TestBOMHPPLogic(unittest.TestCase):
         hpp = hitung_hpp_produk([comp1, comp2])
         self.assertEqual(hpp, Decimal("4750.0000"))
 
-        # Test empty list
-        self.assertEqual(hitung_hpp_produk([]), Decimal("0.0000"))
+    def test_kalkulasi_hpp_bom_pembulatan_boundary(self):
+        """Skenario Presisi Desimal: pembulatan boundary ROUND_HALF_UP."""
+        # 0.00005 * 1.0000 = 0.00005 -> rounds up to 0.0001
+        self.assertEqual(hitung_biaya_komponen(Decimal('0.00005'), Decimal('1.0000')), Decimal('0.0001'))
+        
+        # 0.00004 * 1.0000 = 0.00004 -> rounds down to 0.0000
+        self.assertEqual(hitung_biaya_komponen(Decimal('0.00004'), Decimal('1.0000')), Decimal('0.0000'))
+
+    def test_kalkulasi_hpp_bom_list_kosong(self):
+        """Skenario Validasi Negatif: input array BOM kosong tanpa bahan."""
+        with self.assertRaises(ValueError):
+            hitung_hpp_produk([])
+
+    def test_kalkulasi_hpp_bom_harga_negatif(self):
+        """Skenario Validasi Negatif: kuantitas/harga negatif & type mismatch float."""
+        # Kuantitas negatif
+        with self.assertRaises(ValueError):
+            hitung_biaya_komponen(Decimal('-0.0025'), Decimal('100000.0000'))
+        
+        # Harga negatif
+        with self.assertRaises(ValueError):
+            hitung_biaya_komponen(Decimal('0.0025'), Decimal('-100000.0000'))
+
+        # Type mismatch float on kuantitas
+        with self.assertRaises(TypeError):
+            hitung_biaya_komponen(0.0025, Decimal('100000.0000'))
+
+        # Type mismatch float on harga
+        with self.assertRaises(TypeError):
+            hitung_biaya_komponen(Decimal('0.0025'), 100000.0000)
+
+        # Type mismatch float in hitung_hpp_produk
+        comp_float = BOMKomponen(bahan_baku_id=5, nama_barang="Karet Flash", kuantitas=0.0025, harga_beli=Decimal("100000.00"))
+        with self.assertRaises(TypeError):
+            hitung_hpp_produk([comp_float])
 
     def test_buat_audit_payload_bom(self):
         """Skenario Positif: Format payload audit trail BOM JSON."""
