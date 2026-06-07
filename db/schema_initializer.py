@@ -19,19 +19,23 @@ import mysql.connector
 from mysql.connector import errors
 import bcrypt
 
+from db.seed_data import seed_satuan_ukur_default, seed_konversi_satuan_default
+
 # Setup logging
 _logger = logging.getLogger('abucom.db.init')
 
 Result = namedtuple('Result', ['is_success', 'data', 'error_msg'])
 
 # Konstanta verifikasi integritas schema
-EXPECTED_TABLE_COUNT = 28
+EXPECTED_TABLE_COUNT = 30
 EXPECTED_SEED_COUNTS = {
     'cabang': 1,
     'pengguna': 1,
     'saldo_ppob': 2,
     'saldo_ewallet': 6,
     'system_configs': 13,
+    'satuan_ukur': 16,
+    'konversi_satuan': 10,
 }
 
 
@@ -349,6 +353,13 @@ def run_full_initialization(
             "UPDATE pengguna SET password_hash = %s WHERE id = 1",
             (hashed_pwd,)
         )
+        # Seed UoM data
+        res_satuan = seed_satuan_ukur_default(cursor)
+        if not res_satuan.is_success:
+            raise Exception(res_satuan.error_msg)
+        res_konversi = seed_konversi_satuan_default(cursor)
+        if not res_konversi.is_success:
+            raise Exception(res_konversi.error_msg)
         root_conn.commit()
     except mysql.connector.Error as e:
         cursor.close()

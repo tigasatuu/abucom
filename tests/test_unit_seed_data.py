@@ -26,6 +26,8 @@ from db.seed_data import (
     seed_saldo_ppob_default,
     seed_saldo_ewallet_default,
     seed_system_configs_default,
+    seed_satuan_ukur_default,
+    seed_konversi_satuan_default,
     verify_seed_integrity,
     run_seed_all,
     DEFAULT_CABANG_DATA,
@@ -429,6 +431,8 @@ def test_verify_seed_integrity_valid_sempurna() -> None:
         (2,),  # saldo_ppob
         (6,),  # saldo_ewallet
         (13,), # system_configs
+        (16,), # satuan_ukur
+        (10,), # konversi_satuan
         ('$2b$12$validbcryptsamplehashhere',),  # password_hash
         (13,)  # unique keys config
     ]
@@ -453,6 +457,8 @@ def test_verify_seed_integrity_mismatch_counts() -> None:
         (2,),  # saldo_ppob
         (6,),  # saldo_ewallet
         (10,), # system_configs (mismatch!)
+        (16,), # satuan_ukur
+        (10,), # konversi_satuan
         ('$2b$12$validhash',),
         (13,)
     ]
@@ -470,7 +476,7 @@ def test_verify_seed_integrity_mismatch_password_hash() -> None:
     """
     mock_cursor = MagicMock()
     mock_cursor.fetchone.side_effect = [
-        (1,), (1,), (2,), (6,), (13,),
+        (1,), (1,), (2,), (6,), (13,), (16,), (10,),
         ('$2a$10$wrongprefixhash',),  # wrong prefix cost 10
         (13,)
     ]
@@ -488,7 +494,7 @@ def test_verify_seed_integrity_mismatch_unique_keys() -> None:
     """
     mock_cursor = MagicMock()
     mock_cursor.fetchone.side_effect = [
-        (1,), (1,), (2,), (6,), (13,),
+        (1,), (1,), (2,), (6,), (13,), (16,), (10,),
         ('$2b$12$validhash',),
         (10,)  # only 10 unique keys instead of 13!
     ]
@@ -507,7 +513,7 @@ def test_verify_seed_integrity_no_user_found() -> None:
     mock_cursor = MagicMock()
     # pengguna id=1 fetchone -> None
     mock_cursor.fetchone.side_effect = [
-        (1,), (1,), (2,), (6,), (13,),
+        (1,), (1,), (2,), (6,), (13,), (16,), (10,),
         None,  # no user row
         (13,)
     ]
@@ -542,9 +548,11 @@ def test_verify_seed_integrity_mysql_error() -> None:
 @patch('db.seed_data.seed_saldo_ppob_default')
 @patch('db.seed_data.seed_saldo_ewallet_default')
 @patch('db.seed_data.seed_system_configs_default')
+@patch('db.seed_data.seed_satuan_ukur_default')
+@patch('db.seed_data.seed_konversi_satuan_default')
 @patch('db.seed_data.verify_seed_integrity')
 def test_run_seed_all_sukses_komplit(
-    mock_verify, mock_configs, mock_ewallet, mock_ppob, mock_pengguna, mock_cabang, mock_gen_hash
+    mock_verify, mock_konversi, mock_satuan, mock_configs, mock_ewallet, mock_ppob, mock_pengguna, mock_cabang, mock_gen_hash
 ) -> None:
     """Memverifikasi alur penuh run_seed_all sukses komplit dengan commit transaksi.
 
@@ -561,11 +569,15 @@ def test_run_seed_all_sukses_komplit(
     mock_ppob.return_value = Result(True, 2, None)
     mock_ewallet.return_value = Result(True, 6, None)
     mock_configs.return_value = Result(True, 13, None)
+    mock_satuan.return_value = Result(True, 16, None)
+    mock_konversi.return_value = Result(True, 10, None)
     mock_verify.return_value = Result(True, EXPECTED_SEED_COUNTS, None)
 
     res = run_seed_all(mock_conn)
     assert res.is_success is True
     assert res.data['cabang_inserted'] == 1
+    assert res.data['satuan_ukur_inserted'] == 16
+    assert res.data['konversi_satuan_inserted'] == 10
     assert res.data['report'] == EXPECTED_SEED_COUNTS
     assert res.error_msg is None
 
@@ -737,9 +749,11 @@ def test_run_seed_all_gagal_seed_configs_dan_rollback(mock_configs, mock_ewallet
 @patch('db.seed_data.seed_saldo_ppob_default')
 @patch('db.seed_data.seed_saldo_ewallet_default')
 @patch('db.seed_data.seed_system_configs_default')
+@patch('db.seed_data.seed_satuan_ukur_default')
+@patch('db.seed_data.seed_konversi_satuan_default')
 @patch('db.seed_data.verify_seed_integrity')
 def test_run_seed_all_gagal_verifikasi_dan_return_fail(
-    mock_verify, mock_configs, mock_ewallet, mock_ppob, mock_pengguna, mock_cabang, mock_gen_hash
+    mock_verify, mock_konversi, mock_satuan, mock_configs, mock_ewallet, mock_ppob, mock_pengguna, mock_cabang, mock_gen_hash
 ) -> None:
     """Memverifikasi pengembalian fail jika verifikasi pasca-commit gagal.
 
@@ -756,6 +770,8 @@ def test_run_seed_all_gagal_verifikasi_dan_return_fail(
     mock_ppob.return_value = Result(True, 2, None)
     mock_ewallet.return_value = Result(True, 6, None)
     mock_configs.return_value = Result(True, 13, None)
+    mock_satuan.return_value = Result(True, 16, None)
+    mock_konversi.return_value = Result(True, 10, None)
     mock_verify.return_value = Result(False, None, "Verification mismatch")
 
     res = run_seed_all(mock_conn)
@@ -1225,7 +1241,7 @@ def test_verify_seed_integrity_multiple_errors_combined() -> None:
     Target: verify_seed_integrity
     """
     mock_cursor = MagicMock()
-    mock_cursor.fetchone.side_effect = [(0,), (0,), (0,), (0,), (0,), None, (0,)]
+    mock_cursor.fetchone.side_effect = [(0,), (0,), (0,), (0,), (0,), (0,), (0,), None, (0,)]
 
     res = verify_seed_integrity(mock_cursor)
     assert res.is_success is False
@@ -1241,7 +1257,7 @@ def test_verify_seed_integrity_report_dict_on_failure() -> None:
     Target: verify_seed_integrity
     """
     mock_cursor = MagicMock()
-    mock_cursor.fetchone.side_effect = [(1,), (1,), (2,), (6,), (10,), ('$2b$12$valid',), (13,)]
+    mock_cursor.fetchone.side_effect = [(1,), (1,), (2,), (6,), (10,), (16,), (10,), ('$2b$12$valid',), (13,)]
 
     res = verify_seed_integrity(mock_cursor)
     assert res.is_success is False
@@ -1256,7 +1272,7 @@ def test_verify_seed_integrity_password_hash_kosong() -> None:
     Target: verify_seed_integrity
     """
     mock_cursor = MagicMock()
-    mock_cursor.fetchone.side_effect = [(1,), (1,), (2,), (6,), (13,), ('',), (13,)]
+    mock_cursor.fetchone.side_effect = [(1,), (1,), (2,), (6,), (13,), (16,), (10,), ('',), (13,)]
 
     res = verify_seed_integrity(mock_cursor)
     assert res.is_success is False
@@ -1273,9 +1289,11 @@ def test_verify_seed_integrity_password_hash_kosong() -> None:
 @patch('db.seed_data.seed_saldo_ppob_default')
 @patch('db.seed_data.seed_saldo_ewallet_default')
 @patch('db.seed_data.seed_system_configs_default')
+@patch('db.seed_data.seed_satuan_ukur_default')
+@patch('db.seed_data.seed_konversi_satuan_default')
 @patch('db.seed_data.verify_seed_integrity')
 def test_run_seed_all_urutan_pemanggilan_benar(
-    mock_verify, mock_configs, mock_ewallet, mock_ppob, mock_pengguna, mock_cabang, mock_gen_hash
+    mock_verify, mock_konversi, mock_satuan, mock_configs, mock_ewallet, mock_ppob, mock_pengguna, mock_cabang, mock_gen_hash
 ) -> None:
     """Memverifikasi seluruh fungsi sub-seed dipanggil sesuai urutan dependensi database yang benar.
 
@@ -1292,6 +1310,8 @@ def test_run_seed_all_urutan_pemanggilan_benar(
     mock_ppob.return_value = Result(True, 2, None)
     mock_ewallet.return_value = Result(True, 6, None)
     mock_configs.return_value = Result(True, 13, None)
+    mock_satuan.return_value = Result(True, 16, None)
+    mock_konversi.return_value = Result(True, 10, None)
     mock_verify.return_value = Result(True, EXPECTED_SEED_COUNTS, None)
 
     manager = MagicMock()
@@ -1301,6 +1321,8 @@ def test_run_seed_all_urutan_pemanggilan_benar(
     manager.attach_mock(mock_ppob, 'ppob')
     manager.attach_mock(mock_ewallet, 'ewallet')
     manager.attach_mock(mock_configs, 'configs')
+    manager.attach_mock(mock_satuan, 'satuan')
+    manager.attach_mock(mock_konversi, 'konversi')
     manager.attach_mock(mock_verify, 'verify')
 
     res = run_seed_all(mock_conn)
@@ -1308,8 +1330,8 @@ def test_run_seed_all_urutan_pemanggilan_benar(
 
     calls = manager.mock_calls
     names = [c[0] for c in calls]
-    sub_seed_names = [n for n in names if n in ('gen_hash', 'cabang', 'pengguna', 'ppob', 'ewallet', 'configs', 'verify')]
-    assert sub_seed_names == ['gen_hash', 'cabang', 'pengguna', 'ppob', 'ewallet', 'configs', 'verify']
+    sub_seed_names = [n for n in names if n in ('gen_hash', 'cabang', 'pengguna', 'ppob', 'ewallet', 'configs', 'satuan', 'konversi', 'verify')]
+    assert sub_seed_names == ['gen_hash', 'cabang', 'pengguna', 'ppob', 'ewallet', 'configs', 'satuan', 'konversi', 'verify']
 
 
 @patch('db.seed_data.generate_default_password_hash')
@@ -1318,9 +1340,11 @@ def test_run_seed_all_urutan_pemanggilan_benar(
 @patch('db.seed_data.seed_saldo_ppob_default')
 @patch('db.seed_data.seed_saldo_ewallet_default')
 @patch('db.seed_data.seed_system_configs_default')
+@patch('db.seed_data.seed_satuan_ukur_default')
+@patch('db.seed_data.seed_konversi_satuan_default')
 @patch('db.seed_data.verify_seed_integrity')
 def test_run_seed_all_stats_dict_lengkap(
-    mock_verify, mock_configs, mock_ewallet, mock_ppob, mock_pengguna, mock_cabang, mock_gen_hash
+    mock_verify, mock_konversi, mock_satuan, mock_configs, mock_ewallet, mock_ppob, mock_pengguna, mock_cabang, mock_gen_hash
 ) -> None:
     """Memverifikasi bahwa stats dictionary hasil seeding lengkap dan akurat pada saat sukses.
 
@@ -1335,6 +1359,8 @@ def test_run_seed_all_stats_dict_lengkap(
     mock_ppob.return_value = Result(True, 3, None)
     mock_ewallet.return_value = Result(True, 4, None)
     mock_configs.return_value = Result(True, 5, None)
+    mock_satuan.return_value = Result(True, 6, None)
+    mock_konversi.return_value = Result(True, 7, None)
     mock_verify.return_value = Result(True, EXPECTED_SEED_COUNTS, None)
 
     res = run_seed_all(mock_conn)
@@ -1345,9 +1371,11 @@ def test_run_seed_all_stats_dict_lengkap(
         'saldo_ppob_inserted': 3,
         'saldo_ewallet_inserted': 4,
         'system_configs_inserted': 5,
+        'satuan_ukur_inserted': 6,
+        'konversi_satuan_inserted': 7,
         'report': EXPECTED_SEED_COUNTS
     }
-    assert len(res.data) == 6
+    assert len(res.data) == 8
 
 
 @patch('db.seed_data.generate_default_password_hash')
@@ -1356,8 +1384,10 @@ def test_run_seed_all_stats_dict_lengkap(
 @patch('db.seed_data.seed_saldo_ppob_default')
 @patch('db.seed_data.seed_saldo_ewallet_default')
 @patch('db.seed_data.seed_system_configs_default')
+@patch('db.seed_data.seed_satuan_ukur_default')
+@patch('db.seed_data.seed_konversi_satuan_default')
 def test_run_seed_all_cursor_close_saat_commit_error(
-    mock_configs, mock_ewallet, mock_ppob, mock_pengguna, mock_cabang, mock_gen_hash
+    mock_konversi, mock_satuan, mock_configs, mock_ewallet, mock_ppob, mock_pengguna, mock_cabang, mock_gen_hash
 ) -> None:
     """Memverifikasi bahwa cursor tetap ditutup dan transaksi di-rollback jika commit database error.
 
@@ -1374,6 +1404,8 @@ def test_run_seed_all_cursor_close_saat_commit_error(
     mock_ppob.return_value = Result(True, 2, None)
     mock_ewallet.return_value = Result(True, 6, None)
     mock_configs.return_value = Result(True, 13, None)
+    mock_satuan.return_value = Result(True, 16, None)
+    mock_konversi.return_value = Result(True, 10, None)
 
     mock_conn.commit.side_effect = RuntimeError("Commit crash")
 
@@ -1389,9 +1421,11 @@ def test_run_seed_all_cursor_close_saat_commit_error(
 @patch('db.seed_data.seed_saldo_ppob_default')
 @patch('db.seed_data.seed_saldo_ewallet_default')
 @patch('db.seed_data.seed_system_configs_default')
+@patch('db.seed_data.seed_satuan_ukur_default')
+@patch('db.seed_data.seed_konversi_satuan_default')
 @patch('db.seed_data.verify_seed_integrity')
 def test_run_seed_all_idempoten_semua_data_sudah_ada(
-    mock_verify, mock_configs, mock_ewallet, mock_ppob, mock_pengguna, mock_cabang, mock_gen_hash
+    mock_verify, mock_konversi, mock_satuan, mock_configs, mock_ewallet, mock_ppob, mock_pengguna, mock_cabang, mock_gen_hash
 ) -> None:
     """Memverifikasi run_seed_all bersifat idempoten jika seluruh data seed sudah terisi lengkap di db.
 
@@ -1406,6 +1440,8 @@ def test_run_seed_all_idempoten_semua_data_sudah_ada(
     mock_ppob.return_value = Result(True, 0, None)
     mock_ewallet.return_value = Result(True, 0, None)
     mock_configs.return_value = Result(True, 0, None)
+    mock_satuan.return_value = Result(True, 0, None)
+    mock_konversi.return_value = Result(True, 0, None)
     mock_verify.return_value = Result(True, EXPECTED_SEED_COUNTS, None)
 
     res = run_seed_all(mock_conn)
@@ -1415,6 +1451,8 @@ def test_run_seed_all_idempoten_semua_data_sudah_ada(
     assert res.data['saldo_ppob_inserted'] == 0
     assert res.data['saldo_ewallet_inserted'] == 0
     assert res.data['system_configs_inserted'] == 0
+    assert res.data['satuan_ukur_inserted'] == 0
+    assert res.data['konversi_satuan_inserted'] == 0
 
 
 # ------------------------------------------------------------------------------
@@ -1504,9 +1542,9 @@ def test_konstanta_expected_seed_counts_total_dan_keys() -> None:
     Skenario: Validasi Input
     Target: EXPECTED_SEED_COUNTS
     """
-    assert len(EXPECTED_SEED_COUNTS) == 5
-    assert set(EXPECTED_SEED_COUNTS.keys()) == {'cabang', 'pengguna', 'saldo_ppob', 'saldo_ewallet', 'system_configs'}
-    assert sum(EXPECTED_SEED_COUNTS.values()) == 23
+    assert len(EXPECTED_SEED_COUNTS) == 7
+    assert set(EXPECTED_SEED_COUNTS.keys()) == {'cabang', 'pengguna', 'saldo_ppob', 'saldo_ewallet', 'system_configs', 'satuan_ukur', 'konversi_satuan'}
+    assert sum(EXPECTED_SEED_COUNTS.values()) == 49
 
 
 def test_konstanta_default_password_valid() -> None:
@@ -1518,5 +1556,49 @@ def test_konstanta_default_password_valid() -> None:
     assert isinstance(DEFAULT_PASSWORD, str)
     assert len(DEFAULT_PASSWORD) > 0
     assert DEFAULT_PASSWORD == 'admin123'
+
+
+def test_seed_satuan_ukur_default_skip_jika_cukup() -> None:
+    """Memverifikasi seed satuan ukur dilewati jika data sudah terisi cukup."""
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = (16,)
+    res = seed_satuan_ukur_default(mock_cursor)
+    assert res.is_success is True
+    assert res.data == 0
+
+
+def test_seed_satuan_ukur_default_insert_jika_kosong() -> None:
+    """Memverifikasi insert satuan ukur jika kosong."""
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = (0,)
+    mock_cursor.rowcount = 1
+    res = seed_satuan_ukur_default(mock_cursor)
+    assert res.is_success is True
+    assert res.data == 16
+
+
+def test_seed_konversi_satuan_default_skip_jika_cukup() -> None:
+    """Memverifikasi seed konversi dilewati jika data sudah terisi cukup."""
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = (10,)
+    res = seed_konversi_satuan_default(mock_cursor)
+    assert res.is_success is True
+    assert res.data == 0
+
+
+def test_seed_konversi_satuan_default_insert_jika_kosong() -> None:
+    """Memverifikasi insert konversi jika kosong."""
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = (0,)
+    mock_cursor.fetchall.return_value = [
+        (1, 'Rim'), (2, 'Lembar'), (3, 'Lusin'), (4, 'Pcs'),
+        (5, 'Meter'), (6, 'Centimeter'), (7, 'Liter'), (8, 'Ml'),
+        (9, 'Kg'), (10, 'Gram')
+    ]
+    mock_cursor.rowcount = 1
+    res = seed_konversi_satuan_default(mock_cursor)
+    assert res.is_success is True
+    assert res.data == 10
+
 
 

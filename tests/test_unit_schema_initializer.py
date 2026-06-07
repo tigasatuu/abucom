@@ -35,7 +35,7 @@ def _make_mysql_error(errno: int, msg: str) -> mysql.connector.Error:
 
 class MockCursor:
     """Mock MySQL Cursor yang fleksibel untuk merespon query secara dinamis."""
-    def __init__(self, table_count=28, missing_index=None, wrong_seed=None, missing_seed_table=None):
+    def __init__(self, table_count=30, missing_index=None, wrong_seed=None, missing_seed_table=None):
         self.last_query = None
         self.with_rows = False
         self.table_count = table_count
@@ -55,7 +55,8 @@ class MockCursor:
             # Generate daftar tabel
             tbl_list = [
                 'transaksi', 'absensi', 'antrian_kerja', 'barang',
-                'cabang', 'pengguna', 'saldo_ppob', 'saldo_ewallet', 'system_configs'
+                'cabang', 'pengguna', 'saldo_ppob', 'saldo_ewallet', 'system_configs',
+                'satuan_ukur', 'konversi_satuan'
             ]
             if self.missing_seed_table and self.missing_seed_table in tbl_list:
                 tbl_list.remove(self.missing_seed_table)
@@ -500,14 +501,14 @@ def test_execute_schema_init_statement_dengan_result_set() -> None:
 # ==============================================================================
 
 def test_verify_schema_integrity_skema_valid_sempurna() -> None:
-    """Memverifikasi integritas skema valid sempurna (28 tabel, 4 index, seed data pas).
+    """Memverifikasi integritas skema valid sempurna (30 tabel, 4 index, seed data pas).
 
     Skenario: Positif
     Target: verify_schema_integrity
     """
     # Arrange
     mock_conn = MagicMock()
-    mock_cursor = MockCursor(table_count=28)
+    mock_cursor = MockCursor(table_count=30)
     mock_conn.cursor.return_value = mock_cursor
 
     # Act
@@ -515,13 +516,15 @@ def test_verify_schema_integrity_skema_valid_sempurna() -> None:
 
     # Assert
     assert res.is_success is True
-    assert res.data['tables'] == 28
+    assert res.data['tables'] == 30
     assert res.data['indexes'] == 4
     assert res.data['seeds']['cabang'] == 1
     assert res.data['seeds']['pengguna'] == 1
     assert res.data['seeds']['saldo_ppob'] == 2
     assert res.data['seeds']['saldo_ewallet'] == 6
     assert res.data['seeds']['system_configs'] == 13
+    assert res.data['seeds']['satuan_ukur'] == 16
+    assert res.data['seeds']['konversi_satuan'] == 10
     assert res.error_msg is None
     assert mock_cursor.closed is True
 
@@ -554,7 +557,7 @@ def test_verify_schema_integrity_index_hilang() -> None:
     """
     # Arrange
     mock_conn = MagicMock()
-    mock_cursor = MockCursor(table_count=28, missing_index='idx_transaksi_tanggal_cabang')
+    mock_cursor = MockCursor(table_count=30, missing_index='idx_transaksi_tanggal_cabang')
     mock_conn.cursor.return_value = mock_cursor
 
     # Act
@@ -575,7 +578,7 @@ def test_verify_schema_integrity_seed_data_salah() -> None:
     # Arrange
     mock_conn = MagicMock()
     # system_configs diharapkan 13, di-mock bernilai 10
-    mock_cursor = MockCursor(table_count=28, wrong_seed=('system_configs', 10))
+    mock_cursor = MockCursor(table_count=30, wrong_seed=('system_configs', 10))
     mock_conn.cursor.return_value = mock_cursor
 
     # Act
@@ -596,7 +599,7 @@ def test_verify_schema_integrity_tabel_seed_hilang() -> None:
     # Arrange
     mock_conn = MagicMock()
     # Hilangkan tabel 'system_configs' dari list
-    mock_cursor = MockCursor(table_count=28, missing_seed_table='system_configs')
+    mock_cursor = MockCursor(table_count=30, missing_seed_table='system_configs')
     mock_conn.cursor.return_value = mock_cursor
 
     # Act
@@ -663,9 +666,11 @@ def test_verify_schema_integrity_gagal_exception_umum() -> None:
 @patch('db.schema_initializer.execute_schema_init')
 @patch('db.schema_initializer.bcrypt.gensalt')
 @patch('db.schema_initializer.bcrypt.hashpw')
+@patch('db.schema_initializer.seed_satuan_ukur_default')
+@patch('db.schema_initializer.seed_konversi_satuan_default')
 @patch('db.schema_initializer.verify_schema_integrity')
 def test_run_full_initialization_sukses_lengkap(
-    mock_verify, mock_hashpw, mock_gensalt, mock_exec_init, mock_read_file, mock_connect
+    mock_verify, mock_konversi, mock_satuan, mock_hashpw, mock_gensalt, mock_exec_init, mock_read_file, mock_connect
 ) -> None:
     """Memverifikasi inisialisasi lengkap sukses dari awal hingga akhir.
 
@@ -683,8 +688,10 @@ def test_run_full_initialization_sukses_lengkap(
     
     mock_gensalt.return_value = b"$2b$12$salt"
     mock_hashpw.return_value = b"$2b$12$hashed"
+    mock_satuan.return_value = Result(True, 16, None)
+    mock_konversi.return_value = Result(True, 10, None)
     
-    mock_verify.return_value = Result(True, {'tables': 28, 'indexes': 4, 'seeds': {}}, None)
+    mock_verify.return_value = Result(True, {'tables': 30, 'indexes': 4, 'seeds': {}}, None)
 
     # Act
     res = run_full_initialization(
@@ -698,7 +705,7 @@ def test_run_full_initialization_sukses_lengkap(
     # Assert
     assert res.is_success is True
     assert res.data['init_stats']['success'] == 2
-    assert res.data['verify_report']['tables'] == 28
+    assert res.data['verify_report']['tables'] == 30
     assert res.error_msg is None
     
     # Verifikasi chain calls
@@ -913,9 +920,11 @@ def test_run_full_initialization_gagal_update_password_exception(
 @patch('db.schema_initializer.execute_schema_init')
 @patch('db.schema_initializer.bcrypt.gensalt')
 @patch('db.schema_initializer.bcrypt.hashpw')
+@patch('db.schema_initializer.seed_satuan_ukur_default')
+@patch('db.schema_initializer.seed_konversi_satuan_default')
 @patch('db.schema_initializer.verify_schema_integrity')
 def test_run_full_initialization_gagal_verifikasi(
-    mock_verify, mock_hashpw, mock_gensalt, mock_exec_init, mock_read_file, mock_connect
+    mock_verify, mock_konversi, mock_satuan, mock_hashpw, mock_gensalt, mock_exec_init, mock_read_file, mock_connect
 ) -> None:
     """Memverifikasi kegagalan inisialisasi jika tahap verifikasi akhir mendeteksi skema tidak valid.
 
@@ -932,6 +941,8 @@ def test_run_full_initialization_gagal_verifikasi(
     mock_exec_init.return_value = Result(True, {'success': 1, 'failed': 0}, None)
     mock_gensalt.return_value = b"salt"
     mock_hashpw.return_value = b"hashed"
+    mock_satuan.return_value = Result(True, 16, None)
+    mock_konversi.return_value = Result(True, 10, None)
     
     mock_verify.return_value = Result(False, {'tables': 20}, "Verifikasi gagal: tabel kurang")
 
@@ -954,7 +965,7 @@ def test_konstanta_expected_table_count() -> None:
     Skenario: Validasi
     Target: EXPECTED_TABLE_COUNT
     """
-    assert EXPECTED_TABLE_COUNT == 28
+    assert EXPECTED_TABLE_COUNT == 30
 
 
 def test_konstanta_expected_seed_counts() -> None:
@@ -963,12 +974,14 @@ def test_konstanta_expected_seed_counts() -> None:
     Skenario: Validasi
     Target: EXPECTED_SEED_COUNTS
     """
-    assert len(EXPECTED_SEED_COUNTS) == 5
+    assert len(EXPECTED_SEED_COUNTS) == 7
     assert EXPECTED_SEED_COUNTS['cabang'] == 1
     assert EXPECTED_SEED_COUNTS['pengguna'] == 1
     assert EXPECTED_SEED_COUNTS['saldo_ppob'] == 2
     assert EXPECTED_SEED_COUNTS['saldo_ewallet'] == 6
     assert EXPECTED_SEED_COUNTS['system_configs'] == 13
+    assert EXPECTED_SEED_COUNTS['satuan_ukur'] == 16
+    assert EXPECTED_SEED_COUNTS['konversi_satuan'] == 10
 
 
 @patch('db.schema_initializer.Path.exists')
@@ -1011,7 +1024,7 @@ def test_verify_schema_integrity_tabel_index_hilang() -> None:
     Target: verify_schema_integrity
     """
     mock_conn = MagicMock()
-    mock_cursor = MockCursor(table_count=28, missing_seed_table='transaksi')
+    mock_cursor = MockCursor(table_count=30, missing_seed_table='transaksi')
     mock_conn.cursor.return_value = mock_cursor
     res = verify_schema_integrity(mock_conn)
     assert res.is_success is False
