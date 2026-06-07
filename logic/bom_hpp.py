@@ -33,6 +33,10 @@ def hitung_biaya_komponen(kuantitas: Decimal, harga_beli_satuan: Decimal) -> Dec
     Returns:
         Decimal: Total biaya komponen dengan presisi desimal.
     """
+    if isinstance(kuantitas, float) or isinstance(harga_beli_satuan, float):
+        raise TypeError("Kuantitas dan harga beli tidak boleh menggunakan tipe data float!")
+    if kuantitas < 0 or harga_beli_satuan < 0:
+        raise ValueError("Kuantitas dan harga beli tidak boleh negatif!")
     return (kuantitas * harga_beli_satuan).quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
 
 
@@ -45,8 +49,14 @@ def hitung_hpp_produk(komponen_list: list[BOMKomponen]) -> Decimal:
     Returns:
         Decimal: Hasil kalkulasi HPP produk percetakan.
     """
+    if not komponen_list:
+        raise ValueError("Daftar komponen BOM tidak boleh kosong!")
     total = Decimal('0.0000')
     for comp in komponen_list:
+        if isinstance(comp.kuantitas, float) or isinstance(comp.harga_beli, float):
+            raise TypeError("Kuantitas dan harga beli tidak boleh menggunakan tipe data float!")
+        if comp.kuantitas < 0 or comp.harga_beli < 0:
+            raise ValueError("Kuantitas dan harga beli tidak boleh negatif!")
         total += hitung_biaya_komponen(comp.kuantitas, comp.harga_beli)
     return total
 
