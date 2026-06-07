@@ -13,7 +13,12 @@ from typing import Any
 
 from logic.safety_validator import validasi_kekuatan_sandi
 from middleware.auth_jwt import hash_password
-from db.pengguna_repository import cek_username_unik, insert_pengguna
+from db.pengguna_repository import (
+    cek_username_unik,
+    insert_pengguna,
+    get_password_hash_by_id,
+    update_password_hash,
+)
 
 Result = namedtuple('Result', ['is_success', 'data', 'error_msg'])
 
@@ -236,3 +241,100 @@ def registrasi_pengguna(
                 pass
 
     return Result(True, new_user_id, None)
+
+
+def ubah_password_akun(
+    user_id: int,
+    password_lama: str,
+    password_baru: str,
+    konfirmasi_password: str,
+    cabang_id: int,
+    db_conn: Any,
+) -> Result:
+    """Mengorkestrasi proses pengubahan kata sandi akun pengguna sendiri.
+
+    Alur eksekusi:
+    1. Validasi kecocokan password baru dan konfirmasi password.
+    2. Validasi kekuatan password baru (5 kriteria keamanan).
+    3. Ambil password hash lama dari database.
+    4. Verifikasi kecocokan password lama dengan hash database menggunakan bcrypt.
+    5. Cek apakah password baru sama dengan password lama.
+    6. Hash password baru menggunakan bcrypt Cost Factor 12.
+    7. Perbarui password hash di database secara transaksional (ACID).
+    8. Catat aktivitas pengubahan kata sandi ke audit log (redacted).
+
+    Args:
+        user_id (int): ID pengguna yang ingin mengubah password.
+        password_lama (str): Password lama dalam bentuk teks polos.
+        password_baru (str): Password baru dalam bentuk teks polos.
+        konfirmasi_password (str): Konfirmasi kata sandi baru.
+        cabang_id (int): ID cabang aktif pengguna.
+        db_conn: Objek koneksi database MySQL.
+
+    Returns:
+        Result: is_success=True dengan data={'action': 'PASSWORD_CHANGED'},
+                is_success=False dengan error_msg spesifik.
+
+    Example:
+        >>> ubah_password_akun(1, 'SandiLama123!', 'SandiBaru123!', 'SandiBaru123!', 1, db_conn)
+        Result(is_success=True, data={'action': 'PASSWORD_CHANGED'}, error_msg=None)
+    """
+    from middleware.auth_jwt import verify_password, hash_password
+    from middleware.audit_logger import log_audit_trail
+
+    # Langkah 1: Validasi kecocokan password baru dan konfirmasi
+    if len(password_baru) < 8 or password_baru != konfirmasi_password:
+        return Result(
+            False,
+            None,
+            'ERR-VAL-044: Konvalidasi Gagal: Kata sandi baru minimal harus 8 karakter '
+            'dan bernilai cocok pada kedua input!'
+        )
+
+    # Langkah 2: Validasi kekuatan password baru
+    strength_result = validasi_kekuatan_sandi(password_baru)
+    if not strength_result.is_valid:
+        return Result(False, None, strength_result.error_msg)
+
+    # Langkah 3: Ambil hash password lama dari database
+    hash_result = get_password_hash_by_id(user_id, db_conn)
+    if not hash_result.is_success:
+        return Result(False, None, hash_result.error_msg)
+
+    # Langkah 4: Verifikasi password lama menggunakan bcrypt
+    if not verify_password(password_lama, hash_result.data):
+        return Result(
+            False,
+            None,
+            'ERR-AUTH-044: Otorisasi Gagal: Kata sandi lama yang Anda masukkan tidak valid!'
+        )
+
+    # Langkah 5: Cek password baru tidak sama dengan password lama
+    if password_lama == password_baru:
+        return Result(
+            False,
+            None,
+            'ERR-VAL-044: Konvalidasi Gagal: Kata sandi baru tidak boleh sama dengan kata sandi lama!'
+        )
+
+    # Langkah 6: Hash password baru dengan bcrypt Cost Factor 12
+    new_hash = hash_password(password_baru)
+
+    # Langkah 7: Simpan hash baru ke database via repository
+    update_result = update_password_hash(user_id, new_hash, db_conn)
+    if not update_result.is_success:
+        return Result(False, None, update_result.error_msg)
+
+    # Langkah 8: Catat audit trail
+    log_audit_trail(
+        pengguna_id=user_id,
+        action_type='UPDATE',
+        target_table='pengguna',
+        old_val={'field': 'password_hash', 'note': '***REDACTED***'},
+        new_val={'field': 'password_hash', 'note': '***REDACTED***'},
+        cabang_id=cabang_id,
+        db_connection=db_conn
+    )
+
+    return Result(True, {'action': 'PASSWORD_CHANGED'}, None)
+
