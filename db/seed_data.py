@@ -10,7 +10,7 @@ Tanggal: 2026-06-04
 # 1. Standard Library
 import logging
 from collections import namedtuple
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from typing import Any
 
 # 2. Third-Party
@@ -72,12 +72,41 @@ DEFAULT_SYSTEM_CONFIGS_DATA: tuple[tuple[str, Decimal, str, str, int], ...] = (
     ('dana_cadangan_darurat', Decimal('4500000.0000'), 'DECIMAL', 'Cadangan kas darurat minimal yang harus dijaga di laci kasir', 1),
 )
 
+SEED_SATUAN_UKUR: list[tuple[str, str, str, str]] = [
+    ('Pcs', 'Kuantitas', 'pcs', 'Satuan pieces/buah individual'),
+    ('Lembar', 'Kuantitas', 'lbr', 'Satuan lembar kertas/bahan lembaran'),
+    ('Rim', 'Kuantitas', 'rim', 'Satuan rim kertas (1 rim = 500 lembar)'),
+    ('Buah', 'Kuantitas', 'bh', 'Satuan buah/unit barang'),
+    ('Set', 'Kuantitas', 'set', 'Satuan set/paket lengkap'),
+    ('Lusin', 'Kuantitas', 'lsn', 'Satuan lusin (1 lusin = 12 pcs)'),
+    ('Meter', 'Panjang', 'm', 'Satuan panjang meter'),
+    ('Centimeter', 'Panjang', 'cm', 'Satuan panjang centimeter'),
+    ('Meter_Persegi', 'Luas', 'm²', 'Satuan luas meter persegi'),
+    ('Ml', 'Volume', 'ml', 'Satuan volume mililiter'),
+    ('Liter', 'Volume', 'L', 'Satuan volume liter'),
+    ('Botol', 'Volume', 'btl', 'Satuan botol tinta/cairan'),
+    ('Gram', 'Berat', 'g', 'Satuan berat gram'),
+    ('Kg', 'Berat', 'kg', 'Satuan berat kilogram'),
+    ('Roll', 'Kuantitas', 'roll', 'Satuan gulung/roll bahan'),
+    ('Pack', 'Kuantitas', 'pack', 'Satuan kemasan pak'),
+]
+
+SEED_KONVERSI_SATUAN: list[tuple[str, str, Decimal]] = [
+    ('Rim', 'Lembar', Decimal('500.0000')),
+    ('Lusin', 'Pcs', Decimal('12.0000')),
+    ('Meter', 'Centimeter', Decimal('100.0000')),
+    ('Liter', 'Ml', Decimal('1000.0000')),
+    ('Kg', 'Gram', Decimal('1000.0000')),
+]
+
 EXPECTED_SEED_COUNTS: dict[str, int] = {
     'cabang': 1,
     'pengguna': 1,
     'saldo_ppob': 2,
     'saldo_ewallet': 6,
     'system_configs': 13,
+    'satuan_ukur': 16,
+    'konversi_satuan': 10,
 }
 
 
@@ -289,6 +318,96 @@ def seed_system_configs_default(cursor: Any) -> Result:
         return Result(False, None, err_msg)
 
 
+
+def seed_satuan_ukur_default(cursor: Any) -> Result:
+    """Memasukkan data satuan ukur default secara idempoten menggunakan INSERT IGNORE.
+
+    Args:
+        cursor (Any): Cursor database aktif yang berada dalam transaksi.
+
+    Returns:
+        Result: NamedTuple berisi status keberhasilan operasional dan baris terinsert.
+    """
+    try:
+        cursor.execute("SELECT COUNT(*) FROM satuan_ukur")
+        count = cursor.fetchone()[0]
+        if count >= EXPECTED_SEED_COUNTS['satuan_ukur']:
+            _logger.warning("Seed tabel satuan_ukur: data sudah ada, skip insert.")
+            return Result(True, 0, None)
+
+        inserted = 0
+        query = (
+            "INSERT IGNORE INTO satuan_ukur (nama_satuan, kategori_satuan, simbol, keterangan, cabang_id) "
+            "VALUES (%s, %s, %s, %s, %s)"
+        )
+        for row in SEED_SATUAN_UKUR:
+            cursor.execute(query, (row[0], row[1], row[2], row[3], 1))
+            inserted += cursor.rowcount
+
+        _logger.info(f"Seed tabel satuan_ukur: {inserted} baris berhasil diinsert.")
+        return Result(True, inserted, None)
+    except mysql.connector.Error as e:
+        err_msg = f"ERR-DB-SEED-001: Gagal seed tabel satuan_ukur (MySQL Error {e.errno}: {e.msg})"
+        _logger.error(err_msg)
+        return Result(False, None, err_msg)
+    except Exception as e:
+        err_msg = f"ERR-DB-SEED-001: Gagal seed tabel satuan_ukur (Error: {str(e)})"
+        _logger.error(err_msg)
+        return Result(False, None, err_msg)
+
+
+def seed_konversi_satuan_default(cursor: Any) -> Result:
+    """Memasukkan data konversi satuan default secara idempoten menggunakan INSERT IGNORE.
+
+    Args:
+        cursor (Any): Cursor database aktif yang berada dalam transaksi.
+
+    Returns:
+        Result: NamedTuple berisi status keberhasilan operasional dan baris terinsert.
+    """
+    try:
+        cursor.execute("SELECT COUNT(*) FROM konversi_satuan")
+        count = cursor.fetchone()[0]
+        if count >= EXPECTED_SEED_COUNTS['konversi_satuan']:
+            _logger.warning("Seed tabel konversi_satuan: data sudah ada, skip insert.")
+            return Result(True, 0, None)
+
+        cursor.execute("SELECT id, nama_satuan FROM satuan_ukur WHERE is_aktif = TRUE")
+        satuan_map = {row[1]: row[0] for row in cursor.fetchall()}
+
+        inserted = 0
+        query = (
+            "INSERT IGNORE INTO konversi_satuan (satuan_asal_id, satuan_tujuan_id, faktor_konversi, cabang_id) "
+            "VALUES (%s, %s, %s, %s)"
+        )
+        for row in SEED_KONVERSI_SATUAN:
+            asal_name, tujuan_name, faktor = row
+            asal_id = satuan_map.get(asal_name)
+            tujuan_id = satuan_map.get(tujuan_name)
+            if asal_id is None or tujuan_id is None:
+                continue
+
+            # Insert direct
+            cursor.execute(query, (asal_id, tujuan_id, faktor, 1))
+            inserted += cursor.rowcount
+
+            # Insert inverse (konversi balik)
+            faktor_balik = (Decimal('1') / faktor).quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
+            cursor.execute(query, (tujuan_id, asal_id, faktor_balik, 1))
+            inserted += cursor.rowcount
+
+        _logger.info(f"Seed tabel konversi_satuan: {inserted} baris berhasil diinsert.")
+        return Result(True, inserted, None)
+    except mysql.connector.Error as e:
+        err_msg = f"ERR-DB-SEED-001: Gagal seed tabel konversi_satuan (MySQL Error {e.errno}: {e.msg})"
+        _logger.error(err_msg)
+        return Result(False, None, err_msg)
+    except Exception as e:
+        err_msg = f"ERR-DB-SEED-001: Gagal seed tabel konversi_satuan (Error: {str(e)})"
+        _logger.error(err_msg)
+        return Result(False, None, err_msg)
+
+
 def verify_seed_integrity(cursor: Any) -> Result:
     """Memverifikasi integritas dan kecocokan jumlah baris seed data setelah inisialisasi.
 
@@ -406,6 +525,20 @@ def run_seed_all(db_connection: Any) -> Result:
             cursor.close()
             return res_configs
 
+        # Satuan Ukur
+        res_satuan = seed_satuan_ukur_default(cursor)
+        if not res_satuan.is_success:
+            db_connection.rollback()
+            cursor.close()
+            return res_satuan
+
+        # Konversi Satuan
+        res_konversi = seed_konversi_satuan_default(cursor)
+        if not res_konversi.is_success:
+            db_connection.rollback()
+            cursor.close()
+            return res_konversi
+
         # 4. Commit Transaksi jika semua sub-seeding sukses
         db_connection.commit()
 
@@ -422,6 +555,8 @@ def run_seed_all(db_connection: Any) -> Result:
             'saldo_ppob_inserted': res_ppob.data,
             'saldo_ewallet_inserted': res_ewallet.data,
             'system_configs_inserted': res_configs.data,
+            'satuan_ukur_inserted': res_satuan.data,
+            'konversi_satuan_inserted': res_konversi.data,
             'report': verify_res.data
         }
         return Result(True, stats, None)

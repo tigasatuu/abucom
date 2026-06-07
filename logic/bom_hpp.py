@@ -66,11 +66,12 @@ def proses_pemotongan_stok(komponen_list: list[BOMKomponen], cabang_id: int, db_
     return Result(False, None, 'ERR-LOGIC-001: Fitur pemotongan stok belum diimplementasikan.')
 
 
-def validasi_data_barang(data: dict) -> ValidationResult:
+def validasi_data_barang(data: dict, satuan_valid_list: list[str] | None = None) -> ValidationResult:
     """Fungsi murni untuk memvalidasi dan membersihkan data input barang baru/edit.
 
     Args:
         data (dict): Dictionary mentah dari input CLI yang belum divalidasi.
+        satuan_valid_list (list[str] | None): Daftar satuan valid dari database (opsional).
 
     Returns:
         ValidationResult: NamedTuple berisi status validasi, data bersih, dan pesan error.
@@ -91,10 +92,14 @@ def validasi_data_barang(data: dict) -> ValidationResult:
         if tipe not in ['Retail_ATK', 'Bahan_Baku']:
             return ValidationResult(False, None, "Tipe barang harus 'Retail_ATK' atau 'Bahan_Baku'!")
 
-        # 3. satuan_uom: wajib bernilai salah satu dari ['Rim', 'Lembar', 'Pcs', 'Ml', 'Meter_Persegi']
+        # 3. satuan_uom: wajib bernilai salah satu dari database/hardcoded list
         uom = data.get('satuan_uom')
-        if uom not in ['Rim', 'Lembar', 'Pcs', 'Ml', 'Meter_Persegi']:
-            return ValidationResult(False, None, "Satuan UoM tidak valid!")
+        if satuan_valid_list is not None:
+            if uom not in satuan_valid_list:
+                return ValidationResult(False, None, "Satuan UoM tidak valid! Pilih dari daftar yang tersedia.")
+        else:
+            if uom not in ['Rim', 'Lembar', 'Pcs', 'Ml', 'Meter_Persegi']:
+                return ValidationResult(False, None, "Satuan UoM tidak valid!")
 
         # Helper to parse and quantize decimal
         def parse_decimal(val_raw, field_name, check_positive=True, allow_zero=True):

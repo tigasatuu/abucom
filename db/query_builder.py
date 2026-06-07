@@ -996,12 +996,11 @@ def query_cek_nama_barang_duplikat(
     cursor = None
     try:
         cursor = db_connection.cursor(dictionary=True)
+        query = "SELECT COUNT(*) AS cnt FROM barang WHERE nama_barang = %s AND cabang_id = %s"
+        params = [nama_barang, cabang_id]
         if exclude_id is not None:
-            query = "SELECT COUNT(*) AS cnt FROM barang WHERE nama_barang = %s AND cabang_id = %s AND id != %s"
-            params = (nama_barang, cabang_id, exclude_id)
-        else:
-            query = "SELECT COUNT(*) AS cnt FROM barang WHERE nama_barang = %s AND cabang_id = %s"
-            params = (nama_barang, cabang_id)
+            query += " AND id != %s"
+            params.append(exclude_id)
             
         cursor.execute(query, params)
         res = cursor.fetchone()
@@ -1018,3 +1017,221 @@ def query_cek_nama_barang_duplikat(
     finally:
         if cursor:
             cursor.close()
+
+
+# --- SATUAN UKUR CRUD ---
+
+def fetch_all_satuan_ukur(db_connection, cabang_id: int) -> Result:
+    """Mengambil seluruh data master satuan ukur aktif untuk satu cabang."""
+    query = """
+        SELECT id, nama_satuan, kategori_satuan, simbol, keterangan, is_aktif
+        FROM satuan_ukur
+        WHERE cabang_id = %s AND is_aktif = TRUE
+        ORDER BY kategori_satuan, nama_satuan
+    """
+    return execute_query(db_connection, query, (cabang_id,), fetch_all=True)
+
+
+def fetch_satuan_ukur_by_id(db_connection, satuan_id: int, cabang_id: int) -> Result:
+    """Mengambil satu record satuan ukur berdasarkan ID."""
+    query = """
+        SELECT id, nama_satuan, kategori_satuan, simbol, keterangan, is_aktif
+        FROM satuan_ukur
+        WHERE id = %s AND cabang_id = %s
+    """
+    return execute_query(db_connection, query, (satuan_id, cabang_id), fetch_one=True)
+
+
+def fetch_satuan_ukur_by_nama(db_connection, nama_satuan: str, cabang_id: int) -> Result:
+    """Mengambil satu record satuan ukur berdasarkan nama (untuk validasi duplikasi)."""
+    query = """
+        SELECT id, nama_satuan, kategori_satuan, simbol, keterangan, is_aktif
+        FROM satuan_ukur
+        WHERE nama_satuan = %s AND cabang_id = %s
+    """
+    return execute_query(db_connection, query, (nama_satuan, cabang_id), fetch_one=True)
+
+
+def insert_satuan_ukur(db_connection, data: dict, cabang_id: int) -> Result:
+    """Menyimpan satuan ukur baru ke database."""
+    query = """
+        INSERT INTO satuan_ukur (nama_satuan, kategori_satuan, simbol, keterangan, cabang_id)
+        VALUES (%s, %s, %s, %s, %s)
+    """
+    params = (
+        data['nama_satuan'],
+        data['kategori_satuan'],
+        data.get('simbol', ''),
+        data.get('keterangan', ''),
+        cabang_id
+    )
+    return execute_insert(db_connection, query, params)
+
+
+def update_satuan_ukur(db_connection, satuan_id: int, data: dict, cabang_id: int) -> Result:
+    """Memperbarui data satuan ukur yang sudah ada."""
+    set_clauses = []
+    params = []
+    for key, val in data.items():
+        set_clauses.append(f"{key} = %s")
+        params.append(val)
+    query = f"UPDATE satuan_ukur SET {', '.join(set_clauses)} WHERE id = %s AND cabang_id = %s"
+    params.extend([satuan_id, cabang_id])
+    return execute_query(db_connection, query, tuple(params))
+
+
+def soft_delete_satuan_ukur(db_connection, satuan_id: int, cabang_id: int) -> Result:
+    """Menonaktifkan satuan ukur (set is_aktif = FALSE). Cek dulu apakah masih dipakai di tabel barang."""
+    check_query = """
+        SELECT COUNT(*) AS cnt 
+        FROM barang 
+        WHERE satuan_uom = (SELECT nama_satuan FROM satuan_ukur WHERE id = %s) AND cabang_id = %s
+    """
+    check_res = execute_query(db_connection, check_query, (satuan_id, cabang_id), fetch_one=True)
+    if not check_res.is_success:
+        return check_res
+    if check_res.data and check_res.data['cnt'] > 0:
+        return Result(False, None, "ERR-UOM-005: Satuan tidak dapat dinonaktifkan karena masih digunakan")
+
+    query = "UPDATE satuan_ukur SET is_aktif = FALSE WHERE id = %s AND cabang_id = %s"
+    return execute_query(db_connection, query, (satuan_id, cabang_id))
+
+
+# --- KONVERSI SATUAN CRUD ---
+
+def fetch_all_konversi_satuan(db_connection, cabang_id: int) -> Result:
+    """Mengambil seluruh aturan konversi dengan JOIN ke nama satuan."""
+    query = """
+        SELECT ks.id, ks.satuan_asal_id, ks.satuan_tujuan_id,
+               sa.nama_satuan AS satuan_asal, st.nama_satuan AS satuan_tujuan, 
+               ks.faktor_konversi
+        FROM konversi_satuan ks
+        JOIN satuan_ukur sa ON ks.satuan_asal_id = sa.id
+        JOIN satuan_ukur st ON ks.satuan_tujuan_id = st.id
+        WHERE ks.cabang_id = %s
+        ORDER BY sa.nama_satuan, st.nama_satuan
+    """
+    res = execute_query(db_connection, query, (cabang_id,), fetch_all=True)
+    if res.is_success and res.data:
+        from decimal import Decimal
+        for row in res.data:
+            if row['faktor_konversi'] is not None:
+                row['faktor_konversi'] = Decimal(str(row['faktor_konversi']))
+    return res
+
+
+def fetch_konversi_by_pasangan(db_connection, satuan_asal_id: int, satuan_tujuan_id: int, cabang_id: int) -> Result:
+    """Mengambil faktor konversi antara dua satuan spesifik."""
+    query = """
+        SELECT id, satuan_asal_id, satuan_tujuan_id, faktor_konversi
+        FROM konversi_satuan
+        WHERE satuan_asal_id = %s AND satuan_tujuan_id = %s AND cabang_id = %s
+    """
+    res = execute_query(db_connection, query, (satuan_asal_id, satuan_tujuan_id, cabang_id), fetch_one=True)
+    if res.is_success and res.data:
+        from decimal import Decimal
+        if res.data['faktor_konversi'] is not None:
+            res.data['faktor_konversi'] = Decimal(str(res.data['faktor_konversi']))
+    return res
+
+
+def insert_konversi_satuan(db_connection, data: dict, cabang_id: int) -> Result:
+    """Menyimpan aturan konversi baru. Otomatis buat konversi balik (inverse)."""
+    satuan_asal_id = int(data['satuan_asal_id'])
+    satuan_tujuan_id = int(data['satuan_tujuan_id'])
+    
+    from decimal import Decimal, ROUND_HALF_UP
+    try:
+        faktor_konversi = Decimal(str(data['faktor_konversi']))
+        if faktor_konversi <= 0:
+            return Result(False, None, "ERR-UOM-004: Faktor konversi harus lebih besar dari nol")
+        faktor_balik = (Decimal('1') / faktor_konversi).quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
+    except Exception as e:
+        return Result(False, None, f"ERR-UOM-004: Faktor konversi tidak valid. {str(e)}")
+
+    def op_insert_direct(cursor):
+        query = """
+            INSERT INTO konversi_satuan (satuan_asal_id, satuan_tujuan_id, faktor_konversi, cabang_id)
+            VALUES (%s, %s, %s, %s)
+        """
+        cursor.execute(query, (satuan_asal_id, satuan_tujuan_id, faktor_konversi, cabang_id))
+        return cursor.lastrowid
+
+    def op_insert_inverse(cursor):
+        query = """
+            INSERT INTO konversi_satuan (satuan_asal_id, satuan_tujuan_id, faktor_konversi, cabang_id)
+            VALUES (%s, %s, %s, %s)
+        """
+        cursor.execute(query, (satuan_tujuan_id, satuan_asal_id, faktor_balik, cabang_id))
+        return cursor.lastrowid
+
+    existing = fetch_konversi_by_pasangan(db_connection, satuan_asal_id, satuan_tujuan_id, cabang_id)
+    if existing.is_success and existing.data:
+        return Result(False, None, "ERR-UOM-006: Aturan konversi sudah ada untuk pasangan satuan ini")
+
+    return execute_acid_transaction(db_connection, [op_insert_direct, op_insert_inverse])
+
+
+def update_konversi_satuan(db_connection, konversi_id: int, faktor_baru: Decimal, cabang_id: int) -> Result:
+    """Memperbarui faktor konversi yang sudah ada. Otomatis update konversi balik."""
+    query_select = "SELECT satuan_asal_id, satuan_tujuan_id FROM konversi_satuan WHERE id = %s AND cabang_id = %s"
+    res_select = execute_query(db_connection, query_select, (konversi_id, cabang_id), fetch_one=True)
+    if not res_select.is_success or not res_select.data:
+        return Result(False, None, "ERR-UOM-001: Konversi tidak ditemukan")
+
+    satuan_asal_id = res_select.data['satuan_asal_id']
+    satuan_tujuan_id = res_select.data['satuan_tujuan_id']
+
+    from decimal import Decimal, ROUND_HALF_UP
+    try:
+        faktor_konversi = Decimal(str(faktor_baru))
+        if faktor_konversi <= 0:
+            return Result(False, None, "ERR-UOM-004: Faktor konversi harus lebih besar dari nol")
+        faktor_balik = (Decimal('1') / faktor_konversi).quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
+    except Exception as e:
+        return Result(False, None, f"ERR-UOM-004: Faktor konversi tidak valid. {str(e)}")
+
+    def op_update_direct(cursor):
+        query = "UPDATE konversi_satuan SET faktor_konversi = %s WHERE id = %s AND cabang_id = %s"
+        cursor.execute(query, (faktor_konversi, konversi_id, cabang_id))
+        return cursor.rowcount
+
+    def op_update_inverse(cursor):
+        query = "UPDATE konversi_satuan SET faktor_konversi = %s WHERE satuan_asal_id = %s AND satuan_tujuan_id = %s AND cabang_id = %s"
+        cursor.execute(query, (faktor_balik, satuan_tujuan_id, satuan_asal_id, cabang_id))
+        return cursor.rowcount
+
+    return execute_acid_transaction(db_connection, [op_update_direct, op_update_inverse])
+
+
+def delete_konversi_satuan(db_connection, konversi_id: int, cabang_id: int) -> Result:
+    """Menghapus aturan konversi (hard delete, beserta konversi baliknya)."""
+    query_select = "SELECT satuan_asal_id, satuan_tujuan_id FROM konversi_satuan WHERE id = %s AND cabang_id = %s"
+    res_select = execute_query(db_connection, query_select, (konversi_id, cabang_id), fetch_one=True)
+    if not res_select.is_success or not res_select.data:
+        return Result(False, None, "ERR-UOM-001: Konversi tidak ditemukan")
+
+    satuan_asal_id = res_select.data['satuan_asal_id']
+    satuan_tujuan_id = res_select.data['satuan_tujuan_id']
+
+    def op_delete_direct(cursor):
+        query = "DELETE FROM konversi_satuan WHERE id = %s AND cabang_id = %s"
+        cursor.execute(query, (konversi_id, cabang_id))
+        return cursor.rowcount
+
+    def op_delete_inverse(cursor):
+        query = "DELETE FROM konversi_satuan WHERE satuan_asal_id = %s AND satuan_tujuan_id = %s AND cabang_id = %s"
+        cursor.execute(query, (satuan_tujuan_id, satuan_asal_id, cabang_id))
+        return cursor.rowcount
+
+    return execute_acid_transaction(db_connection, [op_delete_direct, op_delete_inverse])
+
+
+def is_satuan_valid(db_connection, nama_satuan: str, cabang_id: int) -> bool:
+    """Mengecek apakah nama satuan terdaftar dan aktif di master satuan_ukur."""
+    query = "SELECT COUNT(*) AS cnt FROM satuan_ukur WHERE nama_satuan = %s AND cabang_id = %s AND is_aktif = TRUE"
+    res = execute_query(db_connection, query, (nama_satuan, cabang_id), fetch_one=True)
+    if res.is_success and res.data:
+        return res.data['cnt'] > 0
+    return False
+

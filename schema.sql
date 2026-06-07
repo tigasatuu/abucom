@@ -109,6 +109,61 @@ CREATE TABLE supplier (
     CONSTRAINT fk_supplier_cabang_id FOREIGN KEY (cabang_id) REFERENCES cabang(id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci 
   COMMENT='Data vendor penyuplai bahan & retail | Sensitivitas: Operasional | Modul: M.2';
+-- ------------------------------------------------------------
+-- [TABEL 29] satuan_ukur
+-- ------------------------------------------------------------
+CREATE TABLE satuan_ukur (
+    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY 
+        COMMENT 'Identifikasi unik satuan ukur',
+    nama_satuan VARCHAR(30) NOT NULL UNIQUE 
+        COMMENT 'Nama satuan ukur (e.g. Rim, Lembar, Pcs, Ml, Meter_Persegi, Liter, Kg, Botol)',
+    kategori_satuan VARCHAR(30) NOT NULL 
+        COMMENT 'Kategori pengelompokan satuan (e.g. Kuantitas, Panjang, Luas, Volume, Berat)',
+    simbol VARCHAR(10) NOT NULL DEFAULT '' 
+        COMMENT 'Simbol singkatan (e.g. pcs, lbr, rim, ml, m², L, kg)',
+    keterangan TEXT NULL DEFAULT NULL 
+        COMMENT 'Deskripsi tambahan tentang penggunaan satuan ini',
+    is_aktif BOOLEAN NOT NULL DEFAULT TRUE 
+        COMMENT 'Status aktif satuan (soft delete)',
+    cabang_id INT NOT NULL DEFAULT 1 
+        COMMENT 'Identifikasi cabang pemilik data satuan',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP 
+        COMMENT 'Tanggal & waktu baris data dibuat',
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP 
+        COMMENT 'Tanggal & waktu terakhir baris data diperbarui',
+    CONSTRAINT fk_satuan_ukur_cabang_id FOREIGN KEY (cabang_id) 
+        REFERENCES cabang(id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci 
+  COMMENT='Master satuan ukur barang dan bahan baku | Sensitivitas: Operasional | Modul: M.2';
+
+-- ------------------------------------------------------------
+-- [TABEL 30] konversi_satuan
+-- ------------------------------------------------------------
+CREATE TABLE konversi_satuan (
+    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY 
+        COMMENT 'Identifikasi unik baris konversi',
+    satuan_asal_id INT NOT NULL 
+        COMMENT 'Referensi satuan ukur sumber konversi',
+    satuan_tujuan_id INT NOT NULL 
+        COMMENT 'Referensi satuan ukur target konversi',
+    faktor_konversi DECIMAL(15,4) NOT NULL 
+        COMMENT 'Faktor pengali konversi (1 satuan_asal = faktor * satuan_tujuan)',
+    cabang_id INT NOT NULL DEFAULT 1 
+        COMMENT 'Identifikasi cabang pemilik aturan konversi',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP 
+        COMMENT 'Tanggal & waktu baris data dibuat',
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP 
+        COMMENT 'Tanggal & waktu terakhir baris data diperbarui',
+    CONSTRAINT uq_konversi_asal_tujuan UNIQUE (satuan_asal_id, satuan_tujuan_id),
+    CONSTRAINT chk_konversi_faktor CHECK (faktor_konversi > 0),
+    CONSTRAINT fk_konversi_satuan_asal_id FOREIGN KEY (satuan_asal_id) 
+        REFERENCES satuan_ukur(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_konversi_satuan_tujuan_id FOREIGN KEY (satuan_tujuan_id) 
+        REFERENCES satuan_ukur(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_konversi_satuan_cabang_id FOREIGN KEY (cabang_id) 
+        REFERENCES cabang(id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci 
+  COMMENT='Aturan konversi antar satuan ukur | Sensitivitas: Operasional | Modul: M.2';
 
 -- ------------------------------------------------------------
 -- [TABEL 05] barang
