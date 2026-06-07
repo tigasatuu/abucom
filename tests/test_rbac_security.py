@@ -407,3 +407,32 @@ def test_log_access_denied_none_user_and_cabang(mock_log_audit, mock_get_db, cle
     mock_conn.close.assert_called_once()
 
 
+def test_get_visible_modules_pemilik() -> None:
+    """Menguji bahwa peran pemilik memiliki akses ke semua 10 modul."""
+    from middleware.rbac_guard import get_visible_modules
+    mods = get_visible_modules('pemilik')
+    assert len(mods) == 10
+    keys = [m[0] for m in mods]
+    assert keys == ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10']
+
+
+def test_get_visible_modules_kasir() -> None:
+    """Menguji modul yang terlihat untuk peran kasir."""
+    from middleware.rbac_guard import get_visible_modules
+    mods = get_visible_modules('kasir')
+    keys = [m[0] for m in mods]
+    assert 'M1' in keys
+    assert 'M2' not in keys  # Gudang only
+    assert 'M10' not in keys  # Pemilik only (lockdown)
+
+
+def test_get_module_submenus_m1_kasir() -> None:
+    """Menguji filter sub-menu M1 untuk peran kasir."""
+    from middleware.rbac_guard import get_module_submenus
+    submenus = get_module_submenus('M1', 'kasir')
+    menu_ids = [s[0] for s in submenus]
+    assert 'MENU-M1-001' in menu_ids
+    assert 'MENU-M1-003' in menu_ids
+    assert 'MENU-M1-005' not in menu_ids  # Pemilik only
+
+
