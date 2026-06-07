@@ -1235,3 +1235,312 @@ def is_satuan_valid(db_connection, nama_satuan: str, cabang_id: int) -> bool:
         return res.data['cnt'] > 0
     return False
 
+
+def query_daftar_bom_by_induk(db_connection, barang_induk_id: int, cabang_id: int) -> Result:
+    """Mengambil daftar komposisi BOM berdasarkan produk induk.
+
+    Args:
+        db_connection: Objek koneksi database aktif.
+        barang_induk_id (int): ID barang induk.
+        cabang_id (int): ID cabang filter.
+
+    Returns:
+        Result: NamedTuple (is_success, data: list[dict], error_msg).
+    """
+    cursor = None
+    try:
+        from decimal import Decimal
+        cursor = db_connection.cursor(dictionary=True)
+        query = """
+            SELECT bc.id, bc.bahan_baku_id, b.nama_barang, b.satuan_uom, 
+                   bc.kuantitas_desimal, b.harga_beli, b.stok_saat_ini,
+                   bc.created_at, bc.updated_at
+            FROM bom_komposisi bc
+            JOIN barang b ON bc.bahan_baku_id = b.id
+            WHERE bc.barang_induk_id = %s AND bc.cabang_id = %s
+            ORDER BY bc.id ASC
+        """
+        cursor.execute(query, (barang_induk_id, cabang_id))
+        rows = cursor.fetchall()
+        for row in rows:
+            for col in ['kuantitas_desimal', 'harga_beli', 'stok_saat_ini']:
+                if row[col] is not None:
+                    row[col] = Decimal(str(row[col]))
+        return Result(True, rows, None)
+    except mysql.connector.Error as e:
+        error_msg = f"ERR-DB-002: Gagal mengambil daftar BOM (Detail Error: MySQL Error {e.errno}: {e.msg})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    except Exception as e:
+        error_msg = f"ERR-DB-002: Gagal mengambil daftar BOM (Detail Error: {str(e)})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    finally:
+        if cursor:
+            cursor.close()
+
+
+def query_insert_bom_komponen(
+    db_connection, 
+    barang_induk_id: int, 
+    bahan_baku_id: int, 
+    kuantitas_desimal: Any, 
+    cabang_id: int
+) -> Result:
+    """Menyisipkan komponen BOM baru ke database.
+
+    Args:
+        db_connection: Objek koneksi database aktif.
+        barang_induk_id (int): ID barang induk.
+        bahan_baku_id (int): ID bahan baku.
+        kuantitas_desimal (Decimal): Kuantitas bahan baku.
+        cabang_id (int): ID cabang.
+
+    Returns:
+        Result: NamedTuple (is_success, data: int (lastrowid), error_msg).
+    """
+    cursor = None
+    try:
+        cursor = db_connection.cursor(dictionary=True)
+        query = """
+            INSERT INTO bom_komposisi (barang_induk_id, bahan_baku_id, kuantitas_desimal, cabang_id)
+            VALUES (%s, %s, %s, %s)
+        """
+        cursor.execute(query, (barang_induk_id, bahan_baku_id, kuantitas_desimal, cabang_id))
+        db_connection.commit()
+        return Result(True, cursor.lastrowid, None)
+    except mysql.connector.Error as e:
+        try:
+            db_connection.rollback()
+        except Exception:
+            pass
+        if e.errno == 1062:
+            error_msg = "ERR-BOM-001: Bahan baku ini sudah terdaftar dalam formula BOM produk ini!"
+        else:
+            error_msg = f"ERR-DB-007: Kegagalan database saat proses penyimpanan formula BOM! (MySQL Error {e.errno}: {e.msg})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    except Exception as e:
+        try:
+            db_connection.rollback()
+        except Exception:
+            pass
+        error_msg = f"ERR-DB-007: Kegagalan database saat proses penyimpanan formula BOM! (Detail: {str(e)})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    finally:
+        if cursor:
+            cursor.close()
+
+
+def query_update_bom_kuantitas(db_connection, bom_id: int, kuantitas_baru: Any, cabang_id: int) -> Result:
+    """Memperbarui kuantitas pemakaian desimal bahan baku dalam formula BOM.
+
+    Args:
+        db_connection: Objek koneksi database aktif.
+        bom_id (int): ID baris komposisi BOM.
+        kuantitas_baru (Decimal): Nilai kuantitas baru.
+        cabang_id (int): ID cabang.
+
+    Returns:
+        Result: NamedTuple (is_success, data: int (bom_id), error_msg).
+    """
+    cursor = None
+    try:
+        cursor = db_connection.cursor(dictionary=True)
+        query = """
+            UPDATE bom_komposisi 
+            SET kuantitas_desimal = %s 
+            WHERE id = %s AND cabang_id = %s
+        """
+        cursor.execute(query, (kuantitas_baru, bom_id, cabang_id))
+        if cursor.rowcount == 0:
+            return Result(False, None, "ERR-BOM-002: Data komposisi BOM tidak ditemukan!")
+        db_connection.commit()
+        return Result(True, bom_id, None)
+    except mysql.connector.Error as e:
+        try:
+            db_connection.rollback()
+        except Exception:
+            pass
+        error_msg = f"ERR-DB-002: Gagal memperbarui kuantitas BOM (Detail Error: MySQL Error {e.errno}: {e.msg})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    except Exception as e:
+        try:
+            db_connection.rollback()
+        except Exception:
+            pass
+        error_msg = f"ERR-DB-002: Gagal memperbarui kuantitas BOM (Detail Error: {str(e)})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    finally:
+        if cursor:
+            cursor.close()
+
+
+def query_delete_bom_komponen(db_connection, bom_id: int, cabang_id: int) -> Result:
+    """Menghapus komponen bahan baku dari formula BOM.
+
+    Args:
+        db_connection: Objek koneksi database aktif.
+        bom_id (int): ID baris komposisi BOM.
+        cabang_id (int): ID cabang.
+
+    Returns:
+        Result: NamedTuple (is_success, data: int (bom_id), error_msg).
+    """
+    cursor = None
+    try:
+        cursor = db_connection.cursor(dictionary=True)
+        query = """
+            DELETE FROM bom_komposisi 
+            WHERE id = %s AND cabang_id = %s
+        """
+        cursor.execute(query, (bom_id, cabang_id))
+        if cursor.rowcount == 0:
+            return Result(False, None, "ERR-BOM-003: Data komposisi BOM tidak ditemukan atau sudah dihapus!")
+        db_connection.commit()
+        return Result(True, bom_id, None)
+    except mysql.connector.Error as e:
+        try:
+            db_connection.rollback()
+        except Exception:
+            pass
+        error_msg = f"ERR-DB-002: Gagal menghapus komponen BOM (Detail Error: MySQL Error {e.errno}: {e.msg})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    except Exception as e:
+        try:
+            db_connection.rollback()
+        except Exception:
+            pass
+        error_msg = f"ERR-DB-002: Gagal menghapus komponen BOM (Detail Error: {str(e)})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    finally:
+        if cursor:
+            cursor.close()
+
+
+def query_detail_bom_by_id(db_connection, bom_id: int, cabang_id: int) -> Result:
+    """Mengambil detail satu baris komposisi BOM berdasarkan ID.
+
+    Args:
+        db_connection: Objek koneksi database aktif.
+        bom_id (int): ID baris komposisi BOM.
+        cabang_id (int): ID cabang.
+
+    Returns:
+        Result: NamedTuple (is_success, data: dict, error_msg).
+    """
+    cursor = None
+    try:
+        from decimal import Decimal
+        cursor = db_connection.cursor(dictionary=True)
+        query = """
+            SELECT bc.id, bc.barang_induk_id, bc.bahan_baku_id, b.nama_barang, 
+                   b.satuan_uom, bc.kuantitas_desimal, b.harga_beli,
+                   bc.created_at, bc.updated_at
+            FROM bom_komposisi bc
+            JOIN barang b ON bc.bahan_baku_id = b.id
+            WHERE bc.id = %s AND bc.cabang_id = %s
+        """
+        cursor.execute(query, (bom_id, cabang_id))
+        row = cursor.fetchone()
+        if not row:
+            return Result(False, None, "ERR-BOM-002: Data komposisi BOM tidak ditemukan!")
+        for col in ['kuantitas_desimal', 'harga_beli']:
+            if row[col] is not None:
+                row[col] = Decimal(str(row[col]))
+        return Result(True, row, None)
+    except mysql.connector.Error as e:
+        error_msg = f"ERR-DB-002: Gagal mengambil detail BOM (Detail Error: MySQL Error {e.errno}: {e.msg})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    except Exception as e:
+        error_msg = f"ERR-DB-002: Gagal mengambil detail BOM (Detail Error: {str(e)})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    finally:
+        if cursor:
+            cursor.close()
+
+
+def query_daftar_barang_bahan_baku(db_connection, cabang_id: int) -> Result:
+    """Mengambil daftar master barang yang bertipe Bahan_Baku atau Retail_ATK.
+
+    Args:
+        db_connection: Objek koneksi database aktif.
+        cabang_id (int): ID cabang.
+
+    Returns:
+        Result: NamedTuple (is_success, data: list[dict], error_msg).
+    """
+    cursor = None
+    try:
+        from decimal import Decimal
+        cursor = db_connection.cursor(dictionary=True)
+        query = """
+            SELECT id, nama_barang, tipe_barang, satuan_uom, stok_saat_ini, harga_beli
+            FROM barang
+            WHERE cabang_id = %s AND tipe_barang IN ('Bahan_Baku', 'Retail_ATK')
+            ORDER BY nama_barang ASC
+        """
+        cursor.execute(query, (cabang_id,))
+        rows = cursor.fetchall()
+        for row in rows:
+            for col in ['stok_saat_ini', 'harga_beli']:
+                if row[col] is not None:
+                    row[col] = Decimal(str(row[col]))
+        return Result(True, rows, None)
+    except mysql.connector.Error as e:
+        error_msg = f"ERR-DB-002: Gagal mengambil daftar bahan baku (Detail Error: MySQL Error {e.errno}: {e.msg})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    except Exception as e:
+        error_msg = f"ERR-DB-002: Gagal mengambil daftar bahan baku (Detail Error: {str(e)})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    finally:
+        if cursor:
+            cursor.close()
+
+
+def query_validasi_barang_induk(db_connection, barang_induk_id: int, cabang_id: int) -> Result:
+    """Memvalidasi barang induk produk kustom.
+
+    Args:
+        db_connection: Objek koneksi database aktif.
+        barang_induk_id (int): ID barang induk.
+        cabang_id (int): ID cabang.
+
+    Returns:
+        Result: NamedTuple (is_success, data: dict, error_msg).
+    """
+    cursor = None
+    try:
+        cursor = db_connection.cursor(dictionary=True)
+        query = """
+            SELECT id, nama_barang, tipe_barang 
+            FROM barang 
+            WHERE id = %s AND cabang_id = %s
+        """
+        cursor.execute(query, (barang_induk_id, cabang_id))
+        row = cursor.fetchone()
+        if not row:
+            return Result(False, None, "ERR-VAL-008: Barang induk tidak ditemukan!")
+        return Result(True, row, None)
+    except mysql.connector.Error as e:
+        error_msg = f"ERR-DB-002: Gagal memvalidasi barang induk (Detail Error: MySQL Error {e.errno}: {e.msg})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    except Exception as e:
+        error_msg = f"ERR-DB-002: Gagal memvalidasi barang induk (Detail Error: {str(e)})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    finally:
+        if cursor:
+            cursor.close()
+
+

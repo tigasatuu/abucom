@@ -263,11 +263,21 @@ class TestKelolaBarangLogic(unittest.TestCase):
         hpp = hitung_hpp_produk([comp1, comp2])
         self.assertEqual(hpp, Decimal('50000.0000'))
 
-    def test_proses_pemotongan_stok_stub(self):
-        """Skenario Positif/Negatif: Memanggil stub proses pemotongan stok."""
-        res = proses_pemotongan_stok([], 1, None)
-        self.assertFalse(res.is_success)
-        self.assertIn('belum diimplementasikan', res.error_msg)
+    def test_proses_pemotongan_stok_empty(self):
+        """Skenario Positif: Memanggil proses pemotongan stok dengan komponen kosong."""
+        from unittest.mock import MagicMock
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_conn.cursor.return_value = mock_cursor
+        
+        res = proses_pemotongan_stok([], 1, mock_conn)
+        self.assertTrue(res.is_success)
+        self.assertFalse(res.data)
+        self.assertIsNone(res.error_msg)
+        
+        mock_conn.start_transaction.assert_called_once()
+        mock_conn.commit.assert_called_once()
+
 
     def test_validasi_data_barang_missing_nama_field(self):
         """Skenario Negatif: Key nama_barang tidak ada."""

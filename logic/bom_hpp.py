@@ -62,8 +62,55 @@ def proses_pemotongan_stok(komponen_list: list[BOMKomponen], cabang_id: int, db_
     Returns:
         Result: Status keberhasilan operasi pemotongan.
     """
-    # TODO: Implementasi pemotongan stok bahan baku desimal
-    return Result(False, None, 'ERR-LOGIC-001: Fitur pemotongan stok belum diimplementasikan.')
+    cursor = None
+    stok_minus_detected = False
+    try:
+        cursor = db_connection.cursor()
+        db_connection.start_transaction()
+        
+        for comp in komponen_list:
+            # 1. Tarik stok saat ini dengan query terisolasi (Lock row via FOR UPDATE)
+            cursor.execute(
+                "SELECT stok_saat_ini FROM barang WHERE id = %s AND cabang_id = %s FOR UPDATE",
+                (comp.bahan_baku_id, cabang_id)
+            )
+            row = cursor.fetchone()
+            if not row:
+                raise ValueError(f"Bahan baku ID {comp.bahan_baku_id} tidak ditemukan.")
+                
+            stok_sekarang = Decimal(str(row[0]))
+            
+            # Cek deteksi stok minus
+            if stok_sekarang < comp.kuantitas:
+                stok_minus_detected = True
+                
+            # 2. Update pemotongan stok di MySQL (mendukung angka negatif)
+            cursor.execute(
+                "UPDATE barang SET stok_saat_ini = stok_saat_ini - %s WHERE id = %s AND cabang_id = %s",
+                (comp.kuantitas, comp.bahan_baku_id, cabang_id)
+            )
+            
+            # 3. Log Audit Trail
+            new_stok = stok_sekarang - comp.kuantitas
+            old_val = f'{{"stok_saat_ini": {float(stok_sekarang)}}}'
+            new_val = f'{{"stok_saat_ini": {float(new_stok)}}}'
+            cursor.execute(
+                "INSERT INTO audit_logs (pengguna_id, action_type, target_table, old_value, new_value, cabang_id) "
+                "VALUES (1, 'UPDATE', 'barang', %s, %s, %s)",
+                (old_val, new_val, cabang_id)
+            )
+            
+        db_connection.commit()
+        return Result(True, stok_minus_detected, None)
+    except Exception as e:
+        try:
+            db_connection.rollback()
+        except Exception:
+            pass
+        return Result(False, None, f"ERR-DB-007: Gagal memotong stok bahan baku. Detail: {str(e)}")
+    finally:
+        if cursor:
+            cursor.close()
 
 
 def validasi_data_barang(data: dict, satuan_valid_list: list[str] | None = None) -> ValidationResult:
@@ -379,4 +426,79 @@ def hitung_rasio_harga_kuantitas(harga: Decimal, kuantitas: Decimal) -> Result:
 
     rasio = harga / kuantitas
     return Result(True, rasio.quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP), None)
+
+
+def validasi_kuantitas_bom(kuantitas_raw: str) -> ValidationResult:
+    """Memvalidasi kuantitas desimal untuk formula BOM.
+
+    Args:
+        kuantitas_raw (str): Input kuantitas mentah dari pengguna.
+
+    Returns:
+        ValidationResult: NamedTuple (is_valid, cleaned_data, error_msg).
+    """
+    if kuantitas_raw is None or str(kuantitas_raw).strip() == '':
+        return ValidationResult(False, None, "⛔ ERR-VAL-007: Input kuantitas bahan baku tidak valid (harus angka desimal positif > 0)!")
+    try:
+        val = Decimal(str(kuantitas_raw).strip())
+    except (ValueError, InvalidOperation):
+        return ValidationResult(False, None, "⛔ ERR-VAL-007: Input kuantitas bahan baku tidak valid (harus angka desimal positif > 0)!")
+
+    if val <= Decimal('0.0000'):
+        return ValidationResult(False, None, "⛔ ERR-VAL-007: Input kuantitas bahan baku tidak valid (harus angka desimal positif > 0)!")
+
+    cleaned = val.quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
+    return ValidationResult(True, cleaned, None)
+
+
+def validasi_bahan_baku_id(bahan_baku_id_raw: str) -> ValidationResult:
+    """Memvalidasi ID bahan baku.
+
+    Args:
+        bahan_baku_id_raw (str): Input ID bahan baku mentah.
+
+    Returns:
+        ValidationResult: NamedTuple (is_valid, cleaned_data, error_msg).
+    """
+    if bahan_baku_id_raw is None or str(bahan_baku_id_raw).strip() == '':
+        return ValidationResult(False, None, "⛔ ERR-VAL-008: ID bahan baku tidak valid!")
+    try:
+        val_str = str(bahan_baku_id_raw).strip()
+        if '.' in val_str:
+            return ValidationResult(False, None, "⛔ ERR-VAL-008: ID bahan baku tidak valid!")
+        val = int(val_str)
+    except ValueError:
+        return ValidationResult(False, None, "⛔ ERR-VAL-008: ID bahan baku tidak valid!")
+
+    if val <= 0:
+        return ValidationResult(False, None, "⛔ ERR-VAL-008: ID bahan baku tidak valid!")
+
+    return ValidationResult(True, val, None)
+
+
+def buat_audit_payload_bom(
+    action_type: str,
+    old_data: dict | None,
+    new_data: dict | None
+) -> tuple[str, str]:
+    """Fungsi murni untuk menyusun payload JSON audit trail perubahan data formula BOM.
+
+    Args:
+        action_type (str): Tipe aksi ('INSERT', 'UPDATE', 'DELETE').
+        old_data (dict | None): Data sebelum perubahan (None untuk INSERT).
+        new_data (dict | None): Data setelah perubahan (None untuk DELETE).
+
+    Returns:
+        tuple[str, str]: (old_value_json, new_value_json) siap INSERT ke audit_logs.
+    """
+    import json
+    
+    old_converted = _convert_decimals(old_data) if old_data is not None else None
+    new_converted = _convert_decimals(new_data) if new_data is not None else None
+    
+    old_json = json.dumps(old_converted) if old_converted is not None else 'null'
+    new_json = json.dumps(new_converted) if new_converted is not None else 'null'
+    
+    return old_json, new_json
+
 
