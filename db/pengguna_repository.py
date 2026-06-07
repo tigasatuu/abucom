@@ -239,3 +239,88 @@ def reset_failed_login(user_id: int, db_conn: Any) -> Result:
             except Exception:
                 pass
 
+
+def get_password_hash_by_id(user_id: int, db_conn: Any) -> Result:
+    """Mengambil password hash pengguna dari database berdasarkan ID.
+
+    Args:
+        user_id (int): ID pengguna yang dicari password hash-nya.
+        db_conn: Objek koneksi database MySQL dari connection pool.
+
+    Returns:
+        Result: is_success=True dengan data=password_hash (str) jika ditemukan,
+                is_success=False dengan data=None dan error_msg jika terjadi database error atau tidak ditemukan.
+
+    Example:
+        >>> get_password_hash_by_id(1, db_conn)
+        Result(is_success=True, data='$2b$12$...', error_msg=None)
+    """
+    cursor = None
+    try:
+        cursor = db_conn.cursor(dictionary=True)
+        query = "SELECT password_hash FROM pengguna WHERE id = %s"
+        cursor.execute(query, (user_id,))
+        row = cursor.fetchone()
+        if not row:
+            return Result(
+                False,
+                None,
+                'ERR-DB-003: Data Pengguna tidak ditemukan!'
+            )
+        return Result(True, row['password_hash'], None)
+    except Exception as e:
+        return Result(
+            False,
+            None,
+            f'ERR-DB-003: Terjadi kesalahan database: {str(e)}'
+        )
+    finally:
+        if cursor:
+            try:
+                cursor.close()
+            except Exception:
+                pass
+
+
+def update_password_hash(user_id: int, new_password_hash: str, db_conn: Any) -> Result:
+    """Memperbarui password hash pengguna di database secara transaksional (ACID).
+
+    Args:
+        user_id (int): ID pengguna yang akan diperbarui password-nya.
+        new_password_hash (str): String hash bcrypt baru dari kata sandi.
+        db_conn: Objek koneksi database MySQL dari connection pool.
+
+    Returns:
+        Result: is_success=True dengan data=None jika berhasil,
+                is_success=False dengan data=None dan error_msg jika terjadi database error.
+
+    Example:
+        >>> update_password_hash(1, '$2b$12$...', db_conn)
+        Result(is_success=True, data=None, error_msg=None)
+    """
+    cursor = None
+    try:
+        db_conn.start_transaction()
+        cursor = db_conn.cursor()
+        query = "UPDATE pengguna SET password_hash = %s WHERE id = %s"
+        cursor.execute(query, (new_password_hash, user_id))
+        db_conn.commit()
+        return Result(True, None, None)
+    except Exception as e:
+        try:
+            db_conn.rollback()
+        except Exception:
+            pass
+        return Result(
+            False,
+            None,
+            f'ERR-DB-003: Gagal memperbarui password di database: {str(e)}'
+        )
+    finally:
+        if cursor:
+            try:
+                cursor.close()
+            except Exception:
+                pass
+
+

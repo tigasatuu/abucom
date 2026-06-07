@@ -532,7 +532,7 @@ def test_form_ubah_password_ctrl_c(mock_getpass, pemilik_session) -> None:
 @patch('builtins.input')
 def test_form_ubah_password_db_fail(mock_input, mock_print, mock_getpass, mock_get_db, pemilik_session) -> None:
     """Menguji form_ubah_password gagal karena koneksi DB bermasalah."""
-    mock_getpass.return_value = 'OldPass123'
+    mock_getpass.return_value = 'OldPass123!'
     mock_get_db.return_value = Result(False, None, "DB Connect Error")
     mock_input.return_value = ''
     
@@ -546,7 +546,7 @@ def test_form_ubah_password_db_fail(mock_input, mock_print, mock_getpass, mock_g
 @patch('builtins.input')
 def test_form_ubah_password_query_fail(mock_input, mock_print, mock_getpass, mock_get_db, pemilik_session) -> None:
     """Menguji form_ubah_password gagal karena query DB melempar eksepsi."""
-    mock_getpass.return_value = 'OldPass123'
+    mock_getpass.return_value = 'OldPass123!'
     mock_conn = MagicMock()
     mock_cursor = MagicMock()
     mock_get_db.return_value = Result(True, mock_conn, None)
@@ -565,7 +565,7 @@ def test_form_ubah_password_query_fail(mock_input, mock_print, mock_getpass, moc
 @patch('builtins.input')
 def test_form_ubah_password_wrong_old(mock_input, mock_print, mock_getpass, mock_get_db, pemilik_session) -> None:
     """Menguji form_ubah_password gagal karena kata sandi lama tidak cocok."""
-    mock_getpass.return_value = 'OldPassWrong'
+    mock_getpass.return_value = 'OldPassWrong123!'
     mock_conn = MagicMock()
     mock_cursor = MagicMock()
     mock_get_db.return_value = Result(True, mock_conn, None)
@@ -626,7 +626,7 @@ def test_form_ubah_password_validation_fail(mock_input, mock_print, mock_getpass
 @patch('builtins.input')
 def test_form_ubah_password_update_fail(mock_input, mock_print, mock_getpass, mock_get_db, pemilik_session) -> None:
     """Menguji form_ubah_password gagal karena query update melempar eksepsi."""
-    mock_getpass.side_effect = ['OldPass', 'NewPassValid', 'NewPassValid']
+    mock_getpass.side_effect = ['OldPass', 'NewPassValid123!', 'NewPassValid123!']
     mock_conn = MagicMock()
     mock_cursor = MagicMock()
     mock_get_db.return_value = Result(True, mock_conn, None)
@@ -649,7 +649,7 @@ def test_form_ubah_password_update_fail(mock_input, mock_print, mock_getpass, mo
 @patch('builtins.input')
 def test_form_ubah_password_success(mock_input, mock_print, mock_getpass, mock_get_db, pemilik_session) -> None:
     """Menguji form_ubah_password berhasil mengupdate password dan mencatat audit trail."""
-    mock_getpass.side_effect = ['OldPass', 'NewPassValid', 'NewPassValid']
+    mock_getpass.side_effect = ['OldPass', 'NewPassValid123!', 'NewPassValid123!']
     mock_conn = MagicMock()
     mock_cursor = MagicMock()
     mock_get_db.return_value = Result(True, mock_conn, None)

@@ -900,6 +900,8 @@ def form_ubah_password(session_state: dict) -> None:
         session_state (dict): Status sesi aktif pengguna.
     """
     import getpass
+    from logic.pengguna import ubah_password_akun
+
     clear_terminal()
 
     breadcrumb_path = "Dashboard > Ubah Password"
@@ -921,7 +923,8 @@ def form_ubah_password(session_state: dict) -> None:
         print()
 
     try:
-        password_lama = getpass.getpass("Masukkan Password Lama: ")
+        raw_password_lama = getpass.getpass("Masukkan Password Lama: ")
+        password_lama = sanitasi_input_cli(raw_password_lama).strip()
     except (EOFError, KeyboardInterrupt):
         return
 
@@ -932,38 +935,12 @@ def form_ubah_password(session_state: dict) -> None:
         return
 
     db_conn = conn_res.data
-    password_hash = None
     try:
-        cursor = db_conn.cursor(dictionary=True)
-        cursor.execute("SELECT password_hash FROM pengguna WHERE id = %s", (session_state['user_id'],))
-        row = cursor.fetchone()
-        cursor.close()
-        if row:
-            password_hash = row['password_hash']
-    except Exception as e:
-        print(f"⛔ ERR-DB-003: Terjadi kesalahan database: {str(e)}")
-        input("Tekan Enter untuk melanjutkan...")
-        return
-    finally:
-        if not password_hash:
-            try:
-                db_conn.close()
-            except Exception:
-                pass
+        raw_password_baru = getpass.getpass("Masukkan Password Baru: ")
+        password_baru = sanitasi_input_cli(raw_password_baru).strip()
 
-    from middleware.auth_jwt import verify_password, hash_password
-    if not password_hash or not verify_password(password_lama, password_hash):
-        try:
-            db_conn.close()
-        except Exception:
-            pass
-        print("⛔ ERR-AUTH-044: Otorisasi Gagal: Kata sandi lama yang Anda masukkan tidak valid!")
-        input("Tekan Enter untuk melanjutkan...")
-        return
-
-    try:
-        password_baru = getpass.getpass("Masukkan Password Baru: ")
-        konfirmasi_password = getpass.getpass("Masukkan Kembali Password Baru: ")
+        raw_konfirmasi = getpass.getpass("Masukkan Kembali Password Baru: ")
+        konfirmasi_password = sanitasi_input_cli(raw_konfirmasi).strip()
     except (EOFError, KeyboardInterrupt):
         try:
             db_conn.close()
@@ -971,45 +948,40 @@ def form_ubah_password(session_state: dict) -> None:
             pass
         return
 
-    if len(password_baru) < 8 or password_baru != konfirmasi_password:
-        try:
-            db_conn.close()
-        except Exception:
-            pass
-        print("⛔ ERR-VAL-044: Konvalidasi Gagal: Kata sandi baru minimal harus 8 karakter dan bernilai cocok pada kedua input!")
-        input("Tekan Enter untuk melanjutkan...")
-        return
-
-    hashed_baru = hash_password(password_baru)
-
     try:
-        cursor = db_conn.cursor()
-        cursor.execute("UPDATE pengguna SET password_hash = %s WHERE id = %s", (hashed_baru, session_state['user_id']))
-        db_conn.commit()
-        cursor.close()
+        user_id = session_state['user_id']
+        cabang_id = session_state.get('cabang_id', 1)
 
-        from middleware.audit_logger import log_audit_trail
-        log_audit_trail(
-            pengguna_id=session_state['user_id'],
-            action_type='UPDATE',
-            target_table='pengguna',
-            old_val={'field': 'password_hash', 'note': '***REDACTED***'},
-            new_val={'field': 'password_hash', 'note': '***REDACTED***'},
-            cabang_id=session_state.get('cabang_id', 1),
-            db_connection=db_conn
+        result = ubah_password_akun(
+            user_id=user_id,
+            password_lama=password_lama,
+            password_baru=password_baru,
+            konfirmasi_password=konfirmasi_password,
+            cabang_id=cabang_id,
+            db_conn=db_conn
         )
-    except Exception as e:
-        print(f"⛔ ERR-DB-003: Gagal memperbarui password di database: {str(e)}")
+
+        if not result.is_success:
+            print(f"⛔ {result.error_msg}")
+            input("Tekan Enter untuk melanjutkan...")
+            return
+
+        print("✓ Password berhasil diubah! Gunakan sandi baru Anda pada login berikutnya.")
         input("Tekan Enter untuk melanjutkan...")
-        return
+
+        # Force Logout (Hapus Session JWT)
+        session_state['user_id'] = None
+        session_state['username'] = None
+        session_state['role'] = None
+        session_state['cabang_id'] = None
+        session_state['token'] = None
+
     finally:
         try:
             db_conn.close()
         except Exception:
             pass
 
-    print("✓ Password berhasil diubah! Gunakan sandi baru Anda pada login berikutnya.")
-    input("Tekan Enter untuk melanjutkan...")
 
 
 def graceful_exit(session_state: dict) -> None:
