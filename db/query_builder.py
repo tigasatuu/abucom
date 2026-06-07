@@ -259,3 +259,480 @@ def execute_with_retry(
             conn.close()  # Mengembalikan koneksi ke pool
         except Exception as e:
             _logger.warning(f"Gagal mengembalikan koneksi ke pool (Detail Error: {str(e)})")
+
+
+def query_dashboard_pemilik(db_connection, cabang_id: int, tanggal: str) -> Result:
+    """Mengambil data agregasi harian untuk dashboard pemilik.
+
+    (Ref: UC-043 Skenario A — Dashboard Pemilik)
+
+    Args:
+        db_connection: Objek koneksi database aktif.
+        cabang_id (int): ID cabang yang di-query.
+        tanggal (str): Tanggal hari ini (YYYY-MM-DD).
+
+    Returns:
+        Result: NamedTuple berisi status dan dict data dashboard pemilik.
+    """
+    cursor = None
+    try:
+        from decimal import Decimal
+        cursor = db_connection.cursor(dictionary=True)
+
+        # a) Total pendapatan hari ini
+        query_a = """
+            SELECT COALESCE(SUM(total_bayar), 0) AS total_pendapatan
+            FROM transaksi
+            WHERE DATE(tanggal_transaksi) = %s
+              AND status_pembayaran IN ('LUNAS','BELUM LUNAS')
+              AND cabang_id = %s
+        """
+        cursor.execute(query_a, (tanggal, cabang_id))
+        res_a = cursor.fetchone()
+        total_pendapatan = Decimal(str(res_a['total_pendapatan'])) if res_a else Decimal('0.0000')
+
+        # b) Total pengeluaran hari ini
+        query_b = """
+            SELECT COALESCE(SUM(nominal), 0) AS total_pengeluaran
+            FROM pengeluaran
+            WHERE tanggal_pengeluaran = %s AND cabang_id = %s
+        """
+        cursor.execute(query_b, (tanggal, cabang_id))
+        res_b = cursor.fetchone()
+        total_pengeluaran = Decimal(str(res_b['total_pengeluaran'])) if res_b else Decimal('0.0000')
+
+        # c) Total kerugian limbah hari ini
+        query_c = """
+            SELECT COALESCE(SUM(kerugian_nominal), 0) AS total_limbah
+            FROM limbah_produksi
+            WHERE DATE(tanggal_pencatatan) = %s AND cabang_id = %s
+        """
+        cursor.execute(query_c, (tanggal, cabang_id))
+        res_c = cursor.fetchone()
+        total_limbah = Decimal(str(res_c['total_limbah'])) if res_c else Decimal('0.0000')
+
+        # d) Jumlah transaksi per status pembayaran hari ini
+        query_d = """
+            SELECT status_pembayaran, COUNT(*) AS jumlah
+            FROM transaksi
+            WHERE DATE(tanggal_transaksi) = %s AND cabang_id = %s
+            GROUP BY status_pembayaran
+        """
+        cursor.execute(query_d, (tanggal, cabang_id))
+        status_transaksi = cursor.fetchall()
+
+        # e) Alert jatuh tempo pinjaman bank (H-3)
+        query_e = """
+            SELECT tipe_bank, setoran_bulanan, tanggal_jatuh_tempo,
+                   DATEDIFF(tanggal_jatuh_tempo, CURDATE()) AS sisa_hari
+            FROM pinjaman_bank
+            WHERE status_pinjaman = 'BELUM LUNAS'
+              AND DATEDIFF(tanggal_jatuh_tempo, CURDATE()) <= 3
+              AND DATEDIFF(tanggal_jatuh_tempo, CURDATE()) >= 0
+              AND cabang_id = %s
+        """
+        cursor.execute(query_e, (cabang_id,))
+        alert_bank = cursor.fetchall()
+
+        # f) Alert jatuh tempo utang supplier (H-3)
+        query_f = """
+            SELECT s.nama_supplier, u.sisa_utang, u.tanggal_jatuh_tempo,
+                   DATEDIFF(u.tanggal_jatuh_tempo, CURDATE()) AS sisa_hari
+            FROM utang_supplier u
+            JOIN supplier s ON u.supplier_id = s.id
+            WHERE u.status_utang = 'BELUM LUNAS'
+              AND DATEDIFF(u.tanggal_jatuh_tempo, CURDATE()) <= 3
+              AND DATEDIFF(u.tanggal_jatuh_tempo, CURDATE()) >= 0
+              AND u.cabang_id = %s
+        """
+        cursor.execute(query_f, (cabang_id,))
+        alert_supplier = cursor.fetchall()
+
+        # Konversi nominal decimal
+        for item in alert_bank:
+            item['setoran_bulanan'] = Decimal(str(item['setoran_bulanan']))
+        for item in alert_supplier:
+            item['sisa_utang'] = Decimal(str(item['sisa_utang']))
+
+        data = {
+            'total_pendapatan': total_pendapatan,
+            'total_pengeluaran': total_pengeluaran,
+            'total_limbah': total_limbah,
+            'status_transaksi': status_transaksi,
+            'alert_bank': alert_bank,
+            'alert_supplier': alert_supplier
+        }
+        return Result(True, data, None)
+    except mysql.connector.Error as e:
+        error_msg = f"ERR-DB-002: Gagal mengambil data dashboard pemilik (Detail Error: MySQL Error {e.errno}: {e.msg})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    except Exception as e:
+        error_msg = f"ERR-DB-002: Gagal mengambil data dashboard pemilik (Detail Error: {str(e)})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    finally:
+        if cursor:
+            cursor.close()
+
+
+def query_dashboard_kasir(db_connection, user_id: int, cabang_id: int, tanggal: str) -> Result:
+    """Mengambil data ringkasan harian untuk dashboard kasir.
+
+    (Ref: UC-043 Skenario B — Dashboard Kasir)
+
+    Args:
+        db_connection: Objek koneksi database aktif.
+        user_id (int): ID pengguna kasir.
+        cabang_id (int): ID cabang yang di-query.
+        tanggal (str): Tanggal hari ini (YYYY-MM-DD).
+
+    Returns:
+        Result: NamedTuple berisi status dan dict data dashboard kasir.
+    """
+    cursor = None
+    try:
+        from decimal import Decimal
+        cursor = db_connection.cursor(dictionary=True)
+
+        # a) Jumlah & total transaksi shift aktif kasir hari ini
+        query_a = """
+            SELECT COUNT(*) AS jumlah_nota, COALESCE(SUM(total_bayar), 0) AS total_kas
+            FROM transaksi
+            WHERE kasir_id = %s AND DATE(tanggal_transaksi) = %s AND cabang_id = %s
+        """
+        cursor.execute(query_a, (user_id, tanggal, cabang_id))
+        res_a = cursor.fetchone()
+        jumlah_nota = res_a['jumlah_nota'] if res_a else 0
+        total_kas = Decimal(str(res_a['total_kas'])) if res_a else Decimal('0.0000')
+
+        # b) Jumlah invoice BELUM LUNAS (pesanan DP)
+        query_b = """
+            SELECT COUNT(*) AS jumlah_belum_lunas
+            FROM transaksi
+            WHERE status_pembayaran = 'BELUM LUNAS'
+              AND DATE(tanggal_transaksi) = %s AND cabang_id = %s
+        """
+        cursor.execute(query_b, (tanggal, cabang_id))
+        res_b = cursor.fetchone()
+        jumlah_belum_lunas = res_b['jumlah_belum_lunas'] if res_b else 0
+
+        # c) Saldo virtual PPOB (2 akun)
+        query_c = """
+            SELECT akun_tipe, saldo_terakhir
+            FROM saldo_ppob WHERE cabang_id = %s
+        """
+        cursor.execute(query_c, (cabang_id,))
+        saldo_ppob = cursor.fetchall()
+        for item in saldo_ppob:
+            item['saldo_terakhir'] = Decimal(str(item['saldo_terakhir']))
+
+        data = {
+            'jumlah_nota': jumlah_nota,
+            'total_kas': total_kas,
+            'jumlah_belum_lunas': jumlah_belum_lunas,
+            'saldo_ppob': saldo_ppob
+        }
+        return Result(True, data, None)
+    except mysql.connector.Error as e:
+        error_msg = f"ERR-DB-002: Gagal mengambil data dashboard kasir (Detail Error: MySQL Error {e.errno}: {e.msg})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    except Exception as e:
+        error_msg = f"ERR-DB-002: Gagal mengambil data dashboard kasir (Detail Error: {str(e)})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    finally:
+        if cursor:
+            cursor.close()
+
+
+def query_dashboard_operasional(db_connection, cabang_id: int) -> Result:
+    """Mengambil data ringkasan harian untuk dashboard desainer/produksi.
+
+    (Ref: UC-043 Skenario C — Dashboard Desainer/Produksi)
+
+    Args:
+        db_connection: Objek koneksi database aktif.
+        cabang_id (int): ID cabang yang di-query.
+
+    Returns:
+        Result: NamedTuple berisi status dan dict data dashboard operasional.
+    """
+    cursor = None
+    try:
+        from decimal import Decimal
+        cursor = db_connection.cursor(dictionary=True)
+
+        # a) Jumlah antrian kerja per status
+        query_a = """
+            SELECT status_antrian, COUNT(*) AS jumlah
+            FROM antrian_kerja WHERE cabang_id = %s
+            GROUP BY status_antrian
+        """
+        cursor.execute(query_a, (cabang_id,))
+        antrian = cursor.fetchall()
+
+        # b) Alert stok bahan baku kritis
+        query_b = """
+            SELECT nama_barang, stok_saat_ini, satuan_uom
+            FROM barang
+            WHERE tipe_barang = 'Bahan_Baku'
+              AND stok_saat_ini <= 5.0000
+              AND cabang_id = %s
+            ORDER BY stok_saat_ini ASC
+            LIMIT 10
+        """
+        cursor.execute(query_b, (cabang_id,))
+        stok_kritis = cursor.fetchall()
+        for item in stok_kritis:
+            item['stok_saat_ini'] = Decimal(str(item['stok_saat_ini']))
+
+        data = {
+            'antrian': antrian,
+            'stok_kritis': stok_kritis
+        }
+        return Result(True, data, None)
+    except mysql.connector.Error as e:
+        error_msg = f"ERR-DB-002: Gagal mengambil data dashboard operasional (Detail Error: MySQL Error {e.errno}: {e.msg})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    except Exception as e:
+        error_msg = f"ERR-DB-002: Gagal mengambil data dashboard operasional (Detail Error: {str(e)})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    finally:
+        if cursor:
+            cursor.close()
+
+
+def query_dashboard_kepala(db_connection, cabang_id: int, tanggal: str) -> Result:
+    """Mengambil data ringkasan harian untuk dashboard kepala percetakan.
+
+    Args:
+        db_connection: Objek koneksi database aktif.
+        cabang_id (int): ID cabang yang di-query.
+        tanggal (str): Tanggal hari ini (YYYY-MM-DD).
+
+    Returns:
+        Result: NamedTuple berisi status dan dict data dashboard kepala.
+    """
+    cursor = None
+    try:
+        cursor = db_connection.cursor(dictionary=True)
+
+        # a) Jumlah staf hadir hari ini
+        query_a = """
+            SELECT COUNT(*) AS jumlah_hadir
+            FROM absensi
+            WHERE tanggal = %s AND status_kehadiran = 'Hadir' AND cabang_id = %s
+        """
+        cursor.execute(query_a, (tanggal, cabang_id))
+        res_a = cursor.fetchone()
+        jumlah_hadir = res_a['jumlah_hadir'] if res_a else 0
+
+        # b) Total staf terdaftar
+        query_b = """
+            SELECT COUNT(*) AS total_staf
+            FROM pengguna WHERE cabang_id = %s AND role != 'pemilik'
+        """
+        cursor.execute(query_b, (cabang_id,))
+        res_b = cursor.fetchone()
+        total_staf = res_b['total_staf'] if res_b else 0
+
+        # c) Draf stock opname pending approval
+        query_c = """
+            SELECT COUNT(*) AS draf_pending
+            FROM stock_opname
+            WHERE status_opname = 'DRAFT' AND cabang_id = %s
+        """
+        cursor.execute(query_c, (cabang_id,))
+        res_c = cursor.fetchone()
+        draf_pending = res_c['draf_pending'] if res_c else 0
+
+        # d) Antrian kerja aktif
+        query_d = """
+            SELECT status_antrian, COUNT(*) AS jumlah
+            FROM antrian_kerja WHERE cabang_id = %s
+            GROUP BY status_antrian
+        """
+        cursor.execute(query_d, (cabang_id,))
+        antrian = cursor.fetchall()
+
+        data = {
+            'jumlah_hadir': jumlah_hadir,
+            'total_staf': total_staf,
+            'draf_pending': draf_pending,
+            'antrian': antrian
+        }
+        return Result(True, data, None)
+    except mysql.connector.Error as e:
+        error_msg = f"ERR-DB-002: Gagal mengambil data dashboard kepala (Detail Error: MySQL Error {e.errno}: {e.msg})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    except Exception as e:
+        error_msg = f"ERR-DB-002: Gagal mengambil data dashboard kepala (Detail Error: {str(e)})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    finally:
+        if cursor:
+            cursor.close()
+
+
+def query_dashboard_gudang(db_connection, cabang_id: int) -> Result:
+    """Mengambil data ringkasan harian untuk dashboard gudang.
+
+    Args:
+        db_connection: Objek koneksi database aktif.
+        cabang_id (int): ID cabang yang di-query.
+
+    Returns:
+        Result: NamedTuple berisi status dan dict data dashboard gudang.
+    """
+    cursor = None
+    try:
+        from decimal import Decimal
+        cursor = db_connection.cursor(dictionary=True)
+
+        # a) Alert stok bahan baku kritis
+        query_a = """
+            SELECT nama_barang, stok_saat_ini, satuan_uom
+            FROM barang
+            WHERE tipe_barang = 'Bahan_Baku'
+              AND stok_saat_ini <= 5.0000
+              AND cabang_id = %s
+            ORDER BY stok_saat_ini ASC
+            LIMIT 10
+        """
+        cursor.execute(query_a, (cabang_id,))
+        stok_kritis = cursor.fetchall()
+        for item in stok_kritis:
+            item['stok_saat_ini'] = Decimal(str(item['stok_saat_ini']))
+
+        # b) Draf stock opname pending
+        query_b = """
+            SELECT COUNT(*) AS draf_pending
+            FROM stock_opname
+            WHERE status_opname = 'DRAFT' AND cabang_id = %s
+        """
+        cursor.execute(query_b, (cabang_id,))
+        res_b = cursor.fetchone()
+        draf_pending = res_b['draf_pending'] if res_b else 0
+
+        # c) Utang supplier jatuh tempo (H-7)
+        query_c = """
+            SELECT s.nama_supplier, u.sisa_utang, u.tanggal_jatuh_tempo
+            FROM utang_supplier u
+            JOIN supplier s ON u.supplier_id = s.id
+            WHERE u.status_utang = 'BELUM LUNAS'
+              AND DATEDIFF(u.tanggal_jatuh_tempo, CURDATE()) <= 7
+              AND u.cabang_id = %s
+            ORDER BY u.tanggal_jatuh_tempo ASC
+        """
+        cursor.execute(query_c, (cabang_id,))
+        utang_supplier = cursor.fetchall()
+        for item in utang_supplier:
+            item['sisa_utang'] = Decimal(str(item['sisa_utang']))
+
+        data = {
+            'stok_kritis': stok_kritis,
+            'draf_pending': draf_pending,
+            'utang_supplier': utang_supplier
+        }
+        return Result(True, data, None)
+    except mysql.connector.Error as e:
+        error_msg = f"ERR-DB-002: Gagal mengambil data dashboard gudang (Detail Error: MySQL Error {e.errno}: {e.msg})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    except Exception as e:
+        error_msg = f"ERR-DB-002: Gagal mengambil data dashboard gudang (Detail Error: {str(e)})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    finally:
+        if cursor:
+            cursor.close()
+
+
+def query_dashboard_pramuniaga(db_connection, cabang_id: int) -> Result:
+    """Mengambil data ringkasan harian untuk dashboard pramuniaga.
+
+    Args:
+        db_connection: Objek koneksi database aktif.
+        cabang_id (int): ID cabang yang di-query.
+
+    Returns:
+        Result: NamedTuple berisi status dan dict data dashboard pramuniaga.
+    """
+    cursor = None
+    try:
+        cursor = db_connection.cursor(dictionary=True)
+
+        query = """
+            SELECT COUNT(*) AS jumlah_antri
+            FROM antrian_kerja
+            WHERE status_antrian = 'Antri' AND cabang_id = %s
+        """
+        cursor.execute(query, (cabang_id,))
+        res = cursor.fetchone()
+        jumlah_antri = res['jumlah_antri'] if res else 0
+
+        data = {
+            'jumlah_antri': jumlah_antri
+        }
+        return Result(True, data, None)
+    except mysql.connector.Error as e:
+        error_msg = f"ERR-DB-002: Gagal mengambil data dashboard pramuniaga (Detail Error: MySQL Error {e.errno}: {e.msg})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    except Exception as e:
+        error_msg = f"ERR-DB-002: Gagal mengambil data dashboard pramuniaga (Detail Error: {str(e)})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    finally:
+        if cursor:
+            cursor.close()
+
+
+def query_dashboard_fotocopy(db_connection, user_id: int, cabang_id: int, tanggal: str) -> Result:
+    """Mengambil data ringkasan harian untuk dashboard fotocopy_print.
+
+    Args:
+        db_connection: Objek koneksi database aktif.
+        user_id (int): ID pengguna fotocopy_print.
+        cabang_id (int): ID cabang yang di-query.
+        tanggal (str): Tanggal hari ini (YYYY-MM-DD).
+
+    Returns:
+        Result: NamedTuple berisi status dan dict data dashboard fotocopy_print.
+    """
+    cursor = None
+    try:
+        from decimal import Decimal
+        cursor = db_connection.cursor(dictionary=True)
+
+        query = """
+            SELECT COUNT(*) AS jumlah_nota, COALESCE(SUM(total_bayar), 0) AS total_kas
+            FROM transaksi
+            WHERE kasir_id = %s AND DATE(tanggal_transaksi) = %s AND cabang_id = %s
+        """
+        cursor.execute(query, (user_id, tanggal, cabang_id))
+        res = cursor.fetchone()
+        jumlah_nota = res['jumlah_nota'] if res else 0
+        total_kas = Decimal(str(res['total_kas'])) if res else Decimal('0.0000')
+
+        data = {
+            'jumlah_nota': jumlah_nota,
+            'total_kas': total_kas
+        }
+        return Result(True, data, None)
+    except mysql.connector.Error as e:
+        error_msg = f"ERR-DB-002: Gagal mengambil data dashboard fotocopy (Detail Error: MySQL Error {e.errno}: {e.msg})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    except Exception as e:
+        error_msg = f"ERR-DB-002: Gagal mengambil data dashboard fotocopy (Detail Error: {str(e)})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    finally:
+        if cursor:
+            cursor.close()

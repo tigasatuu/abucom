@@ -7,7 +7,7 @@ Tanggal: 2026-06-03
 """
 
 from collections import namedtuple
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 # NamedTuple Definition
 DepresiasiResult = namedtuple('DepresiasiResult', ['penyusutan_bulanan', 'akumulasi_penyusutan', 'nilai_buku'])
@@ -46,3 +46,26 @@ def verifikasi_limit_pengeluaran(nominal: Decimal, threshold_limit: Decimal) -> 
     """
     # TODO: Implementasi pengecekan threshold limit opex
     return False
+
+
+def hitung_laba_bersih_harian(
+    total_pendapatan: Decimal,
+    total_pengeluaran: Decimal,
+    total_limbah: Decimal
+) -> Decimal:
+    """Menghitung estimasi laba bersih harian sederhana.
+
+    (Ref: UC-043 Skenario A — Dashboard Pemilik)
+
+    Args:
+        total_pendapatan (Decimal): Total kas masuk transaksi hari ini.
+        total_pengeluaran (Decimal): Total kas keluar pengeluaran hari ini.
+        total_limbah (Decimal): Total kerugian limbah produksi hari ini.
+
+    Returns:
+        Decimal: Estimasi laba bersih harian (bisa negatif jika rugi).
+    """
+    return (total_pendapatan - total_pengeluaran - total_limbah).quantize(
+        Decimal('0.0001'), rounding=ROUND_HALF_UP
+    )
+

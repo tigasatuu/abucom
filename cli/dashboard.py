@@ -7,6 +7,8 @@ Tanggal: 2026-06-06
 """
 
 import sys
+from decimal import Decimal
+from datetime import date
 
 # Import third-party
 try:
@@ -17,6 +19,12 @@ try:
 except ImportError:
     HAS_RICH = False
 
+try:
+    from tabulate import tabulate
+    HAS_TABULATE = True
+except ImportError:
+    HAS_TABULATE = False
+
 # Import local
 from db.db_connector import get_db_connection
 from logic.auth_handler import logout_user
@@ -24,6 +32,530 @@ from middleware.auth_jwt import validate_session_token
 from middleware.rbac_guard import get_visible_menus, get_visible_modules, get_module_submenus, MODULE_NAMES
 from utils.text_formatter import clear_terminal
 from logic.safety_validator import sanitasi_input_cli
+from db.query_builder import (
+    query_dashboard_pemilik,
+    query_dashboard_kasir,
+    query_dashboard_operasional,
+    query_dashboard_kepala,
+    query_dashboard_gudang,
+    query_dashboard_pramuniaga,
+    query_dashboard_fotocopy
+)
+from logic.financial_engine import hitung_laba_bersih_harian
+
+
+def _format_rupiah(nominal: Decimal) -> str:
+    """Format nominal Decimal ke string Rupiah dengan separator ribuan."""
+    return f"Rp {nominal:,.4f}"
+
+
+def _render_dashboard_pemilik(session_state: dict, db_conn, tanggal: str) -> None:
+    res = query_dashboard_pemilik(db_conn, session_state.get('cabang_id', 1), tanggal)
+    if not res.is_success:
+        raise Exception(res.error_msg)
+    data = res.data
+
+    total_pendapatan = data['total_pendapatan']
+    total_pengeluaran = data['total_pengeluaran']
+    total_limbah = data['total_limbah']
+    status_transaksi = data['status_transaksi']
+    alert_bank = data['alert_bank']
+    alert_supplier = data['alert_supplier']
+
+    laba_bersih = hitung_laba_bersih_harian(total_pendapatan, total_pengeluaran, total_limbah)
+
+    if laba_bersih >= 0:
+        laba_text = f"[bold green]{_format_rupiah(laba_bersih)}[/]"
+    else:
+        laba_text = f"[bold red]RUGI {_format_rupiah(laba_bersih)}[/]"
+
+    summary_lines = [
+        f"💰 Total Pendapatan    : {_format_rupiah(total_pendapatan)}",
+        f"💸 Total Pengeluaran   : {_format_rupiah(total_pengeluaran)}",
+        f"🗑️ Kerugian Limbah     : {_format_rupiah(total_limbah)}",
+        "────────────────────────────────────",
+        f"📈 Estimasi Laba Bersih: {laba_text}"
+    ]
+    summary_content = "\n".join(summary_lines)
+
+    headers = ["Status", "Jumlah"]
+    table_rows = []
+    status_map = {item['status_pembayaran']: item['jumlah'] for item in status_transaksi}
+    for st in ['LUNAS', 'BELUM LUNAS', 'BATAL', 'RETUR']:
+        table_rows.append([st, status_map.get(st, 0)])
+
+    if HAS_TABULATE:
+        table_str = tabulate(table_rows, headers=headers, tablefmt="grid")
+    else:
+        table_str = "┌──────────────┬────────┐\n"
+        table_str += "│ Status       │ Jumlah │\n"
+        table_str += "├──────────────┼────────┤\n"
+        for st, count in table_rows:
+            table_str += f"│ {st:<12} │ {count:>6} │\n"
+        table_str += "└──────────────┴────────┘"
+
+    alerts = []
+    for item in alert_bank:
+        tipe = item['tipe_bank']
+        setoran = item['setoran_bulanan']
+        tgl = item['tanggal_jatuh_tempo']
+        sisa = item['sisa_hari']
+        alerts.append(f"• {tipe} - Cicilan {_format_rupiah(setoran)}\n  Jatuh tempo: {tgl} ({sisa} hari lagi)")
+    for item in alert_supplier:
+        nama = item['nama_supplier']
+        utang = item['sisa_utang']
+        tgl = item['tanggal_jatuh_tempo']
+        sisa = item['sisa_hari']
+        alerts.append(f"• Supplier {nama} - Utang {_format_rupiah(utang)}\n  Jatuh tempo: {tgl} ({sisa} hari lagi)")
+
+    if not alerts:
+        alerts_str = "✓ Tidak ada utang jatuh tempo dalam 3 hari."
+    else:
+        alerts_str = "\n".join(alerts)
+
+    if HAS_RICH:
+        _console.print(Panel(
+            summary_content,
+            title=f"[bold magenta]📊 RINGKASAN HARIAN TOKO — {tanggal}[/]",
+            border_style="bold blue",
+            expand=False
+        ))
+        _console.print("[bold white]Status Transaksi Hari Ini:[/]")
+        _console.print(table_str)
+        _console.print()
+        alert_style = "bold yellow" if alerts else "bold green"
+        _console.print(Panel(
+            alerts_str,
+            title=f"[{alert_style}]⚠️ PERINGATAN JATUH TEMPO (H-3)[/]",
+            border_style="yellow" if alerts else "green",
+            expand=False
+        ))
+        _console.print()
+    else:
+        print(f"═══ 📊 RINGKASAN HARIAN TOKO — {tanggal} ═══")
+        for line in summary_lines:
+            clean_line = line.replace("[bold green]", "").replace("[/]", "").replace("[bold red]", "")
+            print(f"  {clean_line}")
+        print("──────────────────────────────────────────────────────")
+        print("Status Transaksi Hari Ini:")
+        print(table_str)
+        print("──────────────────────────────────────────────────────")
+        print("⚠️ PERINGATAN JATUH TEMPO (H-3):")
+        print(alerts_str)
+        print("══════════════════════════════════════════════════════")
+        print()
+
+
+def _render_dashboard_kasir(session_state: dict, db_conn, tanggal: str) -> None:
+    res = query_dashboard_kasir(db_conn, session_state.get('user_id'), session_state.get('cabang_id', 1), tanggal)
+    if not res.is_success:
+        raise Exception(res.error_msg)
+    data = res.data
+
+    jumlah_nota = data['jumlah_nota']
+    total_kas = data['total_kas']
+    jumlah_belum_lunas = data['jumlah_belum_lunas']
+    saldo_ppob = data['saldo_ppob']
+
+    username = session_state.get('username', '')
+    summary_lines = [
+        f"Jumlah Nota Hari Ini   : {jumlah_nota} nota",
+        f"Total Kas Masuk        : {_format_rupiah(total_kas)}"
+    ]
+    if jumlah_belum_lunas > 0:
+        summary_lines.append(f"Invoice BELUM LUNAS    : {jumlah_belum_lunas} nota  [YELLOW]⚠️[/]" if HAS_RICH else f"Invoice BELUM LUNAS    : {jumlah_belum_lunas} nota  ⚠️")
+    else:
+        summary_lines.append(f"Invoice BELUM LUNAS    : {jumlah_belum_lunas} nota")
+
+    summary_content = "\n".join(summary_lines)
+
+    headers = ["Akun PPOB", "Saldo Terakhir"]
+    table_rows = []
+    ppob_map = {item['akun_tipe']: item['saldo_terakhir'] for item in saldo_ppob}
+    
+    accounts = [
+        ('Pulsa_Data', 'Pulsa & Data'),
+        ('Token_Tagihan', 'Token & Tagihan')
+    ]
+    
+    warning_accounts = []
+    for key, display_name in accounts:
+        val = ppob_map.get(key, Decimal('0.0000'))
+        val_str = _format_rupiah(val)
+        if val < Decimal('150000.0000'):
+            warning_accounts.append(display_name)
+            val_str += " ⚠️"
+        table_rows.append([display_name, val_str])
+
+    if HAS_TABULATE:
+        table_str = tabulate(table_rows, headers=headers, tablefmt="grid")
+    else:
+        table_str = "┌──────────────────┬────────────────────┐\n"
+        table_str += "│ Akun PPOB        │ Saldo Terakhir     │\n"
+        table_str += "├──────────────────┼────────────────────┤\n"
+        for name, balance in table_rows:
+            table_str += f"│ {name:<16} │ {balance:<18} │\n"
+        table_str += "└──────────────────┴────────────────────┘"
+
+    warning_str = ""
+    if warning_accounts:
+        names = ", ".join(warning_accounts)
+        warning_str = f"⚠️ PERINGATAN: Saldo {names} < {_format_rupiah(Decimal('150000.0000'))}!"
+
+    if HAS_RICH:
+        _console.print(Panel(
+            summary_content,
+            title=f"[bold magenta]🧾 DASHBOARD KASIR — {username} — {tanggal}[/]",
+            border_style="bold blue",
+            expand=False
+        ))
+        _console.print("[bold white]Saldo PPOB:[/]")
+        _console.print(table_str)
+        if warning_str:
+            _console.print(f"[bold yellow]{warning_str}[/]")
+        _console.print()
+    else:
+        print(f"═══ 🧾 DASHBOARD KASIR — {username} — {tanggal} ═══")
+        for line in summary_lines:
+            print(f"  {line}")
+        print("──────────────────────────────────────────────────────")
+        print("Saldo PPOB:")
+        print(table_str)
+        if warning_str:
+            print(warning_str)
+        print("══════════════════════════════════════════════════════")
+        print()
+
+
+def _render_dashboard_operasional(session_state: dict, db_conn) -> None:
+    res = query_dashboard_operasional(db_conn, session_state.get('cabang_id', 1))
+    if not res.is_success:
+        raise Exception(res.error_msg)
+    data = res.data
+
+    antrian = data['antrian']
+    stok_kritis = data['stok_kritis']
+
+    headers_a = ["Status Antrian", "Jumlah"]
+    antrian_map = {item['status_antrian']: item['jumlah'] for item in antrian}
+    table_rows_a = []
+    for st in ['Antri', 'Proses Desain', 'Produksi', 'Selesai', 'Diambil']:
+        table_rows_a.append([st, antrian_map.get(st, 0)])
+
+    if HAS_TABULATE:
+        table_str_a = tabulate(table_rows_a, headers=headers_a, tablefmt="grid")
+    else:
+        table_str_a = "┌──────────────────┬────────┐\n"
+        table_str_a += "│ Status Antrian   │ Jumlah │\n"
+        table_str_a += "├──────────────────┼────────┤\n"
+        for st, count in table_rows_a:
+            table_str_a += f"│ {st:<16} │ {count:>6} │\n"
+        table_str_a += "└──────────────────┴────────┘"
+
+    headers_s = ["Nama Barang", "Sisa", "Satuan"]
+    table_rows_s = []
+    for item in stok_kritis:
+        stok_val = item['stok_saat_ini']
+        table_rows_s.append([item['nama_barang'], f"{stok_val:,.4f}", item['satuan_uom']])
+
+    if HAS_TABULATE:
+        table_str_s = tabulate(table_rows_s, headers=headers_s, tablefmt="grid") if table_rows_s else "✓ Semua stok bahan baku aman."
+    else:
+        if table_rows_s:
+            table_str_s = "┌────────────────────────┬──────────┬────────┐\n"
+            table_str_s += "│ Nama Barang            │ Sisa     │ Satuan │\n"
+            table_str_s += "├────────────────────────┼──────────┼────────┤\n"
+            for name, sisa, unit in table_rows_s:
+                table_str_s += f"│ {name:<22} │ {sisa:>8} │ {unit:<6} │\n"
+            table_str_s += "└────────────────────────┴──────────┴────────┘"
+        else:
+            table_str_s = "✓ Semua stok bahan baku aman."
+
+    username = session_state.get('username', '')
+    tanggal = date.today().isoformat()
+
+    if HAS_RICH:
+        _console.print(Panel(
+            f"Selamat bekerja, {username}!\nBerikut adalah status antrian cetak dan bahan baku.",
+            title=f"[bold magenta]🏭 DASHBOARD OPERASIONAL — {username} — {tanggal}[/]",
+            border_style="bold blue",
+            expand=False
+        ))
+        _console.print("[bold white]Status Antrian Kerja:[/]")
+        _console.print(table_str_a)
+        _console.print()
+        _console.print("[bold yellow]⚠️ Stok Bahan Baku KRITIS:[/]")
+        _console.print(table_str_s)
+        _console.print()
+    else:
+        print(f"═══ 🏭 DASHBOARD OPERASIONAL — {username} — {tanggal} ═══")
+        print(f"Selamat bekerja, {username}!")
+        print("Status Antrian Kerja:")
+        print(table_str_a)
+        print("──────────────────────────────────────────────────────")
+        print("⚠️ Stok Bahan Baku KRITIS:")
+        print(table_str_s)
+        print("══════════════════════════════════════════════════════")
+        print()
+
+
+def _render_dashboard_kepala(session_state: dict, db_conn, tanggal: str) -> None:
+    res = query_dashboard_kepala(db_conn, session_state.get('cabang_id', 1), tanggal)
+    if not res.is_success:
+        raise Exception(res.error_msg)
+    data = res.data
+
+    jumlah_hadir = data['jumlah_hadir']
+    total_staf = data['total_staf']
+    draf_pending = data['draf_pending']
+    antrian = data['antrian']
+
+    headers_a = ["Status Antrian", "Jumlah"]
+    antrian_map = {item['status_antrian']: item['jumlah'] for item in antrian}
+    table_rows_a = []
+    for st in ['Antri', 'Proses Desain', 'Produksi', 'Selesai', 'Diambil']:
+        table_rows_a.append([st, antrian_map.get(st, 0)])
+
+    if HAS_TABULATE:
+        table_str_a = tabulate(table_rows_a, headers=headers_a, tablefmt="grid")
+    else:
+        table_str_a = "┌──────────────────┬────────┐\n"
+        table_str_a += "│ Status Antrian   │ Jumlah │\n"
+        table_str_a += "├──────────────────┼────────┤\n"
+        for st, count in table_rows_a:
+            table_str_a += f"│ {st:<16} │ {count:>6} │\n"
+        table_str_a += "└──────────────────┴────────┘"
+
+    summary_lines = [
+        f"Staf Hadir Hari Ini  : {jumlah_hadir} dari {total_staf} staf",
+        f"Draf Stock Opname    : {draf_pending} draf pending approval"
+    ]
+    summary_content = "\n".join(summary_lines)
+    username = session_state.get('username', '')
+
+    if HAS_RICH:
+        _console.print(Panel(
+            summary_content,
+            title=f"[bold magenta]👑 DASHBOARD SUPERVISOR — {username} — {tanggal}[/]",
+            border_style="bold blue",
+            expand=False
+        ))
+        _console.print("[bold white]Status Antrian Kerja Aktif:[/]")
+        _console.print(table_str_a)
+        _console.print()
+    else:
+        print(f"═══ 👑 DASHBOARD SUPERVISOR — {username} — {tanggal} ═══")
+        for line in summary_lines:
+            print(f"  {line}")
+        print("──────────────────────────────────────────────────────")
+        print("Status Antrian Kerja Aktif:")
+        print(table_str_a)
+        print("══════════════════════════════════════════════════════")
+        print()
+
+
+def _render_dashboard_gudang(session_state: dict, db_conn) -> None:
+    res = query_dashboard_gudang(db_conn, session_state.get('cabang_id', 1))
+    if not res.is_success:
+        raise Exception(res.error_msg)
+    data = res.data
+
+    stok_kritis = data['stok_kritis']
+    draf_pending = data['draf_pending']
+    utang_supplier = data['utang_supplier']
+
+    headers_s = ["Nama Barang", "Sisa", "Satuan"]
+    table_rows_s = []
+    for item in stok_kritis:
+        stok_val = item['stok_saat_ini']
+        table_rows_s.append([item['nama_barang'], f"{stok_val:,.4f}", item['satuan_uom']])
+
+    if HAS_TABULATE:
+        table_str_s = tabulate(table_rows_s, headers=headers_s, tablefmt="grid") if table_rows_s else "✓ Semua stok bahan baku aman."
+    else:
+        if table_rows_s:
+            table_str_s = "┌────────────────────────┬──────────┬────────┐\n"
+            table_str_s += "│ Nama Barang            │ Sisa     │ Satuan │\n"
+            table_str_s += "├────────────────────────┼──────────┼────────┤\n"
+            for name, sisa, unit in table_rows_s:
+                table_str_s += f"│ {name:<22} │ {sisa:>8} │ {unit:<6} │\n"
+            table_str_s += "└────────────────────────┴──────────┴────────┘"
+        else:
+            table_str_s = "✓ Semua stok bahan baku aman."
+
+    headers_u = ["Nama Supplier", "Sisa Utang", "Jatuh Tempo"]
+    table_rows_u = []
+    for item in utang_supplier:
+        table_rows_u.append([item['nama_supplier'], _format_rupiah(item['sisa_utang']), str(item['tanggal_jatuh_tempo'])])
+
+    if HAS_TABULATE:
+        table_str_u = tabulate(table_rows_u, headers=headers_u, tablefmt="grid") if table_rows_u else "✓ Tidak ada utang supplier jatuh tempo dalam 7 hari."
+    else:
+        if table_rows_u:
+            table_str_u = "┌────────────────────────┬────────────────────┬────────────┐\n"
+            table_str_u += "│ Nama Supplier          │ Sisa Utang         │ Jatuh Tempo│\n"
+            table_str_u += "├────────────────────────┼────────────────────┼────────────┤\n"
+            for name, utang, tgl in table_rows_u:
+                table_str_u += f"│ {name:<22} │ {utang:<18} │ {tgl:<10} │\n"
+            table_str_u += "└────────────────────────┴────────────────────┴────────────┘"
+        else:
+            table_str_u = "✓ Tidak ada utang supplier jatuh tempo dalam 7 hari."
+
+    summary_lines = [
+        f"Draf Stock Opname      : {draf_pending} draf pending approval"
+    ]
+    summary_content = "\n".join(summary_lines)
+
+    username = session_state.get('username', '')
+    tanggal = date.today().isoformat()
+
+    if HAS_RICH:
+        _console.print(Panel(
+            summary_content,
+            title=f"[bold magenta]📦 DASHBOARD GUDANG — {username} — {tanggal}[/]",
+            border_style="bold blue",
+            expand=False
+        ))
+        _console.print("[bold yellow]⚠️ Stok Bahan Baku KRITIS:[/]")
+        _console.print(table_str_s)
+        _console.print()
+        _console.print("[bold red]⚠️ UTANG SUPPLIER DEKAT JATUH TEMPO (H-7):[/]")
+        _console.print(table_str_u)
+        _console.print()
+    else:
+        print(f"═══ 📦 DASHBOARD GUDANG — {username} — {tanggal} ═══")
+        for line in summary_lines:
+            print(f"  {line}")
+        print("──────────────────────────────────────────────────────")
+        print("⚠️ Stok Bahan Baku KRITIS:")
+        print(table_str_s)
+        print("──────────────────────────────────────────────────────")
+        print("⚠️ UTANG SUPPLIER DEKAT JATUH TEMPO (H-7):")
+        print(table_str_u)
+        print("══════════════════════════════════════════════════════")
+        print()
+
+
+def _render_dashboard_pramuniaga(session_state: dict, db_conn) -> None:
+    res = query_dashboard_pramuniaga(db_conn, session_state.get('cabang_id', 1))
+    if not res.is_success:
+        raise Exception(res.error_msg)
+    data = res.data
+
+    jumlah_antri = data['jumlah_antri']
+    username = session_state.get('username', '')
+    tanggal = date.today().isoformat()
+
+    summary_lines = [
+        "Selamat bekerja! Tetap ramah melayani pelanggan CRM.",
+        f"Jumlah antrian pesanan masuk ('Antri'): {jumlah_antri} pekerjaan"
+    ]
+    summary_content = "\n".join(summary_lines)
+
+    if HAS_RICH:
+        _console.print(Panel(
+            summary_content,
+            title=f"[bold magenta]💁 DASHBOARD PRAMUNIAGA — {username} — {tanggal}[/]",
+            border_style="bold blue",
+            expand=False
+        ))
+        _console.print()
+    else:
+        print(f"═══ 💁 DASHBOARD PRAMUNIAGA — {username} — {tanggal} ═══")
+        for line in summary_lines:
+            print(f"  {line}")
+        print("══════════════════════════════════════════════════════")
+        print()
+
+
+def _render_dashboard_fotocopy(session_state: dict, db_conn, tanggal: str) -> None:
+    res = query_dashboard_fotocopy(db_conn, session_state.get('user_id'), session_state.get('cabang_id', 1), tanggal)
+    if not res.is_success:
+        raise Exception(res.error_msg)
+    data = res.data
+
+    jumlah_nota = data['jumlah_nota']
+    total_kas = data['total_kas']
+    username = session_state.get('username', '')
+
+    summary_lines = [
+        "Selamat bekerja! Layani fotokopi dan cetak retail cepat dengan teliti.",
+        f"Jumlah Transaksi Hari Ini: {jumlah_nota} nota",
+        f"Total Omset Fotocopy/Print: {_format_rupiah(total_kas)}"
+    ]
+    summary_content = "\n".join(summary_lines)
+
+    if HAS_RICH:
+        _console.print(Panel(
+            summary_content,
+            title=f"[bold magenta]🖨️ DASHBOARD FOTOCOPY & PRINT — {username} — {tanggal}[/]",
+            border_style="bold blue",
+            expand=False
+        ))
+        _console.print()
+    else:
+        print(f"═══ 🖨️ DASHBOARD FOTOCOPY & PRINT — {username} — {tanggal} ═══")
+        for line in summary_lines:
+            print(f"  {line}")
+        print("══════════════════════════════════════════════════════")
+        print()
+
+
+def _render_summary_panels(session_state: dict) -> None:
+    """Merender panel ringkasan visual harian per peran aktif pengguna.
+
+    (Ref: UC-043)
+
+    Args:
+        session_state (dict): Status sesi aktif pengguna.
+    """
+    role = session_state.get('role', '')
+    tanggal = date.today().isoformat()
+
+    conn_res = get_db_connection()
+    if not conn_res.is_success:
+        warning_msg = f"⚠️ ERR-DB-003: Gagal memuat ringkasan dashboard (Detail: {conn_res.error_msg})"
+        if HAS_RICH:
+            _console.print(f"[bold yellow]{warning_msg}[/]")
+        else:
+            print(warning_msg)
+        return
+
+    db_conn = conn_res.data
+    try:
+        if role == 'pemilik':
+            _render_dashboard_pemilik(session_state, db_conn, tanggal)
+        elif role == 'kepala_percetakan':
+            _render_dashboard_kepala(session_state, db_conn, tanggal)
+        elif role == 'kasir':
+            _render_dashboard_kasir(session_state, db_conn, tanggal)
+        elif role in ('desainer', 'produksi_cetak'):
+            _render_dashboard_operasional(session_state, db_conn)
+        elif role == 'gudang':
+            _render_dashboard_gudang(session_state, db_conn)
+        elif role == 'pramuniaga':
+            _render_dashboard_pramuniaga(session_state, db_conn)
+        elif role == 'fotocopy_print':
+            _render_dashboard_fotocopy(session_state, db_conn, tanggal)
+        else:
+            msg = "Selamat bekerja! Jalankan tugas dengan aman dan teliti."
+            if HAS_RICH:
+                _console.print(Panel(msg, title="[bold white]INFO[/]", border_style="bold blue", expand=False))
+            else:
+                print("═══ INFO ═══")
+                print(msg)
+                print("════════════")
+    except Exception as e:
+        warning_msg = f"⚠️ ERR-DB-003: Gagal memuat data ringkasan dashboard (Detail: {str(e)})"
+        if HAS_RICH:
+            _console.print(f"[bold yellow]{warning_msg}[/]")
+        else:
+            print(warning_msg)
+    finally:
+        try:
+            db_conn.close()
+        except Exception:
+            pass
 
 
 def render_dashboard(session_state: dict) -> None:
@@ -79,6 +611,7 @@ def render_dashboard(session_state: dict) -> None:
             ))
             _console.print("Navigasi: Dashboard")
             _console.print()
+            _render_summary_panels(session_state)
             _console.print("[bold white]PILIHAN MODUL:[/]")
             
             # get visible modules
@@ -104,6 +637,7 @@ def render_dashboard(session_state: dict) -> None:
             print(border)
             print("Navigasi: Dashboard")
             print()
+            _render_summary_panels(session_state)
             print("PILIHAN MODUL:")
             visible_mods = get_visible_modules(role)
             for mod_key, mod_name in visible_mods:
