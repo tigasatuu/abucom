@@ -69,6 +69,12 @@ def validasi_kekuatan_sandi(password: str) -> ValidationStatus:
         >>> validasi_kekuatan_sandi('lemah')
         ValidationStatus(is_valid=False, sanitized_data='lemah', error_msg='ERR-VAL-001: ...')
     """
+    if not isinstance(password, str):
+        return ValidationStatus(
+            False,
+            "",
+            "ERR-VAL-001: Sandi Lemah: Tipe data password harus berupa string!"
+        )
     errors: list[str] = []
 
     if len(password) < 8:
@@ -113,6 +119,12 @@ def validasi_panjang_input(raw_input: str, max_length: int, field_name: str) -> 
         >>> validasi_panjang_input('x' * 51, 50, 'username')
         SanitizedInput(is_valid=False, cleaned_value='', error_msg='ERR-VAL-LEN: ...')
     """
+    if not isinstance(raw_input, str):
+        return SanitizedInput(
+            False,
+            "",
+            f"ERR-VAL-LEN: Tipe data {field_name} harus berupa string!"
+        )
     if len(raw_input) > max_length:
         return SanitizedInput(
             False,
@@ -140,6 +152,12 @@ def validasi_format_whatsapp(nomor_wa: str) -> SanitizedInput:
         >>> validasi_format_whatsapp('0812')
         SanitizedInput(is_valid=False, cleaned_value='', error_msg='ERR-VAL-WA: ...')
     """
+    if not isinstance(nomor_wa, str):
+        return SanitizedInput(
+            False,
+            "",
+            "ERR-VAL-WA: Tipe data nomor WhatsApp harus berupa string!"
+        )
     if not re.match(r'^08[0-9]{8,11}$', nomor_wa):
         return SanitizedInput(
             False,
@@ -166,6 +184,12 @@ def validasi_format_tanggal(tanggal_str: str) -> SanitizedInput:
         >>> validasi_format_tanggal('2026-13-45')
         SanitizedInput(is_valid=False, cleaned_value='', error_msg='ERR-VAL-DATE: ...')
     """
+    if not isinstance(tanggal_str, str):
+        return SanitizedInput(
+            False,
+            "",
+            "ERR-VAL-DATE: Tipe data tanggal harus berupa string!"
+        )
     if not re.match(r'^\d{4}-\d{2}-\d{2}$', tanggal_str):
         return SanitizedInput(
             False,
@@ -201,6 +225,12 @@ def validasi_input_numerik_positif(raw_input: str, field_name: str) -> Sanitized
         >>> validasi_input_numerik_positif('-5', 'ID Barang')
         SanitizedInput(is_valid=False, cleaned_value='', error_msg='ERR-VAL-NUM: ...')
     """
+    if not isinstance(raw_input, str):
+        return SanitizedInput(
+            False,
+            "",
+            f"ERR-VAL-NUM: Tipe data {field_name} harus berupa string!"
+        )
     try:
         val = int(raw_input)
         if val <= 0:
@@ -233,6 +263,12 @@ def validasi_input_desimal_positif(raw_input: str, field_name: str) -> Sanitized
         >>> validasi_input_desimal_positif('abc', 'Nominal Rupiah')
         SanitizedInput(is_valid=False, cleaned_value='', error_msg='ERR-VAL-DEC: ...')
     """
+    if not isinstance(raw_input, str):
+        return SanitizedInput(
+            False,
+            "",
+            f"ERR-VAL-DEC: Tipe data {field_name} harus berupa string!"
+        )
     try:
         if not raw_input.strip():
             raise ValueError()
@@ -265,6 +301,12 @@ def validasi_konfirmasi_yn(raw_input: str) -> SanitizedInput:
         >>> validasi_konfirmasi_yn('maybe')
         SanitizedInput(is_valid=False, cleaned_value='', error_msg='ERR-VAL-YN: ...')
     """
+    if not isinstance(raw_input, str):
+        return SanitizedInput(
+            False,
+            "",
+            "ERR-VAL-YN: Tipe data konfirmasi harus berupa string!"
+        )
     cleaned = raw_input.strip().upper()
     if cleaned not in ('Y', 'N'):
         return SanitizedInput(
@@ -294,6 +336,12 @@ def validasi_pilihan_menu(raw_input: str, min_val: int, max_val: int) -> Sanitiz
         >>> validasi_pilihan_menu('99', 0, 10)
         SanitizedInput(is_valid=False, cleaned_value='', error_msg='ERR-VAL-MENU: ...')
     """
+    if not isinstance(raw_input, str):
+        return SanitizedInput(
+            False,
+            "",
+            "ERR-VAL-MENU: Tipe data pilihan menu harus berupa string!"
+        )
     try:
         val = int(raw_input)
         if not (min_val <= val <= max_val):
@@ -326,6 +374,12 @@ def sanitasi_dan_validasi_input(raw_input: str, max_length: int, field_name: str
         >>> sanitasi_dan_validasi_input('\\x1bNama Barang', 100, 'Nama Barang')
         SanitizedInput(is_valid=True, cleaned_value='Nama Barang', error_msg=None)
     """
+    if not isinstance(raw_input, str):
+        return SanitizedInput(
+            False,
+            "",
+            f"ERR-VAL-LEN: Tipe data {field_name} harus berupa string!"
+        )
     sanitized = sanitasi_input_cli(raw_input).strip()
     return validasi_panjang_input(sanitized, max_length, field_name)
 
