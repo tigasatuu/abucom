@@ -25,9 +25,17 @@ from db.query_builder import (
     fetch_all_satuan_ukur, fetch_satuan_ukur_by_id, fetch_satuan_ukur_by_nama,
     insert_satuan_ukur, update_satuan_ukur, soft_delete_satuan_ukur,
     fetch_all_konversi_satuan, fetch_konversi_by_pasangan, insert_konversi_satuan,
-    update_konversi_satuan, delete_konversi_satuan
+    update_konversi_satuan, delete_konversi_satuan,
+    query_daftar_bom_by_induk, query_insert_bom_komponen,
+    query_update_bom_kuantitas, query_delete_bom_komponen,
+    query_detail_bom_by_id, query_daftar_barang_bahan_baku,
+    query_validasi_barang_induk
 )
-from logic.bom_hpp import validasi_data_barang, buat_audit_payload_barang, hitung_margin_barang
+from logic.bom_hpp import (
+    validasi_data_barang, buat_audit_payload_barang, hitung_margin_barang,
+    validasi_kuantitas_bom, validasi_bahan_baku_id, buat_audit_payload_bom,
+    hitung_biaya_komponen, hitung_hpp_produk, BOMKomponen
+)
 from logic.uom_converter import (
     konversi_satuan, hitung_faktor_konversi_balik,
     validasi_data_satuan_ukur, validasi_data_konversi,
@@ -894,16 +902,533 @@ def _lihat_detail_barang(session_state: dict) -> None:
         return
 
 
-def form_komposisi_bom(session_state: dict) -> None:
+@require_role('MENU-M2-002')
+def form_komposisi_bom(session_state: dict, access_level: str = 'DENY') -> None:
     """Formulir manajemen resep Bill of Materials (BOM) produk.
 
     (Ref: Module Structure Bab 4.4 - Modul M.2)
 
     Args:
         session_state (dict): Status sesi aktif pengguna.
+        access_level (str): Level akses peran aktif.
     """
-    # TODO: Implementasi form komposisi BOM
-    print("[PLACEHOLDER] Menu belum diimplementasikan.")
+    role = session_state.get('role', '')
+    cabang_id = session_state.get('cabang_id', 1)
+    user_id = session_state.get('user_id', 1)
+
+    # D.2.2: Otorisasi awal - Hanya pemilik, kepala_percetakan, dan produksi_cetak.
+    if role not in ['pemilik', 'kepala_percetakan', 'produksi_cetak']:
+        console.print("⛔ ERR-AUTH-003: Akses Ditolak: Hak Akses Pemilik Dibutuhkan!", style="bold red")
+        input("Tekan Enter untuk melanjutkan...")
+        return
+
+    while True:
+        os.system('cls' if platform.system() == 'Windows' else 'clear')
+        console.print(Panel(
+            "[bold white]KELOLA KOMPOSISI BOM PRODUK[/]\n"
+            "[blue]Dashboard > M.2 Inventaris > Kelola Komposisi BOM[/]",
+            style="bold white",
+            expand=False
+        ))
+        console.print()
+
+        try:
+            raw_induk_id = _prompt_input("Masukkan ID Produk Induk [0-Kembali]: ")
+            if not raw_induk_id or raw_induk_id == '0':
+                return
+
+            try:
+                barang_induk_id = int(raw_induk_id)
+            except ValueError:
+                console.print("⛔ ID Produk Induk harus berupa angka!", style="bold red")
+                input("Tekan Enter untuk melanjutkan...")
+                continue
+
+            conn_res = get_db_connection()
+            if not conn_res.is_success:
+                console.print(f"⛔ {conn_res.error_msg}", style="bold red")
+                input("Tekan Enter untuk melanjutkan...")
+                return
+            conn = conn_res.data
+
+            try:
+                # Validasi barang induk
+                val_induk_res = query_validasi_barang_induk(conn, barang_induk_id, cabang_id)
+                if not val_induk_res.is_success:
+                    console.print(f"⛔ {val_induk_res.error_msg}", style="bold red")
+                    input("Tekan Enter untuk melanjutkan...")
+                    continue
+                
+                barang_induk = val_induk_res.data
+                nama_induk = barang_induk['nama_barang']
+
+                # Loop sub-menu untuk barang induk yang dipilih
+                while True:
+                    os.system('cls' if platform.system() == 'Windows' else 'clear')
+                    console.print(Panel(
+                        f"[bold white]KELOLA KOMPOSISI BOM[/]\n"
+                        f"[blue]Produk Induk: {nama_induk} (ID: {barang_induk_id})[/]",
+                        style="bold white",
+                        expand=False
+                    ))
+                    console.print()
+
+                    if role == 'produksi_cetak':
+                        console.print("  [1] Lihat Komposisi BOM & HPP")
+                        console.print("  [0] Kembali ke Pilihan Produk Induk")
+                    else:
+                        console.print("  [1] Lihat Komposisi BOM & HPP")
+                        console.print("  [2] Tambah Komponen Bahan Baku")
+                        console.print("  [3] Ubah Kuantitas Komponen")
+                        console.print("  [4] Hapus Komponen dari Formula")
+                        console.print("  [0] Kembali ke Pilihan Produk Induk")
+                    console.print()
+
+                    try:
+                        pilihan = _prompt_input("Pilihan Anda: ")
+                    except (EOFError, KeyboardInterrupt):
+                        break
+
+                    if pilihan == '0':
+                        break
+
+                    if pilihan == '1':
+                        _lihat_komposisi_bom(session_state, barang_induk_id, nama_induk)
+                        input("Tekan Enter untuk melanjutkan...")
+                    elif pilihan == '2':
+                        if role not in ['pemilik', 'kepala_percetakan']:
+                            console.print("⛔ ERR-AUTH-003: Akses Ditolak: Hak Akses Pemilik/Kepala Percetakan Dibutuhkan!", style="bold red")
+                            input("Tekan Enter untuk melanjutkan...")
+                        else:
+                            _tambah_komponen_bom(session_state, barang_induk_id, nama_induk)
+                    elif pilihan == '3':
+                        if role != 'pemilik':
+                            console.print("⛔ ERR-AUTH-003: Akses Ditolak: Hak Akses Pemilik Dibutuhkan!", style="bold red")
+                            input("Tekan Enter untuk melanjutkan...")
+                        else:
+                            _ubah_kuantitas_bom(session_state, barang_induk_id, nama_induk)
+                    elif pilihan == '4':
+                        if role != 'pemilik':
+                            console.print("⛔ ERR-AUTH-003: Akses Ditolak: Hak Akses Pemilik Dibutuhkan!", style="bold red")
+                            input("Tekan Enter untuk melanjutkan...")
+                        else:
+                            _hapus_komponen_bom(session_state, barang_induk_id, nama_induk)
+                    else:
+                        console.print("⛔ Pilihan tidak valid.", style="bold red")
+                        input("Tekan Enter untuk melanjutkan...")
+
+            finally:
+                conn.close()
+
+        except (EOFError, KeyboardInterrupt):
+            return
+
+
+def _lihat_komposisi_bom(session_state: dict, barang_induk_id: int, nama_induk: str) -> None:
+    """Menampilkan detail komposisi BOM dan total HPP produk jadi.
+
+    Args:
+        session_state (dict): Status sesi aktif.
+        barang_induk_id (int): ID barang induk.
+        nama_induk (str): Nama barang induk.
+    """
+    cabang_id = session_state.get('cabang_id', 1)
+    
+    conn_res = get_db_connection()
+    if not conn_res.is_success:
+        console.print(f"⛔ {conn_res.error_msg}", style="bold red")
+        return
+    conn = conn_res.data
+    try:
+        bom_res = query_daftar_bom_by_induk(conn, barang_induk_id, cabang_id)
+        if not bom_res.is_success:
+            console.print(f"⛔ {bom_res.error_msg}", style="bold red")
+            return
+            
+        bom_komponen = bom_res.data
+        if not bom_komponen:
+            console.print(Panel(
+                "[yellow]Belum ada komponen bahan baku terdaftar untuk produk ini.[/]",
+                style="bold yellow",
+                expand=False
+            ))
+            return
+
+        rows = []
+        total_hpp = Decimal('0.0000')
+        for idx, comp in enumerate(bom_komponen, start=1):
+            qty = comp['kuantitas_desimal']
+            h_beli = comp['harga_beli']
+            biaya = (qty * h_beli).quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
+            total_hpp += biaya
+            
+            # Stock coloring: merah <= 0, kuning <= 5
+            stok_val = comp['stok_saat_ini']
+            if stok_val <= 0:
+                stok_display = f"[bold red]{stok_val:,.4f}[/]"
+            elif stok_val <= 5:
+                stok_display = f"[bold yellow]{stok_val:,.4f}[/]"
+            else:
+                stok_display = f"{stok_val:,.4f}"
+
+            rows.append([
+                idx,
+                comp['id'],
+                comp['nama_barang'],
+                comp['satuan_uom'],
+                f"{qty:,.4f}",
+                f"Rp {h_beli:,.4f}",
+                f"Rp {biaya:,.4f}",
+                stok_display
+            ])
+            
+        rows.append([
+            "", "", "TOTAL HPP PRODUK", "", "", "", f"Rp {total_hpp:,.4f}", ""
+        ])
+        
+        headers = ["No", "ID BOM", "Bahan Baku", "Satuan", "Qty Pakai", "H.Beli/Satuan", "Biaya Komponen", "Stok Tersedia"]
+        table_str = tabulate(rows, headers=headers, tablefmt="grid")
+        console.print()
+        console.print(table_str)
+        console.print()
+        console.print(f"[bold green]✓ HPP Riil Produk: Rp {total_hpp:,.4f} per unit[/]")
+        console.print()
+    finally:
+        conn.close()
+
+
+def _tambah_komponen_bom(session_state: dict, barang_induk_id: int, nama_induk: str) -> None:
+    """Sub-flow tambah komponen bahan baku ke formula BOM.
+
+    Args:
+        session_state (dict): Status sesi aktif.
+        barang_induk_id (int): ID barang induk.
+        nama_induk (str): Nama barang induk.
+    """
+    cabang_id = session_state.get('cabang_id', 1)
+    user_id = session_state.get('user_id', 1)
+    
+    os.system('cls' if platform.system() == 'Windows' else 'clear')
+    console.print(Panel(
+        "[bold white]TAMBAH KOMPONEN BAHAN BAKU[/]\n"
+        "[blue]Dashboard > M.2 > BOM > Tambah Komponen[/]",
+        style="bold white",
+        expand=False
+    ))
+    console.print()
+
+    conn_res = get_db_connection()
+    if not conn_res.is_success:
+        console.print(f"⛔ {conn_res.error_msg}", style="bold red")
+        input("Tekan Enter untuk melanjutkan...")
+        return
+    conn = conn_res.data
+    try:
+        # Tampilkan daftar bahan baku tersedia
+        bahan_res = query_daftar_barang_bahan_baku(conn, cabang_id)
+        if not bahan_res.is_success:
+            console.print(f"⛔ {bahan_res.error_msg}", style="bold red")
+            input("Tekan Enter untuk melanjutkan...")
+            return
+            
+        list_bahan = bahan_res.data
+        if not list_bahan:
+            console.print("[yellow]Tidak ada bahan baku yang terdaftar di database.[/]", style="bold yellow")
+            input("Tekan Enter untuk melanjutkan...")
+            return
+
+        rows = []
+        for idx, item in enumerate(list_bahan, start=1):
+            rows.append([
+                idx,
+                item['id'],
+                item['nama_barang'],
+                item['satuan_uom'],
+                f"{item['stok_saat_ini']:,.4f}",
+                f"Rp {item['harga_beli']:,.4f}"
+            ])
+            
+        headers = ["No", "ID", "Nama Bahan", "Satuan", "Stok", "H.Beli/Satuan"]
+        console.print("Daftar Bahan Baku Tersedia:")
+        console.print(tabulate(rows, headers=headers, tablefmt="grid"))
+        console.print()
+
+        raw_bahan_id = _prompt_input("Masukkan ID Bahan Baku [0-Batal]: ")
+        if not raw_bahan_id or raw_bahan_id == '0':
+            return
+            
+        val_id_res = validasi_bahan_baku_id(raw_bahan_id)
+        if not val_id_res.is_valid:
+            console.print(f"{val_id_res.error_msg}", style="bold red")
+            input("Tekan Enter untuk melanjutkan...")
+            return
+            
+        bahan_baku_id = val_id_res.cleaned_data
+        
+        # Cari detail bahan baku yang dipilih
+        selected_bahan = next((b for b in list_bahan if b['id'] == bahan_baku_id), None)
+        if not selected_bahan:
+            console.print("⛔ ID bahan baku tidak valid atau tidak terdaftar di database!", style="bold red")
+            input("Tekan Enter untuk melanjutkan...")
+            return
+
+        raw_qty = _prompt_input("Masukkan Kuantitas Pemakaian (desimal, contoh: 0.0500): ")
+        val_qty_res = validasi_kuantitas_bom(raw_qty)
+        if not val_qty_res.is_valid:
+            console.print(f"{val_qty_res.error_msg}", style="bold red")
+            input("Tekan Enter untuk melanjutkan...")
+            return
+            
+        qty_desimal = val_qty_res.cleaned_data
+        biaya = (qty_desimal * selected_bahan['harga_beli']).quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
+
+        # Tampilkan Konfirmasi
+        console.print()
+        console.print(Panel(
+            f"Produk Induk : {nama_induk}\n"
+            f"Bahan Baku   : {selected_bahan['nama_barang']} (ID: {bahan_baku_id})\n"
+            f"Kuantitas    : {qty_desimal:,.4f} {selected_bahan['satuan_uom']}\n"
+            f"Biaya        : Rp {biaya:,.4f}",
+            title="Konfirmasi Tambah Komponen BOM",
+            expand=False
+        ))
+        console.print()
+        
+        confirm = _prompt_input("Simpan komponen ini? [Y/N]: ")
+        if confirm.upper() == 'Y':
+            ins_res = query_insert_bom_komponen(conn, barang_induk_id, bahan_baku_id, qty_desimal, cabang_id)
+            if not ins_res.is_success:
+                console.print(f"⛔ {ins_res.error_msg}", style="bold red")
+                input("Tekan Enter untuk melanjutkan...")
+                return
+
+            last_id = ins_res.data
+            
+            # Log Audit Trail
+            new_data = {
+                'id': last_id,
+                'barang_induk_id': barang_induk_id,
+                'bahan_baku_id': bahan_baku_id,
+                'kuantitas_desimal': qty_desimal,
+                'cabang_id': cabang_id
+            }
+            old_payload, new_payload = buat_audit_payload_bom('INSERT', None, new_data)
+            log_audit_trail(
+                pengguna_id=user_id,
+                action_type='INSERT',
+                target_table='bom_komposisi',
+                old_val=json.loads(old_payload),
+                new_val=json.loads(new_payload),
+                cabang_id=cabang_id,
+                db_connection=conn
+            )
+            
+            console.print("[bold green]✓ Komponen bahan baku berhasil ditambahkan ke formula BOM![/]")
+            input("Tekan Enter untuk melanjutkan...")
+        else:
+            console.print("[yellow]Batal menambahkan komponen bahan baku.[/]")
+            input("Tekan Enter untuk melanjutkan...")
+    finally:
+        conn.close()
+
+
+def _ubah_kuantitas_bom(session_state: dict, barang_induk_id: int, nama_induk: str) -> None:
+    """Sub-flow ubah kuantitas pemakaian bahan baku dalam formula BOM.
+
+    Args:
+        session_state (dict): Status sesi aktif.
+        barang_induk_id (int): ID barang induk.
+        nama_induk (str): Nama barang induk.
+    """
+    cabang_id = session_state.get('cabang_id', 1)
+    user_id = session_state.get('user_id', 1)
+    
+    os.system('cls' if platform.system() == 'Windows' else 'clear')
+    console.print(Panel(
+        "[bold white]UBAH KUANTITAS KOMPONEN BOM[/]\n"
+        "[blue]Dashboard > M.2 > BOM > Ubah Kuantitas[/]",
+        style="bold white",
+        expand=False
+    ))
+    console.print()
+
+    # Tampilkan komposisi existing
+    _lihat_komposisi_bom(session_state, barang_induk_id, nama_induk)
+
+    conn_res = get_db_connection()
+    if not conn_res.is_success:
+        console.print(f"⛔ {conn_res.error_msg}", style="bold red")
+        input("Tekan Enter untuk melanjutkan...")
+        return
+    conn = conn_res.data
+    try:
+        raw_bom_id = _prompt_input("Masukkan ID BOM yang akan diubah [0-Batal]: ")
+        if not raw_bom_id or raw_bom_id == '0':
+            return
+            
+        try:
+            bom_id = int(raw_bom_id)
+        except ValueError:
+            console.print("⛔ ID BOM harus berupa angka!", style="bold red")
+            input("Tekan Enter untuk melanjutkan...")
+            return
+
+        # Ambil detail BOM
+        detail_res = query_detail_bom_by_id(conn, bom_id, cabang_id)
+        if not detail_res.is_success:
+            console.print(f"⛔ {detail_res.error_msg}", style="bold red")
+            input("Tekan Enter untuk melanjutkan...")
+            return
+            
+        bom_data = detail_res.data
+        if bom_data['barang_induk_id'] != barang_induk_id:
+            console.print("⛔ Data komposisi BOM tidak cocok dengan produk induk terpilih!", style="bold red")
+            input("Tekan Enter untuk melanjutkan...")
+            return
+
+        raw_qty = _prompt_input(f"Kuantitas Baru (desimal, saat ini {bom_data['kuantitas_desimal']:,.4f}): ")
+        val_qty_res = validasi_kuantitas_bom(raw_qty)
+        if not val_qty_res.is_valid:
+            console.print(f"{val_qty_res.error_msg}", style="bold red")
+            input("Tekan Enter untuk melanjutkan...")
+            return
+            
+        qty_baru = val_qty_res.cleaned_data
+        
+        # Hitung biaya lama & baru
+        biaya_lama = (bom_data['kuantitas_desimal'] * bom_data['harga_beli']).quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
+        biaya_baru = (qty_baru * bom_data['harga_beli']).quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
+
+        # Tampilkan Diff
+        console.print()
+        console.print(Panel(
+            f"• Kuantitas: {bom_data['kuantitas_desimal']:,.4f} -> {qty_baru:,.4f}\n"
+            f"• Biaya lama: Rp {biaya_lama:,.4f} -> Biaya baru: Rp {biaya_baru:,.4f}",
+            title="Perubahan Kuantitas",
+            style="yellow",
+            expand=False
+        ))
+        console.print()
+        
+        confirm = _prompt_input("Simpan perubahan? [Y/N]: ")
+        if confirm.upper() == 'Y':
+            upd_res = query_update_bom_kuantitas(conn, bom_id, qty_baru, cabang_id)
+            if not upd_res.is_success:
+                console.print(f"⛔ {upd_res.error_msg}", style="bold red")
+                input("Tekan Enter untuk melanjutkan...")
+                return
+
+            # Log Audit Trail
+            new_data = dict(bom_data)
+            new_data['kuantitas_desimal'] = qty_baru
+            
+            old_payload, new_payload = buat_audit_payload_bom('UPDATE', bom_data, new_data)
+            log_audit_trail(
+                pengguna_id=user_id,
+                action_type='UPDATE',
+                target_table='bom_komposisi',
+                old_val=json.loads(old_payload),
+                new_val=json.loads(new_payload),
+                cabang_id=cabang_id,
+                db_connection=conn
+            )
+            
+            console.print("[bold green]✓ Kuantitas komponen BOM berhasil diperbarui![/]")
+            input("Tekan Enter untuk melanjutkan...")
+        else:
+            console.print("[yellow]Perubahan dibatalkan.[/]")
+            input("Tekan Enter untuk melanjutkan...")
+    finally:
+        conn.close()
+
+
+def _hapus_komponen_bom(session_state: dict, barang_induk_id: int, nama_induk: str) -> None:
+    """Sub-flow hapus komponen dari formula BOM.
+
+    Args:
+        session_state (dict): Status sesi aktif.
+        barang_induk_id (int): ID barang induk.
+        nama_induk (str): Nama barang induk.
+    """
+    cabang_id = session_state.get('cabang_id', 1)
+    user_id = session_state.get('user_id', 1)
+    
+    os.system('cls' if platform.system() == 'Windows' else 'clear')
+    console.print(Panel(
+        "[bold red]HAPUS KOMPONEN BOM[/]\n"
+        "[blue]Dashboard > M.2 > BOM > Hapus Komponen[/]",
+        style="bold red",
+        expand=False
+    ))
+    console.print()
+
+    # Tampilkan komposisi existing
+    _lihat_komposisi_bom(session_state, barang_induk_id, nama_induk)
+
+    conn_res = get_db_connection()
+    if not conn_res.is_success:
+        console.print(f"⛔ {conn_res.error_msg}", style="bold red")
+        input("Tekan Enter untuk melanjutkan...")
+        return
+    conn = conn_res.data
+    try:
+        raw_bom_id = _prompt_input("Masukkan ID BOM yang akan dihapus [0-Batal]: ")
+        if not raw_bom_id or raw_bom_id == '0':
+            return
+            
+        try:
+            bom_id = int(raw_bom_id)
+        except ValueError:
+            console.print("⛔ ID BOM harus berupa angka!", style="bold red")
+            input("Tekan Enter untuk melanjutkan...")
+            return
+
+        # Ambil detail BOM
+        detail_res = query_detail_bom_by_id(conn, bom_id, cabang_id)
+        if not detail_res.is_success:
+            console.print(f"⛔ {detail_res.error_msg}", style="bold red")
+            input("Tekan Enter untuk melanjutkan...")
+            return
+            
+        bom_data = detail_res.data
+        if bom_data['barang_induk_id'] != barang_induk_id:
+            console.print("⛔ Data komposisi BOM tidak cocok dengan produk induk terpilih!", style="bold red")
+            input("Tekan Enter untuk melanjutkan...")
+            return
+
+        console.print()
+        console.print("[bold red]⚠️ PERINGATAN: Penghapusan komponen BOM bersifat PERMANEN![/]")
+        console.print(f"Bahan Baku : {bom_data['nama_barang']}\n"
+                      f"Kuantitas  : {bom_data['kuantitas_desimal']:,.4f} {bom_data['satuan_uom']}")
+        console.print()
+        
+        confirm = _prompt_input("Konfirmasi hapus? [Y/N]: ")
+        if confirm.upper() == 'Y':
+            del_res = query_delete_bom_komponen(conn, bom_id, cabang_id)
+            if not del_res.is_success:
+                console.print(f"⛔ {del_res.error_msg}", style="bold red")
+                input("Tekan Enter untuk melanjutkan...")
+                return
+
+            # Log Audit Trail
+            old_payload, _ = buat_audit_payload_bom('DELETE', bom_data, None)
+            log_audit_trail(
+                pengguna_id=user_id,
+                action_type='DELETE',
+                target_table='bom_komposisi',
+                old_val=json.loads(old_payload),
+                new_val=None,
+                cabang_id=cabang_id,
+                db_connection=conn
+            )
+            
+            console.print("[bold green]✓ Komponen BOM berhasil dihapus secara permanen![/]")
+            input("Tekan Enter untuk melanjutkan...")
+        else:
+            console.print("[yellow]Penghapusan dibatalkan.[/]")
+            input("Tekan Enter untuk melanjutkan...")
+    finally:
+        conn.close()
 
 
 def form_mencatat_limbah(session_state: dict) -> None:
