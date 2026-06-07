@@ -736,3 +736,285 @@ def query_dashboard_fotocopy(db_connection, user_id: int, cabang_id: int, tangga
     finally:
         if cursor:
             cursor.close()
+
+
+def query_daftar_barang(
+    db_connection,
+    cabang_id: int,
+    tipe_barang: str | None = None,
+    keyword: str | None = None
+) -> Result:
+    """Mengambil daftar master barang dengan filter opsional.
+
+    Args:
+        db_connection: Objek koneksi database aktif dari pool.
+        cabang_id (int): ID cabang untuk filter multi-branch.
+        tipe_barang (str | None): Filter opsional 'Retail_ATK' atau 'Bahan_Baku'.
+        keyword (str | None): Kata kunci pencarian parsial pada kolom nama_barang.
+
+    Returns:
+        Result: NamedTuple (is_success, data: list[dict], error_msg).
+    """
+    cursor = None
+    try:
+        from decimal import Decimal
+        cursor = db_connection.cursor(dictionary=True)
+        query = """
+            SELECT id, nama_barang, tipe_barang, satuan_uom, stok_saat_ini,
+                   harga_beli, harga_retail, harga_grosir, min_grosir, harga_mitra
+            FROM barang
+            WHERE cabang_id = %s
+        """
+        params = [cabang_id]
+        if tipe_barang:
+            query += " AND tipe_barang = %s"
+            params.append(tipe_barang)
+        if keyword:
+            query += " AND nama_barang LIKE CONCAT('%', %s, '%')"
+            params.append(keyword)
+        
+        query += " ORDER BY tipe_barang ASC, nama_barang ASC"
+        cursor.execute(query, tuple(params))
+        rows = cursor.fetchall()
+        
+        # Convert DECIMAL columns to Decimal
+        for row in rows:
+            for col in ['stok_saat_ini', 'harga_beli', 'harga_retail', 'harga_grosir', 'min_grosir', 'harga_mitra']:
+                if row[col] is not None:
+                    row[col] = Decimal(str(row[col]))
+                    
+        return Result(True, rows, None)
+    except mysql.connector.Error as e:
+        error_msg = f"ERR-DB-002: Eksekusi query gagal (Detail Error: MySQL Error {e.errno}: {e.msg})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    except Exception as e:
+        error_msg = f"ERR-DB-002: Eksekusi query gagal (Detail Error: {str(e)})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    finally:
+        if cursor:
+            cursor.close()
+
+
+def query_detail_barang(
+    db_connection,
+    barang_id: int,
+    cabang_id: int
+) -> Result:
+    """Mengambil detail lengkap satu barang beserta info BOM terkait.
+
+    Args:
+        db_connection: Objek koneksi database aktif.
+        barang_id (int): ID barang yang akan ditampilkan.
+        cabang_id (int): ID cabang untuk filter multi-branch.
+
+    Returns:
+        Result: NamedTuple (is_success, data: dict | None, error_msg).
+    """
+    cursor = None
+    try:
+        from decimal import Decimal
+        cursor = db_connection.cursor(dictionary=True)
+        query = """
+            SELECT id, nama_barang, tipe_barang, satuan_uom, stok_saat_ini,
+                   harga_beli, harga_retail, harga_grosir, min_grosir, harga_mitra,
+                   created_at, updated_at
+            FROM barang
+            WHERE id = %s AND cabang_id = %s
+        """
+        cursor.execute(query, (barang_id, cabang_id))
+        barang = cursor.fetchone()
+        
+        if not barang:
+            return Result(True, None, None)
+            
+        for col in ['stok_saat_ini', 'harga_beli', 'harga_retail', 'harga_grosir', 'min_grosir', 'harga_mitra']:
+            if barang[col] is not None:
+                barang[col] = Decimal(str(barang[col]))
+                
+        # Query BOM Terkait
+        query_bom = """
+            SELECT bc.id, bc.bahan_baku_id, b.nama_barang AS nama_bahan,
+                   bc.kuantitas_desimal, b.harga_beli, b.satuan_uom
+            FROM bom_komposisi bc
+            JOIN barang b ON bc.bahan_baku_id = b.id
+            WHERE bc.barang_induk_id = %s AND bc.cabang_id = %s
+        """
+        cursor.execute(query_bom, (barang_id, cabang_id))
+        bom_rows = cursor.fetchall()
+        
+        for row in bom_rows:
+            if row['kuantitas_desimal'] is not None:
+                row['kuantitas_desimal'] = Decimal(str(row['kuantitas_desimal']))
+            if row['harga_beli'] is not None:
+                row['harga_beli'] = Decimal(str(row['harga_beli']))
+                
+        return Result(True, {'barang': barang, 'bom_komponen': bom_rows}, None)
+    except mysql.connector.Error as e:
+        error_msg = f"ERR-DB-002: Eksekusi query gagal (Detail Error: MySQL Error {e.errno}: {e.msg})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    except Exception as e:
+        error_msg = f"ERR-DB-002: Eksekusi query gagal (Detail Error: {str(e)})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    finally:
+        if cursor:
+            cursor.close()
+
+
+def query_insert_barang(
+    db_connection,
+    data_barang: dict
+) -> Result:
+    """Menyisipkan satu baris data barang baru ke tabel master.
+
+    Args:
+        db_connection: Objek koneksi database aktif.
+        data_barang (dict): Dictionary berisi kolom-kolom barang.
+
+    Returns:
+        Result: NamedTuple (is_success, data: int (lastrowid), error_msg).
+    """
+    query = """
+        INSERT INTO barang (
+            nama_barang, tipe_barang, satuan_uom, stok_saat_ini,
+            harga_beli, harga_retail, harga_grosir, min_grosir, harga_mitra, cabang_id
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """
+    params = (
+        data_barang['nama_barang'],
+        data_barang['tipe_barang'],
+        data_barang['satuan_uom'],
+        data_barang['stok_saat_ini'],
+        data_barang['harga_beli'],
+        data_barang['harga_retail'],
+        data_barang['harga_grosir'],
+        data_barang['min_grosir'],
+        data_barang['harga_mitra'],
+        data_barang['cabang_id']
+    )
+    return execute_insert(db_connection, query, params)
+
+
+def query_update_barang(
+    db_connection,
+    barang_id: int,
+    data_update: dict,
+    cabang_id: int
+) -> Result:
+    """Memperbarui kolom-kolom master data barang yang sudah ada.
+
+    Args:
+        db_connection: Objek koneksi database aktif.
+        barang_id (int): ID barang target update.
+        data_update (dict): Dictionary berisi kolom yang diubah beserta nilai barunya.
+        cabang_id (int): Filter multi-branch wajib pada klausa WHERE.
+
+    Returns:
+        Result: NamedTuple (is_success, data: int (rowcount), error_msg).
+    """
+    if not data_update:
+        return Result(True, 0, None)
+        
+    set_clauses = []
+    params = []
+    for key, val in data_update.items():
+        set_clauses.append(f"{key} = %s")
+        params.append(val)
+        
+    query = f"UPDATE barang SET {', '.join(set_clauses)} WHERE id = %s AND cabang_id = %s"
+    params.extend([barang_id, cabang_id])
+    
+    return execute_query(db_connection, query, tuple(params))
+
+
+def query_delete_barang(
+    db_connection,
+    barang_id: int,
+    cabang_id: int
+) -> Result:
+    """Menghapus satu baris barang dari tabel master.
+
+    Args:
+        db_connection: Objek koneksi database aktif.
+        barang_id (int): ID barang yang akan dihapus.
+        cabang_id (int): Filter multi-branch wajib pada klausa WHERE.
+
+    Returns:
+        Result: NamedTuple (is_success, data: int (rowcount), error_msg).
+    """
+    cursor = None
+    try:
+        cursor = db_connection.cursor(dictionary=True)
+        query = "DELETE FROM barang WHERE id = %s AND cabang_id = %s"
+        cursor.execute(query, (barang_id, cabang_id))
+        db_connection.commit()
+        return Result(True, cursor.rowcount, None)
+    except mysql.connector.Error as e:
+        try:
+            db_connection.rollback()
+        except Exception:
+            pass
+        if e.errno == 1451:
+            error_msg = "ERR-FK-005: Barang tidak dapat dihapus karena masih digunakan dalam formula BOM!"
+        else:
+            error_msg = f"ERR-DB-002: Eksekusi query gagal (Detail Error: MySQL Error {e.errno}: {e.msg})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    except Exception as e:
+        try:
+            db_connection.rollback()
+        except Exception:
+            pass
+        error_msg = f"ERR-DB-002: Eksekusi query gagal (Detail Error: {str(e)})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    finally:
+        if cursor:
+            cursor.close()
+
+
+def query_cek_nama_barang_duplikat(
+    db_connection,
+    nama_barang: str,
+    cabang_id: int,
+    exclude_id: int | None = None
+) -> Result:
+    """Mengecek apakah nama barang sudah terdaftar di cabang yang sama.
+
+    Args:
+        db_connection: Objek koneksi database aktif.
+        nama_barang (str): Nama barang yang akan dicek keunikannya.
+        cabang_id (int): ID cabang untuk scope pengecekan.
+        exclude_id (int | None): ID barang yang dikecualikan (untuk skenario update).
+
+    Returns:
+        Result: NamedTuple (is_success, data: bool (True jika duplikat), error_msg).
+    """
+    cursor = None
+    try:
+        cursor = db_connection.cursor(dictionary=True)
+        if exclude_id is not None:
+            query = "SELECT COUNT(*) AS cnt FROM barang WHERE nama_barang = %s AND cabang_id = %s AND id != %s"
+            params = (nama_barang, cabang_id, exclude_id)
+        else:
+            query = "SELECT COUNT(*) AS cnt FROM barang WHERE nama_barang = %s AND cabang_id = %s"
+            params = (nama_barang, cabang_id)
+            
+        cursor.execute(query, params)
+        res = cursor.fetchone()
+        count = res['cnt'] if res else 0
+        return Result(True, count > 0, None)
+    except mysql.connector.Error as e:
+        error_msg = f"ERR-DB-002: Eksekusi query gagal (Detail Error: MySQL Error {e.errno}: {e.msg})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    except Exception as e:
+        error_msg = f"ERR-DB-002: Eksekusi query gagal (Detail Error: {str(e)})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    finally:
+        if cursor:
+            cursor.close()
