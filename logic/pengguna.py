@@ -282,6 +282,21 @@ def ubah_password_akun(
     from middleware.auth_jwt import verify_password, hash_password
     from middleware.audit_logger import log_audit_trail
 
+    # Input Type and Presence Validations
+    if not isinstance(password_lama, str) or not isinstance(password_baru, str) or not isinstance(konfirmasi_password, str):
+        return Result(
+            False,
+            None,
+            'ERR-VAL-044: Konvalidasi Gagal: Semua parameter input kata sandi harus berupa teks/string!'
+        )
+
+    if not password_lama.strip() or not password_baru.strip() or not konfirmasi_password.strip():
+        return Result(
+            False,
+            None,
+            'ERR-VAL-044: Konvalidasi Gagal: Input kata sandi tidak boleh kosong atau hanya berisi spasi!'
+        )
+
     # Langkah 1: Validasi kecocokan password baru dan konfirmasi
     if len(password_baru) < 8 or password_baru != konfirmasi_password:
         return Result(
@@ -289,6 +304,13 @@ def ubah_password_akun(
             None,
             'ERR-VAL-044: Konvalidasi Gagal: Kata sandi baru minimal harus 8 karakter '
             'dan bernilai cocok pada kedua input!'
+        )
+
+    if len(password_baru) > 128:
+        return Result(
+            False,
+            None,
+            'ERR-VAL-044: Konvalidasi Gagal: Kata sandi baru melebihi batas maksimum 128 karakter!'
         )
 
     # Langkah 2: Validasi kekuatan password baru
