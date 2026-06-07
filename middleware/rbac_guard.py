@@ -279,6 +279,20 @@ MENU_LABELS = {
     'MENU-M10-001': 'Parameter Runtime'
 }
 
+# Map nama modul untuk pengelompokan menu visual (Ref: ACM Bab 3.1)
+MODULE_NAMES = {
+    'M1': 'Modul M.1 — Transaksi & Kebijakan Harga',
+    'M2': 'Modul M.2 — Inventaris, BOM & Stock Opname',
+    'M3': 'Modul M.3 — Layanan Keuangan, PPOB & Jasa Service',
+    'M4': 'Modul M.4 — SDM, Penggajian & Poin Karyawan',
+    'M5': 'Modul M.5 — Antrian & Pelacakan Desain',
+    'M6': 'Modul M.6 — Pinjaman, Aset & Pengeluaran',
+    'M7': 'Modul M.7 — Keamanan, Audit Trail & Hak Akses',
+    'M8': 'Modul M.8 — CRM Pelanggan',
+    'M9': 'Modul M.9 — Skalabilitas Multi-Cabang',
+    'M10': 'Modul M.10 — Konfigurasi Sistem Runtime'
+}
+
 
 def check_menu_permission(menu_id: str, active_role: str) -> str:
     """Memeriksa level akses suatu peran terhadap Menu ID tertentu.
@@ -451,3 +465,50 @@ def get_visible_menus(active_role: str) -> list[tuple[str, str, str]]:
             menu_label = MENU_LABELS.get(menu_id, menu_id)
             visible.append((menu_id, menu_label, access_level))
     return visible
+
+
+def get_visible_modules(active_role: str) -> list[tuple[str, str]]:
+    """Mendapatkan daftar modul yang memiliki minimal satu sub-menu yang diizinkan untuk peran aktif.
+
+    (Ref: ACM v1.2 Bab 4, Module Structure v1.2 Bab 4.2)
+
+    Args:
+        active_role (str): Peran aktif dari sesi pengguna.
+
+    Returns:
+        list[tuple[str, str]]: Daftar tuple (module_key, nama_modul).
+    """
+    visible_modules = []
+    # Urutkan berdasarkan kunci modul dari M1 hingga M10
+    for mod_key in ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10']:
+        for menu_id, permissions in RBAC_MATRIX.items():
+            if menu_id.startswith(f"MENU-{mod_key}-"):
+                access_level = permissions.get(active_role, ACCESS_DENY)
+                if access_level != ACCESS_DENY:
+                    mod_name = MODULE_NAMES.get(mod_key, f"Modul {mod_key}")
+                    visible_modules.append((mod_key, mod_name))
+                    break
+    return visible_modules
+
+
+def get_module_submenus(module_key: str, active_role: str) -> list[tuple[str, str, str]]:
+    """Mendapatkan daftar sub-menu di dalam modul tertentu yang diizinkan untuk peran aktif.
+
+    (Ref: ACM v1.2 Bab 4, Module Structure v1.2 Bab 4.2)
+
+    Args:
+        module_key (str): Kunci modul (contoh: 'M1', 'M2').
+        active_role (str): Peran aktif dari sesi pengguna.
+
+    Returns:
+        list[tuple[str, str, str]]: Daftar tuple (menu_id, nama_menu, level_akses).
+    """
+    submenus = []
+    prefix = f"MENU-{module_key}-"
+    for menu_id, permissions in RBAC_MATRIX.items():
+        if menu_id.startswith(prefix):
+            access_level = permissions.get(active_role, ACCESS_DENY)
+            if access_level != ACCESS_DENY:
+                menu_label = MENU_LABELS.get(menu_id, menu_id)
+                submenus.append((menu_id, menu_label, access_level))
+    return submenus
