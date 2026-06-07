@@ -17,11 +17,11 @@ from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 
-# 3. Local Modules
 from db.config_cache import get_all_configs_list, update_config_value
 from db.db_connector import get_db_connection
 from middleware.rbac_guard import require_role
 from middleware.audit_logger import log_audit_trail
+from logic.safety_validator import sanitasi_input_cli
 
 # Console instance
 _console = Console()
@@ -45,7 +45,7 @@ def show_menu_configs(session_state: dict) -> None:
     if not db_conn_res.is_success:
         _console.print(f"[bold red]⛔ ERR-DB-002: Koneksi database gagal: {db_conn_res.error_msg}[/]")
         _console.print("[yellow]Tekan Enter untuk kembali...[/]")
-        input()
+        sanitasi_input_cli(input())
         return
 
     db_connection = db_conn_res.data
@@ -68,14 +68,14 @@ def show_menu_configs(session_state: dict) -> None:
         if not res.is_success:
             _console.print(f"[bold red]⛔ {res.error_msg}[/]")
             _console.print("[yellow]Tekan Enter untuk kembali...[/]")
-            input()
+            sanitasi_input_cli(input())
             return
 
         configs = res.data
         if not configs:
             _console.print("[yellow]Tidak ada parameter konfigurasi yang ditemukan.[/]")
             _console.print("[yellow]Tekan Enter untuk kembali...[/]")
-            input()
+            sanitasi_input_cli(input())
             return
 
         # Render tabel parameter
@@ -119,7 +119,7 @@ def show_menu_configs(session_state: dict) -> None:
         _console.print(table)
         _console.print()
 
-        pilihan = _console.input("[bold yellow]Masukkan nomor opsi parameter yang akan diubah [0-Kembali]: [/]").strip()
+        pilihan = sanitasi_input_cli(_console.input("[bold yellow]Masukkan nomor opsi parameter yang akan diubah [0-Kembali]: [/]")).strip()
 
         if pilihan == '0':
             break
@@ -132,11 +132,11 @@ def show_menu_configs(session_state: dict) -> None:
             else:
                 _console.print("[bold red]⛔ Input Salah: Nomor opsi tidak valid![/]")
                 _console.print("[yellow]Tekan Enter untuk melanjutkan...[/]")
-                input()
+                sanitasi_input_cli(input())
         except ValueError:
             _console.print("[bold red]⛔ Input Salah: Harap masukkan angka![/]")
             _console.print("[yellow]Tekan Enter untuk melanjutkan...[/]")
-            input()
+            sanitasi_input_cli(input())
 
 
 def form_update_parameter(session_state: dict, config: Any = None) -> None:
@@ -158,7 +158,7 @@ def form_update_parameter(session_state: dict, config: Any = None) -> None:
     if not db_conn_res.is_success:
         _console.print(f"[bold red]⛔ ERR-DB-002: Koneksi database gagal: {db_conn_res.error_msg}[/]")
         _console.print("[yellow]Tekan Enter untuk kembali...[/]")
-        input()
+        sanitasi_input_cli(input())
         return
 
     db_connection = db_conn_res.data
@@ -176,7 +176,7 @@ def form_update_parameter(session_state: dict, config: Any = None) -> None:
         expand=False
     ))
 
-    new_val_input = _console.input(f"[bold yellow]Masukkan nilai baru untuk {config.deskripsi}: [/]").strip()
+    new_val_input = sanitasi_input_cli(_console.input(f"[bold yellow]Masukkan nilai baru untuk {config.deskripsi}: [/]")).strip()
 
     # Validasi input berdasarkan tipe_data
     new_value_str = ""
@@ -190,7 +190,7 @@ def form_update_parameter(session_state: dict, config: Any = None) -> None:
         except (ValueError, InvalidOperation):
             _console.print("[bold red]⛔ ERR-VAL-038: Input Salah: Nilai parameter baru harus diisi berupa angka positif desimal![/]")
             _console.print("[yellow]Tekan Enter untuk kembali ke Daftar Parameter...[/]")
-            input()
+            sanitasi_input_cli(input())
             return
     elif config.tipe_data == 'INTEGER':
         try:
@@ -201,13 +201,13 @@ def form_update_parameter(session_state: dict, config: Any = None) -> None:
         except ValueError:
             _console.print("[bold red]⛔ Input Salah: Nilai parameter baru harus diisi berupa angka bulat positif![/]")
             _console.print("[yellow]Tekan Enter untuk kembali ke Daftar Parameter...[/]")
-            input()
+            sanitasi_input_cli(input())
             return
     else:  # VARCHAR
         if not new_val_input:
             _console.print("[bold red]⛔ Input Salah: Nilai parameter baru tidak boleh kosong![/]")
             _console.print("[yellow]Tekan Enter untuk kembali ke Daftar Parameter...[/]")
-            input()
+            sanitasi_input_cli(input())
             return
         new_value_str = new_val_input
 
@@ -217,11 +217,11 @@ def form_update_parameter(session_state: dict, config: Any = None) -> None:
     _console.print(f"  Nilai Lama : {config.parameter_value}")
     _console.print(f"  Nilai Baru : {new_value_str}")
 
-    confirm = _console.input("[bold yellow]Lanjutkan? [Y/N]: [/]").strip().upper()
+    confirm = sanitasi_input_cli(_console.input("[bold yellow]Lanjutkan? [Y/N]: [/]")).strip().upper()
     if confirm != 'Y':
         _console.print("[yellow]Perubahan dibatalkan.[/]")
         _console.print("[yellow]Tekan Enter untuk kembali ke Daftar Parameter...[/]")
-        input()
+        sanitasi_input_cli(input())
         return
 
     # Eksekusi update
@@ -260,4 +260,4 @@ def form_update_parameter(session_state: dict, config: Any = None) -> None:
         _console.print(f"[bold red]⛔ {res.error_msg}[/]")
 
     _console.print("[yellow]Tekan ENTER untuk kembali ke Daftar Parameter...[/]")
-    input()
+    sanitasi_input_cli(input())

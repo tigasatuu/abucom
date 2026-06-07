@@ -23,6 +23,7 @@ from logic.auth_handler import logout_user
 from middleware.auth_jwt import validate_session_token
 from middleware.rbac_guard import get_visible_menus
 from utils.text_formatter import clear_terminal
+from logic.safety_validator import sanitasi_input_cli
 
 
 # Map nama modul untuk pengelompokan menu visual (Ref: ACM Bab 3.1)
@@ -138,14 +139,16 @@ def render_dashboard(session_state: dict) -> None:
             print()
 
         try:
-            pilihan = input("Pilih Menu: ").strip()
+            raw_pilihan = input("Pilih Menu: ")
+            pilihan = sanitasi_input_cli(raw_pilihan).strip()
         except (EOFError, KeyboardInterrupt):
             pilihan = '0'
 
         if pilihan == '0':
             # Konfirmasi logout sesuai CLI Flow UC-042 langkah 2-3
             try:
-                konfirmasi = input("Apakah Anda yakin ingin logout? [Y/N]: ").strip().lower()
+                raw_konfirmasi = input("Apakah Anda yakin ingin logout? [Y/N]: ")
+                konfirmasi = sanitasi_input_cli(raw_konfirmasi).strip().lower()
             except (EOFError, KeyboardInterrupt):
                 konfirmasi = 'y'  # Graceful exit → anggap logout
 
