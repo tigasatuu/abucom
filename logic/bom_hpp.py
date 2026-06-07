@@ -226,3 +226,152 @@ def hitung_margin_barang(harga_jual: Decimal, harga_beli: Decimal) -> Decimal:
         return Decimal('0.00')
     margin = ((harga_jual - harga_beli) / harga_jual) * 100
     return margin.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+
+def tambah_barang(data: dict) -> Result:
+    """Logika bisnis murni untuk melakukan penambahan data master barang baru secara deterministik.
+
+    Args:
+        data (dict): Dictionary input mentah dari form pendaftaran barang.
+
+    Returns:
+        Result: Status keberhasilan operasi penambahan barang beserta record barang bersih.
+    """
+    if not isinstance(data, dict):
+        return Result(False, None, "⛔ ERR-VAL-009: Input data harus berupa dictionary!")
+
+    # 1. Pengecekan tipe data yang memastikan argumen finansial tidak diinput menggunakan float
+    numeric_fields = ['stok_saat_ini', 'harga_beli', 'harga_retail', 'harga_grosir', 'min_grosir', 'harga_mitra']
+    for field in numeric_fields:
+        if field in data:
+            val = data[field]
+            if isinstance(val, float):
+                return Result(
+                    False,
+                    None,
+                    f"⛔ ERR-VAL-050: Argumen finansial/kuantitas '{field}' tidak boleh menggunakan tipe data float!"
+                )
+
+    # 2. Validasi input menolak karakter escape ilegal pada nama barang (ASCII < 0x20)
+    nama = data.get('nama_barang')
+    if nama is not None:
+        nama_str = str(nama)
+        if any(ord(char) < 0x20 for char in nama_str):
+            return Result(
+                False,
+                None,
+                "⛔ ERR-VAL-009: Nama barang tidak boleh mengandung karakter escape ilegal!"
+            )
+        # 3. Validasi batas karakter (max_length) untuk field nama
+        if len(nama_str.strip()) == 0:
+            return Result(
+                False,
+                None,
+                "⛔ ERR-VAL-009: Nama barang tidak boleh kosong!"
+            )
+        if len(nama_str) > 100:
+            return Result(
+                False,
+                None,
+                "⛔ ERR-VAL-009: Nama barang maksimal 100 karakter!"
+            )
+
+    # Validasi deskripsi (jika disuplai)
+    deskripsi = data.get('deskripsi')
+    if deskripsi is not None:
+        deskripsi_str = str(deskripsi)
+        if len(deskripsi_str) > 500:
+            return Result(
+                False,
+                None,
+                "⛔ ERR-VAL-009: Deskripsi barang melebihi batas maksimum 500 karakter!"
+            )
+
+    # Panggil validator internal untuk verifikasi data lengkap
+    val_res = validasi_data_barang(data)
+    if not val_res.is_valid:
+        err_msg = val_res.error_msg
+        if "ERR-VAL" not in err_msg:
+            err_msg = f"⛔ ERR-VAL-009: {err_msg}"
+        return Result(False, None, err_msg)
+
+    cleaned = val_res.cleaned_data
+    record = BarangRecord(
+        nama_barang=cleaned['nama_barang'],
+        tipe_barang=cleaned['tipe_barang'],
+        satuan_uom=cleaned['satuan_uom'],
+        stok_saat_ini=cleaned['stok_saat_ini'],
+        harga_beli=cleaned['harga_beli'],
+        harga_retail=cleaned['harga_retail'],
+        harga_grosir=cleaned['harga_grosir'],
+        min_grosir=cleaned['min_grosir'],
+        harga_mitra=cleaned['harga_mitra'],
+        cabang_id=cleaned['cabang_id']
+    )
+    return Result(True, record, None)
+
+
+def hitung_dimensi_bahan_baku(panjang: Decimal, lebar: Decimal) -> Decimal:
+    """Menghitung total dimensi/luas bahan baku (panjang x lebar) dengan desimal presisi.
+
+    Args:
+        panjang (Decimal): Ukuran panjang bahan baku.
+        lebar (Decimal): Ukuran lebar bahan baku.
+
+    Returns:
+        Decimal: Total luas permukaan bahan baku, dibulatkan ke 4 desimal (ROUND_HALF_UP).
+    """
+    if isinstance(panjang, float) or isinstance(lebar, float):
+        raise TypeError("Dimensi tidak boleh diinput menggunakan tipe data float!")
+    
+    if not isinstance(panjang, Decimal) or not isinstance(lebar, Decimal):
+        raise TypeError("Dimensi harus berupa Decimal!")
+
+    if panjang < Decimal('0.0000') or lebar < Decimal('0.0000'):
+        raise ValueError("Dimensi panjang dan lebar tidak boleh bernilai negatif!")
+
+    luas = panjang * lebar
+    return luas.quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
+
+
+def hitung_rasio_harga_kuantitas(harga: Decimal, kuantitas: Decimal) -> Result:
+    """Menghitung rasio harga dibagi kuantitas dengan mitigasi pembagian nol secara aman.
+
+    Args:
+        harga (Decimal): Nilai finansial harga.
+        kuantitas (Decimal): Nilai volume/kuantitas barang.
+
+    Returns:
+        Result: Status keberhasilan beserta hasil rasio harga dibagi kuantitas.
+    """
+    if isinstance(harga, float) or isinstance(kuantitas, float):
+        return Result(
+            False,
+            None,
+            "⛔ ERR-VAL-050: Argumen finansial/kuantitas tidak boleh menggunakan tipe data float!"
+        )
+
+    if not isinstance(harga, Decimal) or not isinstance(kuantitas, Decimal):
+        return Result(
+            False,
+            None,
+            "⛔ ERR-VAL-050: Argumen finansial/kuantitas harus berupa tipe data Decimal!"
+        )
+
+    if harga < Decimal('0.0000') or kuantitas < Decimal('0.0000'):
+        return Result(
+            False,
+            None,
+            "⛔ ERR-VAL-009: Nominal harga dan kuantitas tidak boleh bernilai negatif!"
+        )
+
+    if kuantitas == Decimal('0.0000'):
+        return Result(
+            False,
+            None,
+            "⛔ ERR-VAL-009: Perhitungan rasio gagal karena kuantitas bernilai nol (ZeroDivisionError prevented)!"
+        )
+
+    rasio = harga / kuantitas
+    return Result(True, rasio.quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP), None)
+
