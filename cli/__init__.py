@@ -14,6 +14,7 @@ import sys
 from db.db_connector import get_db_connection
 from logic.auth_handler import login_user
 from cli.dashboard import render_dashboard
+from logic.safety_validator import sanitasi_input_cli, sanitasi_dan_validasi_input, MAX_USERNAME_LENGTH
 
 # Check if rich library is available for advanced CLI UI
 try:
@@ -78,7 +79,16 @@ def start_cli_app() -> None:
 
             # Minta input username
             try:
-                username = input("Username: ").strip()
+                raw_username = input("Username: ")
+                val_res = sanitasi_dan_validasi_input(raw_username, MAX_USERNAME_LENGTH, "Username")
+                if not val_res.is_valid:
+                    if HAS_RICH:
+                        _console.print(f"[bold red]⛔ {val_res.error_msg}[/]")
+                    else:
+                        print(f"⛔ {val_res.error_msg}")
+                    input("Tekan Enter untuk melanjutkan...")
+                    continue
+                username = val_res.cleaned_value
             except (EOFError, KeyboardInterrupt):
                 print()
                 if HAS_RICH:
