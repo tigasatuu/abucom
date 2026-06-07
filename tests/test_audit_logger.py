@@ -72,8 +72,8 @@ def test_log_audit_trail_update_with_old_new_value():
     assert params[0] == 2
     assert params[1] == 'UPDATE'
     assert params[2] == 'barang'
-    assert json.loads(params[3]) == {'id': 10, 'harga': 5000.0}
-    assert json.loads(params[4]) == {'id': 10, 'harga': 6000.0}
+    assert json.loads(params[3]) == {'id': 10, 'harga': '5000'}
+    assert json.loads(params[4]) == {'id': 10, 'harga': '6000'}
 
 
 def test_log_audit_trail_delete_old_value_only():
@@ -195,8 +195,8 @@ def test_log_audit_trail_decimal_serialization():
     assert res.is_success is True
     args, _ = mock_cursor.execute.call_args
     params = args[1]
-    assert json.loads(params[3]) == {'sisa_utang': 500000.0}
-    assert json.loads(params[4]) == {'sisa_utang': 0.0}
+    assert json.loads(params[3]) == {'sisa_utang': '500000.0000'}
+    assert json.loads(params[4]) == {'sisa_utang': '0.0000'}
 
 
 def test_serialize_value_to_json_happy_path():
@@ -209,7 +209,7 @@ def test_serialize_value_to_json_happy_path():
     res = _serialize_value_to_json(data)
     parsed = json.loads(res)
     assert parsed['id'] == 1
-    assert parsed['nilai'] == 12345.6789
+    assert parsed['nilai'] == '12345.6789'
     assert parsed['waktu'] == '2026-06-07T08:30:00'
     assert parsed['tanggal'] == '2026-06-07'
 

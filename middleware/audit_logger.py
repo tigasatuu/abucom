@@ -39,7 +39,7 @@ def _audit_json_serializer(obj: Any) -> Any:
         TypeError: Jika tipe objek tidak diserialisasi.
     """
     if isinstance(obj, Decimal):
-        return float(obj)
+        return str(obj)
     if isinstance(obj, (datetime, date)):
         return obj.isoformat()
     raise TypeError(f"Tipe {type(obj)} tidak bisa diserialisasi ke JSON")
@@ -118,6 +118,14 @@ def log_audit_trail(
     """
     if action_type not in VALID_ACTION_TYPES:
         raise ValueError(f"Action type '{action_type}' tidak valid.")
+
+    if old_val is not None and not isinstance(old_val, dict):
+        raise ValueError("old_val harus berupa dictionary atau None")
+    if new_val is not None and not isinstance(new_val, dict):
+        raise ValueError("new_val harus berupa dictionary atau None")
+
+    if old_val is not None and new_val is not None and old_val == new_val:
+        return Result(True, 'NO_CHANGES', None)
 
     cursor = None
     try:
