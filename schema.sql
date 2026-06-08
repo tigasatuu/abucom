@@ -103,6 +103,7 @@ CREATE TABLE supplier (
     nama_supplier VARCHAR(100) NOT NULL COMMENT 'Nama badan usaha / perorangan vendor supplier',
     alamat TEXT NOT NULL COMMENT 'Alamat kantor / gudang pengiriman supplier',
     telp VARCHAR(30) NOT NULL COMMENT 'Nomor telepon aktif supplier untuk pengadaan',
+    email VARCHAR(100) NOT NULL COMMENT 'Alamat email supplier untuk pengadaan',
     cabang_id INT NOT NULL DEFAULT 1 COMMENT 'Identifikasi cabang pencatat supplier',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu baris data dibuat',
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Tanggal & waktu terakhir baris data diperbarui',

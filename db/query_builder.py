@@ -1544,3 +1544,253 @@ def query_validasi_barang_induk(db_connection, barang_induk_id: int, cabang_id: 
             cursor.close()
 
 
+def query_daftar_supplier(db_connection, cabang_id: int) -> Result:
+    """Mengambil seluruh data supplier berdasarkan cabang.
+
+    (Ref: Module Structure Bab 4.4, SRS-F-015)
+
+    Args:
+        db_connection: Koneksi database MySQL aktif.
+        cabang_id (int): ID cabang filter.
+
+    Returns:
+        Result: NamedTuple berisi is_success, data (list[dict]), error_msg.
+    """
+    cursor = None
+    try:
+        cursor = db_connection.cursor(dictionary=True)
+        query = (
+            "SELECT id, nama_supplier, alamat, telp, email, created_at, updated_at "
+            "FROM supplier "
+            "WHERE cabang_id = %s "
+            "ORDER BY nama_supplier ASC"
+        )
+        cursor.execute(query, (cabang_id,))
+        rows = cursor.fetchall()
+        return Result(True, rows if rows else [], None)
+    except Exception as e:
+        return Result(False, None, f"ERR-DB-136: Gagal mengambil daftar supplier. Detail: {str(e)}")
+    finally:
+        if cursor:
+            cursor.close()
+
+
+def query_detail_supplier(db_connection, supplier_id: int, cabang_id: int) -> Result:
+    """Mengambil detail data supplier berdasarkan ID dan cabang.
+
+    (Ref: Module Structure Bab 4.4, SRS-F-015, ERR-VAL-013)
+
+    Args:
+        db_connection: Koneksi database MySQL aktif.
+        supplier_id (int): ID supplier.
+        cabang_id (int): ID cabang filter.
+
+    Returns:
+        Result: NamedTuple berisi is_success, data (dict), error_msg.
+    """
+    cursor = None
+    try:
+        cursor = db_connection.cursor(dictionary=True)
+        query = (
+            "SELECT id, nama_supplier, alamat, telp, email, cabang_id, created_at, updated_at "
+            "FROM supplier "
+            "WHERE id = %s AND cabang_id = %s"
+        )
+        cursor.execute(query, (supplier_id, cabang_id))
+        row = cursor.fetchone()
+        if not row:
+            return Result(False, None, "⛔ ERR-VAL-013: ID supplier tidak terdaftar di database master!")
+        return Result(True, row, None)
+    except Exception as e:
+        return Result(False, None, f"ERR-DB-136: Gagal mengambil detail supplier. Detail: {str(e)}")
+    finally:
+        if cursor:
+            cursor.close()
+
+
+def query_insert_supplier(db_connection, nama_supplier: str, alamat: str, telp: str, email: str, cabang_id: int) -> Result:
+    """Menambahkan data supplier baru.
+
+    (Ref: Module Structure Bab 4.4, SRS-F-015)
+
+    Args:
+        db_connection: Koneksi database MySQL aktif.
+        nama_supplier (str): Nama supplier.
+        alamat (str): Alamat supplier.
+        telp (str): Nomor telepon supplier.
+        email (str): Email supplier.
+        cabang_id (int): ID cabang pemilik data.
+
+    Returns:
+        Result: NamedTuple berisi is_success, data (int: last_insert_id), error_msg.
+    """
+    cursor = None
+    try:
+        cursor = db_connection.cursor(dictionary=True)
+        query = (
+            "INSERT INTO supplier (nama_supplier, alamat, telp, email, cabang_id) "
+            "VALUES (%s, %s, %s, %s, %s)"
+        )
+        cursor.execute(query, (nama_supplier, alamat, telp, email, cabang_id))
+        db_connection.commit()
+        last_id = cursor.lastrowid
+        return Result(True, last_id, None)
+    except Exception as e:
+        try:
+            db_connection.rollback()
+        except Exception:
+            pass
+        return Result(False, None, f"ERR-DB-136: Gagal menambahkan supplier baru. Detail: {str(e)}")
+    finally:
+        if cursor:
+            cursor.close()
+
+
+def query_update_supplier(db_connection, supplier_id: int, nama_supplier: str, alamat: str, telp: str, email: str, cabang_id: int) -> Result:
+    """Memperbarui data supplier.
+
+    (Ref: Module Structure Bab 4.4, SRS-F-015)
+
+    Args:
+        db_connection: Koneksi database MySQL aktif.
+        supplier_id (int): ID supplier yang akan diedit.
+        nama_supplier (str): Nama supplier baru.
+        alamat (str): Alamat supplier baru.
+        telp (str): Nomor telepon supplier baru.
+        email (str): Email supplier baru.
+        cabang_id (int): ID cabang pemilik data.
+
+    Returns:
+        Result: NamedTuple berisi is_success, data (int: rows_affected), error_msg.
+    """
+    cursor = None
+    try:
+        cursor = db_connection.cursor(dictionary=True)
+        query = (
+            "UPDATE supplier "
+            "SET nama_supplier = %s, alamat = %s, telp = %s, email = %s "
+            "WHERE id = %s AND cabang_id = %s"
+        )
+        cursor.execute(query, (nama_supplier, alamat, telp, email, supplier_id, cabang_id))
+        db_connection.commit()
+        rows_affected = cursor.rowcount
+        return Result(True, rows_affected, None)
+    except Exception as e:
+        try:
+            db_connection.rollback()
+        except Exception:
+            pass
+        return Result(False, None, f"ERR-DB-136: Gagal mengubah data supplier. Detail: {str(e)}")
+    finally:
+        if cursor:
+            cursor.close()
+
+
+def query_delete_supplier(db_connection, supplier_id: int, cabang_id: int) -> Result:
+    """Menghapus data supplier secara permanen setelah memvalidasi relasi.
+
+    (Ref: Module Structure Bab 4.4, SRS-F-015, ERR-REL-136)
+
+    Args:
+        db_connection: Koneksi database MySQL aktif.
+        supplier_id (int): ID supplier yang akan dihapus.
+        cabang_id (int): ID cabang pemilik data.
+
+    Returns:
+        Result: NamedTuple berisi is_success, data (int: rows_affected), error_msg.
+    """
+    cursor = None
+    try:
+        cursor = db_connection.cursor(dictionary=True)
+        
+        # 1. Cek relasi ke utang_supplier yang masih BELUM LUNAS
+        query_check_utang = (
+            "SELECT count "
+            "FROM (SELECT COUNT(*) as count FROM utang_supplier WHERE supplier_id = %s AND cabang_id = %s AND status_utang = 'BELUM LUNAS') as t"
+        )
+        # Wait, the DDL has utang_supplier table. We can just run:
+        query_check_utang = (
+            "SELECT COUNT(*) as count "
+            "FROM utang_supplier "
+            "WHERE supplier_id = %s AND cabang_id = %s AND status_utang = 'BELUM LUNAS'"
+        )
+        cursor.execute(query_check_utang, (supplier_id, cabang_id))
+        res_utang = cursor.fetchone()
+        if res_utang and res_utang['count'] > 0:
+            return Result(False, None, "⛔ ERR-REL-136: Supplier tidak dapat dihapus karena masih memiliki utang aktif yang belum lunas!")
+
+        # 2. Cek relasi ke riwayat_harga_supplier (Warning, tapi izinkan delete)
+        # Note: Tabel riwayat_harga_supplier mungkin belum ada di DDL, handle error jika table tidak ada.
+        has_riwayat = False
+        try:
+            query_check_riwayat = (
+                "SELECT COUNT(*) as count "
+                "FROM riwayat_harga_supplier "
+                "WHERE supplier_id = %s"
+            )
+            cursor.execute(query_check_riwayat, (supplier_id,))
+            res_riwayat = cursor.fetchone()
+            if res_riwayat and res_riwayat['count'] > 0:
+                has_riwayat = True
+        except Exception:
+            pass
+            
+        # 3. Lakukan hard delete
+        query_delete = "DELETE FROM supplier WHERE id = %s AND cabang_id = %s"
+        cursor.execute(query_delete, (supplier_id, cabang_id))
+        db_connection.commit()
+        rows_affected = cursor.rowcount
+        
+        return Result(True, rows_affected, None)
+    except Exception as e:
+        try:
+            db_connection.rollback()
+        except Exception:
+            pass
+        return Result(False, None, f"ERR-DB-136: Gagal menghapus supplier. Detail: {str(e)}")
+    finally:
+        if cursor:
+            cursor.close()
+
+
+def query_cek_nama_supplier_duplikat(db_connection, nama_supplier: str, cabang_id: int, exclude_id: int | None = None) -> Result:
+    """Mengecek apakah nama supplier sudah terdaftar di cabang yang sama (case-insensitive).
+
+    (Ref: Module Structure Bab 4.4, SRS-F-015)
+
+    Args:
+        db_connection: Koneksi database MySQL aktif.
+        nama_supplier (str): Nama supplier yang dicek.
+        cabang_id (int): ID cabang filter.
+        exclude_id (int | None): ID supplier yang diabaikan (untuk edit).
+
+    Returns:
+        Result: NamedTuple berisi is_success, data (dict data supplier if duplicate, None otherwise), error_msg.
+    """
+    cursor = None
+    try:
+        cursor = db_connection.cursor(dictionary=True)
+        if exclude_id is not None:
+            query = (
+                "SELECT id, nama_supplier, alamat, telp, email, cabang_id "
+                "FROM supplier "
+                "WHERE LOWER(nama_supplier) = LOWER(%s) AND cabang_id = %s AND id != %s"
+            )
+            cursor.execute(query, (nama_supplier, cabang_id, exclude_id))
+        else:
+            query = (
+                "SELECT id, nama_supplier, alamat, telp, email, cabang_id "
+                "FROM supplier "
+                "WHERE LOWER(nama_supplier) = LOWER(%s) AND cabang_id = %s"
+            )
+            cursor.execute(query, (nama_supplier, cabang_id))
+        row = cursor.fetchone()
+        return Result(True, row, None)
+    except Exception as e:
+        return Result(False, None, f"ERR-DB-136: Gagal mengecek duplikasi nama supplier. Detail: {str(e)}")
+    finally:
+        if cursor:
+            cursor.close()
+
+
+

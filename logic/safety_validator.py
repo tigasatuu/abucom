@@ -14,6 +14,7 @@ from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
 # NamedTuple Definition
 ValidationStatus = namedtuple('ValidationStatus', ['is_valid', 'sanitized_data', 'error_msg'])
 SanitizedInput = namedtuple('SanitizedInput', ['is_valid', 'cleaned_value', 'error_msg'])
+Result = namedtuple('Result', ['is_success', 'data', 'error_msg'])
 
 
 # ============================================================
@@ -382,4 +383,99 @@ def sanitasi_dan_validasi_input(raw_input: str, max_length: int, field_name: str
         )
     sanitized = sanitasi_input_cli(raw_input).strip()
     return validasi_panjang_input(sanitized, max_length, field_name)
+
+
+def validasi_data_supplier(data_form: dict) -> Result:
+    """Memvalidasi dan membersihkan data form input supplier.
+
+    (Ref: SRS-F-015, Data Dictionary Bab 3.4)
+
+    Args:
+        data_form (dict): Dictionary berisi data input supplier dari form.
+                          Wajib berisi key: 'nama_supplier', 'alamat', 'telp', 'email'.
+
+    Returns:
+        Result: NamedTuple berisi status validasi, data bersih, dan pesan error.
+    """
+    if not isinstance(data_form, dict):
+        return Result(False, None, "⛔ ERR-VAL-009: Input data harus berupa dictionary!")
+
+    # 1. nama_supplier
+    nama = data_form.get('nama_supplier')
+    if nama is None:
+        return Result(False, None, "⛔ ERR-VAL-009: Nama supplier wajib diisi!")
+    nama_str = sanitasi_input_cli(str(nama)).strip()
+    if not nama_str:
+        return Result(False, None, "⛔ ERR-VAL-009: Nama supplier tidak boleh kosong!")
+    if len(nama_str) > 100:
+        return Result(False, None, "⛔ ERR-VAL-009: Nama supplier maksimal 100 karakter!")
+
+    # 2. alamat
+    alamat = data_form.get('alamat')
+    if alamat is None:
+        return Result(False, None, "⛔ ERR-VAL-009: Alamat supplier wajib diisi!")
+    alamat_str = sanitasi_input_cli(str(alamat)).strip()
+    if not alamat_str:
+        return Result(False, None, "⛔ ERR-VAL-009: Alamat supplier tidak boleh kosong!")
+
+    # 3. telp
+    telp = data_form.get('telp')
+    if telp is None:
+        return Result(False, None, "⛔ ERR-VAL-009: Nomor telepon supplier wajib diisi!")
+    telp_str = sanitasi_input_cli(str(telp)).strip()
+    if not telp_str:
+        return Result(False, None, "⛔ ERR-VAL-009: Nomor telepon supplier tidak boleh kosong!")
+    if len(telp_str) > 30:
+        return Result(False, None, "⛔ ERR-VAL-009: Nomor telepon supplier maksimal 30 karakter!")
+    if not re.match(r'^[0-9+\-\s]+$', telp_str):
+        return Result(False, None, "⛔ ERR-VAL-009: Format nomor telepon tidak valid! Hanya boleh berisi angka, spasi, '+', atau '-'.")
+
+    # 4. email
+    email = data_form.get('email')
+    if email is None:
+        return Result(False, None, "⛔ ERR-VAL-009: Email supplier wajib diisi!")
+    email_str = sanitasi_input_cli(str(email)).strip()
+    if not email_str:
+        return Result(False, None, "⛔ ERR-VAL-009: Email supplier tidak boleh kosong!")
+    if len(email_str) > 100:
+        return Result(False, None, "⛔ ERR-VAL-009: Email supplier maksimal 100 karakter!")
+    if not re.match(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', email_str):
+        return Result(False, None, "⛔ ERR-VAL-009: Format email tidak valid!")
+
+    cleaned_data = {
+        'nama_supplier': nama_str,
+        'alamat': alamat_str,
+        'telp': telp_str,
+        'email': email_str
+    }
+    return Result(True, cleaned_data, None)
+
+
+def validasi_supplier_id(raw_input: str) -> ValidationStatus:
+    """Memvalidasi bahwa input ID supplier merupakan integer positif.
+
+    (Ref: SRS-F-015, ERR-VAL-013)
+
+    Args:
+        raw_input (str): Input mentah ID supplier dari CLI.
+
+    Returns:
+        ValidationStatus: NamedTuple hasil validasi.
+    """
+    if not isinstance(raw_input, str):
+        return ValidationStatus(False, None, "⛔ ERR-VAL-013: Tipe data ID supplier harus berupa string!")
+    
+    sanitized = sanitasi_input_cli(raw_input).strip()
+    if not sanitized:
+        return ValidationStatus(False, None, "⛔ ERR-VAL-013: ID supplier tidak boleh kosong!")
+        
+    try:
+        val = int(sanitized)
+        if val <= 0:
+            raise ValueError()
+    except ValueError:
+        return ValidationStatus(False, None, "⛔ ERR-VAL-013: ID supplier harus berupa angka bulat positif!")
+        
+    return ValidationStatus(True, val, None)
+
 
