@@ -2232,5 +2232,46 @@ def update_pelanggan(
             cursor.close()
 
 
+def query_delete_pelanggan(
+    db_connection,
+    pelanggan_id: int,
+    cabang_id: int
+) -> Result:
+    """Menghapus data pelanggan dari database CRM secara permanen (hard-delete).
 
+    (Ref: Modul M.8, UU PDP No. 27/2022)
 
+    Args:
+        db_connection: Objek koneksi database aktif.
+        pelanggan_id (int): ID pelanggan yang akan dihapus.
+        cabang_id (int): Filter multi-branch wajib pada klausa WHERE.
+
+    Returns:
+        Result: NamedTuple (is_success, data: int (rowcount), error_msg).
+    """
+    cursor = None
+    try:
+        cursor = db_connection.cursor(dictionary=True)
+        query = "DELETE FROM pelanggan WHERE id = %s AND cabang_id = %s"
+        cursor.execute(query, (pelanggan_id, cabang_id))
+        db_connection.commit()
+        return Result(True, cursor.rowcount, None)
+    except mysql.connector.Error as e:
+        try:
+            db_connection.rollback()
+        except Exception:
+            pass
+        error_msg = f"ERR-DB-002: Eksekusi query gagal (Detail Error: MySQL Error {e.errno}: {e.msg})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    except Exception as e:
+        try:
+            db_connection.rollback()
+        except Exception:
+            pass
+        error_msg = f"ERR-DB-002: Eksekusi query gagal (Detail Error: {str(e)})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    finally:
+        if cursor:
+            cursor.close()
