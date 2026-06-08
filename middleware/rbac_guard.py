@@ -423,6 +423,10 @@ def verify_supervisor_escalation(
     cursor.execute(query, (supervisor_role,))
     supervisor = cursor.fetchone()
     cursor.close()
+    try:
+        db_connection.rollback()
+    except Exception:
+        pass
 
     if not supervisor:
         return Result(False, None, f"ERR-AUTH-003: Akun supervisor '{supervisor_role}' tidak ditemukan!")

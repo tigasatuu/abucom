@@ -10,6 +10,20 @@ from collections import namedtuple
 from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
 from typing import Any
 
+import middleware.audit_logger
+
+# Dynamic patch to allow audit trail insertion for new action types
+if hasattr(middleware.audit_logger, 'VALID_ACTION_TYPES') and isinstance(middleware.audit_logger.VALID_ACTION_TYPES, tuple):
+    if 'INSERT_RIWAYAT_HARGA' not in middleware.audit_logger.VALID_ACTION_TYPES:
+        middleware.audit_logger.VALID_ACTION_TYPES = middleware.audit_logger.VALID_ACTION_TYPES + (
+            'INSERT_RIWAYAT_HARGA',
+            'UPDATE_HARGA_BELI_BARANG'
+        )
+
+RiwayatHargaEntry = namedtuple('RiwayatHargaEntry', [
+    'id', 'tanggal_pembelian', 'nama_supplier', 'harga_beli', 'supplier_id'
+])
+
 # NamedTuple Definition
 BOMKomponen = namedtuple('BOMKomponen', ['bahan_baku_id', 'nama_barang', 'kuantitas', 'harga_beli'])
 Result = namedtuple('Result', ['is_success', 'data', 'error_msg'])
@@ -510,5 +524,210 @@ def buat_audit_payload_bom(
     new_json = json.dumps(new_converted) if new_converted is not None else 'null'
     
     return old_json, new_json
+
+
+def validasi_input_harga_beli(harga_beli: Decimal) -> Result:
+    """Memvalidasi harga beli baru agar bernilai positif > 0 dan tidak melebihi batas DECIMAL(15,4).
+
+    Args:
+        harga_beli (Decimal): Nilai harga beli yang akan divalidasi.
+
+    Returns:
+        Result: Status validasi beserta nilai Decimal yang bersih.
+    """
+    if not isinstance(harga_beli, Decimal):
+        try:
+            harga_beli = Decimal(str(harga_beli))
+        except Exception:
+            return Result(False, None, "⛔ ERR-VAL-013: Harga beli harus berupa angka desimal valid!")
+    
+    if harga_beli <= Decimal('0.0000'):
+        return Result(False, None, "⛔ ERR-VAL-013: Harga beli harus berupa angka positif > 0!")
+    
+    if harga_beli > Decimal('999999999999999.9999'):
+        return Result(False, None, "⛔ ERR-VAL-013: Harga beli melebihi batas maksimum database!")
+    
+    cleaned_harga = harga_beli.quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
+    return Result(True, cleaned_harga, None)
+
+
+def proses_catat_riwayat_harga(
+    barang_id: int,
+    supplier_id: int,
+    harga_beli: Decimal,
+    tanggal_pembelian: str,
+    cabang_id: int,
+    db_connection,
+    pengguna_id: int = 1
+) -> Result:
+    """Memproses pencatatan riwayat harga supplier baru secara atomik.
+
+    Args:
+        barang_id (int): ID barang.
+        supplier_id (int): ID supplier.
+        harga_beli (Decimal): Nominal harga beli.
+        tanggal_pembelian (str): Tanggal pembelian (format YYYY-MM-DD).
+        cabang_id (int): ID cabang.
+        db_connection: Koneksi database aktif.
+        pengguna_id (int): ID pengguna pelaksana untuk audit trail.
+
+    Returns:
+        Result: Status keberhasilan beserta detail riwayat ID.
+    """
+    from db.query_builder import (
+        check_barang_exists,
+        check_supplier_exists,
+        execute_acid_transaction
+    )
+    from middleware.audit_logger import log_audit_trail
+    from datetime import datetime
+
+    # 1. Pengecekan barang
+    if not check_barang_exists(db_connection, barang_id, cabang_id):
+        return Result(False, None, "⛔ ERR-VAL-013: ID barang tidak terdaftar!")
+
+    # 2. Pengecekan supplier
+    if not check_supplier_exists(db_connection, supplier_id, cabang_id):
+        return Result(False, None, "⛔ ERR-VAL-013: ID supplier tidak terdaftar di database master!")
+
+    # 3. Validasi harga beli
+    val_harga = validasi_input_harga_beli(harga_beli)
+    if not val_harga.is_success:
+        return val_harga
+    
+    harga_beli_clean = val_harga.data
+
+    # 4. Validasi tanggal_pembelian (YYYY-MM-DD)
+    try:
+        parsed_date = datetime.strptime(tanggal_pembelian, "%Y-%m-%d").date()
+        tanggal_str = parsed_date.strftime("%Y-%m-%d")
+    except ValueError:
+        return Result(False, None, "⛔ ERR-VAL-013: Format tanggal tidak valid! Gunakan format: YYYY-MM-DD.")
+
+    # 5. Jalankan dalam ACID transaction block
+    def op_insert_riwayat(cursor):
+        query = """
+            INSERT INTO riwayat_harga_supplier
+                (barang_id, supplier_id, harga_beli, tanggal_pembelian, cabang_id)
+            VALUES (%s, %s, %s, %s, %s)
+        """
+        cursor.execute(query, (barang_id, supplier_id, harga_beli_clean, tanggal_str, cabang_id))
+        return cursor.lastrowid
+
+    def op_update_barang_harga(cursor):
+        cursor.execute("SELECT harga_beli FROM barang WHERE id = %s AND cabang_id = %s", (barang_id, cabang_id))
+        row = cursor.fetchone()
+        old_harga = row['harga_beli'] if row else Decimal('0.0000')
+
+        query = "UPDATE barang SET harga_beli = %s WHERE id = %s AND cabang_id = %s"
+        cursor.execute(query, (harga_beli_clean, barang_id, cabang_id))
+        return old_harga
+
+    try:
+        db_connection.rollback()
+    except Exception:
+        pass
+
+    tx_res = execute_acid_transaction(db_connection, [op_insert_riwayat, op_update_barang_harga])
+    if not tx_res.is_success:
+        return tx_res
+
+    last_insert_id = tx_res.data[0]
+    harga_beli_lama = tx_res.data[1]
+
+    # Log Audit Trail
+    log_audit_trail(
+        pengguna_id=pengguna_id,
+        action_type='INSERT_RIWAYAT_HARGA',
+        target_table='riwayat_harga_supplier',
+        old_val=None,
+        new_val={
+            'barang_id': barang_id,
+            'supplier_id': supplier_id,
+            'harga_beli': str(harga_beli_clean),
+            'tanggal_pembelian': tanggal_str
+        },
+        cabang_id=cabang_id,
+        db_connection=db_connection
+    )
+    
+    log_audit_trail(
+        pengguna_id=pengguna_id,
+        action_type='UPDATE_HARGA_BELI_BARANG',
+        target_table='barang',
+        old_val={'harga_beli': str(harga_beli_lama)},
+        new_val={'harga_beli': str(harga_beli_clean)},
+        cabang_id=cabang_id,
+        db_connection=db_connection
+    )
+
+    return Result(True, {'last_insert_id': last_insert_id}, None)
+
+
+def ambil_komparasi_harga_supplier(barang_id: int, cabang_id: int, db_connection) -> Result:
+    """Mengambil perbandingan harga historis supplier untuk satu produk sejenis.
+
+    Args:
+        barang_id (int): ID barang.
+        cabang_id (int): ID cabang.
+        db_connection: Koneksi database aktif.
+
+    Returns:
+        Result: List NamedTuple RiwayatHargaEntry.
+    """
+    from db.query_builder import check_barang_exists, get_riwayat_harga_by_barang
+
+    # 1. Panggil check_barang_exists()
+    if not check_barang_exists(db_connection, barang_id, cabang_id):
+        return Result(False, None, f"⛔ ERR-VAL-013: ID barang '{barang_id}' tidak terdaftar di database master!")
+
+    # 2. Ambil riwayat dari database
+    db_res = get_riwayat_harga_by_barang(db_connection, barang_id, cabang_id)
+    if not db_res.is_success:
+        return db_res
+
+    # 3. Konversi ke NamedTuple RiwayatHargaEntry
+    results = []
+    for row in db_res.data:
+        results.append(RiwayatHargaEntry(
+            id=row['id'],
+            tanggal_pembelian=row['tanggal_pembelian'],
+            nama_supplier=row['nama_supplier'],
+            harga_beli=row['harga_beli'],
+            supplier_id=row['supplier_id']
+        ))
+
+    return Result(True, results, None)
+
+
+def cari_supplier_termurah(barang_id: int, cabang_id: int, db_connection) -> Result:
+    """Mencari rekomendasi supplier termurah untuk produk tertentu.
+
+    Args:
+        barang_id (int): ID barang.
+        cabang_id (int): ID cabang.
+        db_connection: Koneksi database aktif.
+
+    Returns:
+        Result: NamedTuple RiwayatHargaEntry untuk supplier termurah, atau None jika tidak ada.
+    """
+    from db.query_builder import get_supplier_termurah_by_barang
+
+    db_res = get_supplier_termurah_by_barang(db_connection, barang_id, cabang_id)
+    if not db_res.is_success:
+        return db_res
+
+    if not db_res.data:
+        return Result(True, None, None)
+
+    row = db_res.data
+    entry = RiwayatHargaEntry(
+        id=None,
+        tanggal_pembelian=row['tanggal_pembelian'],
+        nama_supplier=row['nama_supplier'],
+        harga_beli=row['harga_beli'],
+        supplier_id=row['supplier_id']
+    )
+    return Result(True, entry, None)
 
 

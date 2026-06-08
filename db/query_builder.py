@@ -11,6 +11,7 @@ Tanggal: 2026-06-04
 # 1. Standard Library
 import logging
 from collections import namedtuple
+from decimal import Decimal
 from typing import Callable, Any
 
 # 2. Third-Party
@@ -1791,6 +1792,143 @@ def query_cek_nama_supplier_duplikat(db_connection, nama_supplier: str, cabang_i
     finally:
         if cursor:
             cursor.close()
+
+
+def insert_riwayat_harga_supplier(db_connection, data: dict) -> Result:
+    """Menyimpan entri baru ke tabel riwayat_harga_supplier.
+
+    Args:
+        db_connection: Koneksi database aktif.
+        data (dict): Dictionary data yang di-insert.
+                     Berisi: barang_id, supplier_id, harga_beli, tanggal_pembelian, cabang_id.
+
+    Returns:
+        Result: Hasil eksekusi INSERT (lastrowid).
+    """
+    query = """
+        INSERT INTO riwayat_harga_supplier
+            (barang_id, supplier_id, harga_beli, tanggal_pembelian, cabang_id)
+        VALUES (%s, %s, %s, %s, %s)
+    """
+    params = (
+        data['barang_id'],
+        data['supplier_id'],
+        data['harga_beli'],
+        data['tanggal_pembelian'],
+        data['cabang_id']
+    )
+    return execute_insert(db_connection, query, params)
+
+
+def get_riwayat_harga_by_barang(db_connection, barang_id: int, cabang_id: int) -> Result:
+    """Mengambil kronologi harga beli historis barang dari seluruh supplier.
+
+    Args:
+        db_connection: Koneksi database aktif.
+        barang_id (int): ID barang yang dilacak.
+        cabang_id (int): ID cabang filter.
+
+    Returns:
+        Result: List dict data riwayat harga terurut tanggal terbaru DESC.
+    """
+    query = """
+        SELECT
+            r.id,
+            r.tanggal_pembelian,
+            s.nama_supplier,
+            r.harga_beli,
+            r.supplier_id
+        FROM riwayat_harga_supplier r
+        JOIN supplier s ON r.supplier_id = s.id
+        WHERE r.barang_id = %s AND r.cabang_id = %s
+        ORDER BY r.tanggal_pembelian DESC, r.created_at DESC
+    """
+    return execute_query(db_connection, query, (barang_id, cabang_id), fetch_all=True)
+
+
+def get_supplier_termurah_by_barang(db_connection, barang_id: int, cabang_id: int) -> Result:
+    """Mengambil rekomendasi supplier termurah berdasarkan pembelian terakhir.
+
+    Args:
+        db_connection: Koneksi database aktif.
+        barang_id (int): ID barang.
+        cabang_id (int): ID cabang.
+
+    Returns:
+        Result: Dict/row data supplier termurah atau None.
+    """
+    query = """
+        SELECT
+            s.id AS supplier_id,
+            s.nama_supplier,
+            r.harga_beli,
+            r.tanggal_pembelian
+        FROM riwayat_harga_supplier r
+        JOIN supplier s ON r.supplier_id = s.id
+        WHERE r.barang_id = %s
+          AND r.cabang_id = %s
+          AND r.tanggal_pembelian = (
+              SELECT MAX(r2.tanggal_pembelian)
+              FROM riwayat_harga_supplier r2
+              WHERE r2.barang_id = r.barang_id
+                AND r2.supplier_id = r.supplier_id
+                AND r2.cabang_id = r.cabang_id
+          )
+        ORDER BY r.harga_beli ASC
+        LIMIT 1
+    """
+    return execute_query(db_connection, query, (barang_id, cabang_id), fetch_one=True)
+
+
+def update_harga_beli_barang(db_connection, barang_id: int, harga_beli_baru: Decimal) -> Result:
+    """Mengupdate harga_beli standar pada tabel barang.
+
+    Args:
+        db_connection: Koneksi database aktif.
+        barang_id (int): ID barang.
+        harga_beli_baru (Decimal): Harga beli baru.
+
+    Returns:
+        Result: Hasil eksekusi UPDATE.
+    """
+    query = "UPDATE barang SET harga_beli = %s WHERE id = %s"
+    return execute_query(db_connection, query, (harga_beli_baru, barang_id))
+
+
+def check_barang_exists(db_connection, barang_id: int, cabang_id: int) -> bool:
+    """Mengecek apakah ID barang terdaftar di cabang tertentu.
+
+    Args:
+        db_connection: Koneksi database aktif.
+        barang_id (int): ID barang.
+        cabang_id (int): ID cabang.
+
+    Returns:
+        bool: True jika barang ada, False jika tidak.
+    """
+    query = "SELECT COUNT(1) AS count FROM barang WHERE id = %s AND cabang_id = %s"
+    res = execute_query(db_connection, query, (barang_id, cabang_id), fetch_one=True)
+    if res.is_success and res.data:
+        return res.data['count'] > 0
+    return False
+
+
+def check_supplier_exists(db_connection, supplier_id: int, cabang_id: int) -> bool:
+    """Mengecek apakah ID supplier terdaftar di cabang tertentu.
+
+    Args:
+        db_connection: Koneksi database aktif.
+        supplier_id (int): ID supplier.
+        cabang_id (int): ID cabang.
+
+    Returns:
+        bool: True jika supplier ada, False jika tidak.
+    """
+    query = "SELECT COUNT(1) AS count FROM supplier WHERE id = %s AND cabang_id = %s"
+    res = execute_query(db_connection, query, (supplier_id, cabang_id), fetch_one=True)
+    if res.is_success and res.data:
+        return res.data['count'] > 0
+    return False
 
 
 

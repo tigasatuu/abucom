@@ -36,7 +36,8 @@ from db.query_builder import (
 from logic.bom_hpp import (
     validasi_data_barang, buat_audit_payload_barang, hitung_margin_barang,
     validasi_kuantitas_bom, validasi_bahan_baku_id, buat_audit_payload_bom,
-    hitung_biaya_komponen, hitung_hpp_produk, BOMKomponen
+    hitung_biaya_komponen, hitung_hpp_produk, BOMKomponen,
+    ambil_komparasi_harga_supplier, cari_supplier_termurah, proses_catat_riwayat_harga
 )
 from logic.uom_converter import (
     konversi_satuan, hitung_faktor_konversi_balik,
@@ -146,8 +147,8 @@ def show_menu_inventaris(session_state: dict) -> None:
                     form_job_tracking_antrian(session_state)
                 elif selected_menu_id == 'MENU-M5-002':
                     form_arsip_desain(session_state)
-                elif selected_menu_id == 'MENU-M5-003':
-                    trigger_whatsapp_link(session_state)
+                elif selected_menu_id == 'MENU-M2-007':
+                    view_price_tracking_supplier(session_state)
                 else:
                     print(f"[PLACEHOLDER] Menu '{submenus[val_idx - 1][1]}' belum diimplementasikan.")
                     input("Tekan Enter untuk melanjutkan...")
@@ -1497,6 +1498,7 @@ def form_kelola_supplier(session_state: dict) -> None:
         console.print("  [2] Tambah Supplier Baru")
         console.print("  [3] Edit Data Supplier")
         console.print("  [4] Hapus Supplier")
+        console.print("  [5] Catat Pembelian Stok Tempo (Utang Supplier)")
         console.print("  [0] Kembali ke Menu Inventaris")
         console.print()
 
@@ -1516,6 +1518,8 @@ def form_kelola_supplier(session_state: dict) -> None:
             _edit_supplier(session_state)
         elif pilihan == '4':
             _hapus_supplier(session_state)
+        elif pilihan == '5':
+            _catat_pembelian_stok_tempo(session_state)
         else:
             console.print("⛔ Pilihan tidak valid.", style="bold red")
             input("Tekan Enter untuk melanjutkan...")
@@ -3069,4 +3073,281 @@ def _kalkulator_konversi(session_state: dict) -> None:
         input("Tekan Enter untuk kembali...")
     finally:
         conn.close()
+
+
+@require_role('MENU-M2-007')
+def view_price_tracking_supplier(session_state: dict) -> None:
+    """Antarmuka CLI untuk melacak riwayat harga supplier per barang (Price Tracking).
+
+    (Ref: CLI Interaction Flow §6.7, SRS-F-013)
+
+    Args:
+        session_state (dict): Status sesi aktif pengguna.
+    """
+    cabang_id = session_state.get('cabang_id', 1)
+    
+    while True:
+        os.system('cls' if platform.system() == 'Windows' else 'clear')
+        console.print(Panel(
+            "[bold white]PRICE TRACKING SUPPLIER[/]\n"
+            "[blue]Dashboard > M.2 Inventaris > Price Tracking Supplier[/]",
+            style="bold white",
+            expand=False
+        ))
+        console.print()
+        
+        try:
+            raw_id = _prompt_input("Masukkan ID Barang / Bahan Baku [0-Kembali]: ")
+            if raw_id == '0' or not raw_id:
+                return
+                
+            try:
+                barang_id = int(raw_id)
+                if barang_id <= 0:
+                    raise ValueError()
+            except ValueError:
+                console.print("⛔ ID barang harus berupa integer positif!", style="bold red")
+                input("Tekan Enter untuk melanjutkan...")
+                continue
+                
+            conn_res = get_db_connection()
+            if not conn_res.is_success:
+                console.print(f"⛔ {conn_res.error_msg}", style="bold red")
+                input("Tekan Enter untuk melanjutkan...")
+                return
+            conn = conn_res.data
+            
+            try:
+                res_comp = ambil_komparasi_harga_supplier(barang_id, cabang_id, conn)
+                if not res_comp.is_success:
+                    console.print(f"⛔ {res_comp.error_msg}", style="bold red")
+                    input("Tekan Enter untuk melanjutkan...")
+                    continue
+                    
+                riwayat_list = res_comp.data
+                
+                if not riwayat_list:
+                    console.print("[yellow]⚠️ Belum ada riwayat harga pembelian untuk barang ini.[/]", style="bold yellow")
+                    console.print("Saran: Riwayat harga akan tercatat otomatis saat Anda menginput pengadaan barang masuk.")
+                    console.print()
+                    input("Tekan Enter untuk melanjutkan...")
+                    continue
+                
+                rows = []
+                for idx, item in enumerate(riwayat_list, start=1):
+                    rows.append([
+                        idx,
+                        item.tanggal_pembelian,
+                        item.nama_supplier,
+                        f"Rp {item.harga_beli:,.4f}",
+                        item.supplier_id
+                    ])
+                
+                headers = ['No', 'Tanggal Beli', 'Supplier', 'Harga Beli (Rp)', 'Supplier ID']
+                table_str = tabulate(rows, headers=headers, tablefmt="grid")
+                console.print(table_str)
+                console.print()
+                
+                res_cheap = cari_supplier_termurah(barang_id, cabang_id, conn)
+                if res_cheap.is_success and res_cheap.data:
+                    cheap_item = res_cheap.data
+                    
+                    cursor_uom = conn.cursor(dictionary=True)
+                    cursor_uom.execute("SELECT satuan_uom FROM barang WHERE id = %s", (barang_id,))
+                    row_uom = cursor_uom.fetchone()
+                    uom_str = row_uom['satuan_uom'] if row_uom else 'Unit'
+                    cursor_uom.close()
+                    
+                    console.print(f"[bold blue]Rekomendasi Supplier Termurah: {cheap_item.nama_supplier} (Rp {cheap_item.harga_beli:,.4f} / {uom_str})[/]")
+                    console.print()
+                    
+                input("Tekan Enter untuk melanjutkan...")
+            finally:
+                conn.close()
+        except (EOFError, KeyboardInterrupt):
+            return
+
+
+def _catat_pembelian_stok_tempo(session_state: dict) -> None:
+    """Mencatat transaksi pengadaan barang masuk tempo (Utang Supplier) - UC-015.
+
+    (Ref: CLI Interaction Flow §6.9, BR-F-40, SRS-F-040)
+    """
+    cabang_id = session_state.get('cabang_id', 1)
+    user_id = session_state.get('user_id', 1)
+
+    while True:
+        os.system('cls' if platform.system() == 'Windows' else 'clear')
+        console.print(Panel(
+            "[bold white]CATAT PEMBELIAN STOK TEMPO (UTANG SUPPLIER)[/]\n"
+            "[blue]Dashboard > M.2 > Supplier > Catat Pembelian Stok Tempo[/]",
+            style="bold white",
+            expand=False
+        ))
+        console.print()
+
+        conn_res = get_db_connection()
+        if not conn_res.is_success:
+            console.print(f"⛔ {conn_res.error_msg}", style="bold red")
+            input("Tekan Enter untuk melanjutkan...")
+            return
+        conn = conn_res.data
+
+        try:
+            list_res = query_daftar_supplier(conn, cabang_id)
+            if list_res.is_success and list_res.data:
+                console.print("[bold white]Daftar Supplier:[/]")
+                for s in list_res.data:
+                    console.print(f"  ID: {s['id']} | {s['nama_supplier']}")
+                console.print()
+
+            raw_sup_id = _prompt_input("Masukkan ID Supplier: ")
+            if not raw_sup_id:
+                return
+            try:
+                supplier_id = int(raw_sup_id)
+            except ValueError:
+                console.print("⛔ ID supplier harus berupa angka!", style="bold red")
+                input("Tekan Enter untuk melanjutkan...")
+                continue
+
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute("SELECT nama_supplier FROM supplier WHERE id = %s AND cabang_id = %s", (supplier_id, cabang_id))
+            row_sup = cursor.fetchone()
+            if not row_sup:
+                console.print("⛔ ID supplier tidak terdaftar di database master!", style="bold red")
+                cursor.close()
+                input("Tekan Enter untuk melanjutkan...")
+                continue
+            cursor.close()
+
+            raw_brg_id = _prompt_input("Masukkan ID Barang / Bahan Baku: ")
+            if not raw_brg_id:
+                return
+            try:
+                barang_id = int(raw_brg_id)
+            except ValueError:
+                console.print("⛔ ID barang harus berupa angka!", style="bold red")
+                input("Tekan Enter untuk melanjutkan...")
+                continue
+
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute("SELECT nama_barang, tipe_barang, satuan_uom FROM barang WHERE id = %s AND cabang_id = %s", (barang_id, cabang_id))
+            row_brg = cursor.fetchone()
+            if not row_brg:
+                console.print("⛔ ID barang tidak terdaftar di database master!", style="bold red")
+                cursor.close()
+                input("Tekan Enter untuk melanjutkan...")
+                continue
+            cursor.close()
+
+            raw_qty = _prompt_input("Kuantitas Masuk: ")
+            try:
+                qty = Decimal(raw_qty)
+                if qty <= 0:
+                    raise ValueError()
+            except Exception:
+                console.print("⛔ Kuantitas harus berupa angka desimal positif > 0!", style="bold red")
+                input("Tekan Enter untuk melanjutkan...")
+                continue
+
+            raw_harga = _prompt_input("Harga Beli per Unit (Rp): ")
+            try:
+                harga_beli = Decimal(raw_harga)
+                if harga_beli <= 0:
+                    raise ValueError()
+            except Exception:
+                console.print("⛔ Harga beli harus berupa angka desimal positif > 0!", style="bold red")
+                input("Tekan Enter untuk melanjutkan...")
+                continue
+
+            tanggal_beli = _prompt_input("Tanggal Pembelian (YYYY-MM-DD) [Enter=Hari ini]: ")
+            from datetime import date
+            if not tanggal_beli:
+                tanggal_beli = date.today().strftime("%Y-%m-%d")
+
+            tanggal_tempo = _prompt_input("Tanggal Jatuh Tempo Pembayaran (YYYY-MM-DD): ")
+            if not tanggal_tempo:
+                console.print("⛔ Tanggal jatuh tempo wajib diisi!", style="bold red")
+                input("Tekan Enter untuk melanjutkan...")
+                continue
+
+            nominal_utang = (qty * harga_beli).quantize(Decimal('0.0001'), rounding=ROUND_HALF_UP)
+
+            console.print()
+            console.print("[yellow]🔐 Otorisasi Supervisor dibutuhkan untuk mencatatkan utang tempo belanja![/]")
+            from middleware.rbac_guard import verify_supervisor_escalation
+            esc_res = verify_supervisor_escalation('kepala_percetakan', conn)
+            if not esc_res.is_success:
+                esc_res = verify_supervisor_escalation('pemilik', conn)
+
+            if not esc_res.is_success:
+                console.print(f"⛔ {esc_res.error_msg}", style="bold red")
+                input("Tekan Enter untuk melanjutkan...")
+                continue
+
+            console.print()
+            console.print(Panel(
+                f"Supplier     : {row_sup['nama_supplier']} (ID: {supplier_id})\n"
+                f"Barang       : {row_brg['nama_barang']} (ID: {barang_id})\n"
+                f"Qty Masuk    : {qty:,.4f} {row_brg['satuan_uom']}\n"
+                f"Harga Satuan : Rp {harga_beli:,.4f}\n"
+                f"Total Utang  : Rp {nominal_utang:,.4f}\n"
+                f"Jatuh Tempo  : {tanggal_tempo}",
+                title="Konfirmasi Pembelian Stok Tempo",
+                expand=False
+            ))
+
+            raw_confirm = _prompt_input("Simpan transaksi pengadaan barang masuk ini? [Y/N]: ")
+            if raw_confirm.upper() != 'Y':
+                console.print("[yellow]Transaksi dibatalkan.[/]")
+                input("Tekan Enter untuk melanjutkan...")
+                return
+
+            from db.query_builder import execute_acid_transaction
+            
+            def op_update_stok(cursor):
+                query = "UPDATE barang SET stok_saat_ini = stok_saat_ini + %s WHERE id = %s AND cabang_id = %s"
+                cursor.execute(query, (qty, barang_id, cabang_id))
+                return cursor.rowcount
+
+            def op_insert_utang(cursor):
+                query = """
+                    INSERT INTO utang_supplier 
+                        (supplier_id, nominal_utang, sisa_utang, tanggal_utang, tanggal_jatuh_tempo, status_utang, cabang_id)
+                    VALUES (%s, %s, %s, %s, %s, 'BELUM LUNAS', %s)
+                """
+                cursor.execute(query, (supplier_id, nominal_utang, nominal_utang, tanggal_beli, tanggal_tempo, cabang_id))
+                return cursor.lastrowid
+
+            main_tx_res = execute_acid_transaction(conn, [op_update_stok, op_insert_utang])
+            
+            if not main_tx_res.is_success:
+                console.print(f"⛔ {main_tx_res.error_msg}", style="bold red")
+                input("Tekan Enter untuk melanjutkan...")
+                continue
+
+            console.print("[bold green]✓ Transaksi pengadaan utama berhasil disimpan dan di-commit.[/]")
+
+            try:
+                sec_res = proses_catat_riwayat_harga(
+                    barang_id=barang_id,
+                    supplier_id=supplier_id,
+                    harga_beli=harga_beli,
+                    tanggal_pembelian=tanggal_beli,
+                    cabang_id=cabang_id,
+                    db_connection=conn,
+                    pengguna_id=user_id
+                )
+                if sec_res.is_success:
+                    console.print("[bold green]✓ Riwayat harga beli supplier berhasil dicatat otomatis.[/]")
+                else:
+                    console.print(f"[bold yellow]⚠️ Gagal mencatat riwayat harga supplier. Error: {sec_res.error_msg}[/]")
+            except Exception as ex:
+                console.print(f"[bold yellow]⚠️ Gagal mencatat riwayat harga supplier. Error: {str(ex)}[/]")
+
+            input("Tekan Enter untuk melanjutkan...")
+            return
+        finally:
+            conn.close()
 
