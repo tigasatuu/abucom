@@ -29,7 +29,9 @@ from db.query_builder import (
     query_daftar_bom_by_induk, query_insert_bom_komponen,
     query_update_bom_kuantitas, query_delete_bom_komponen,
     query_detail_bom_by_id, query_daftar_barang_bahan_baku,
-    query_validasi_barang_induk
+    query_validasi_barang_induk,
+    query_daftar_supplier, query_detail_supplier, query_insert_supplier,
+    query_update_supplier, query_delete_supplier, query_cek_nama_supplier_duplikat
 )
 from logic.bom_hpp import (
     validasi_data_barang, buat_audit_payload_barang, hitung_margin_barang,
@@ -41,7 +43,7 @@ from logic.uom_converter import (
     validasi_data_satuan_ukur, validasi_data_konversi,
     KATEGORI_SATUAN_VALID
 )
-from logic.safety_validator import sanitasi_input_cli
+from logic.safety_validator import sanitasi_input_cli, validasi_data_supplier, validasi_supplier_id
 from middleware.rbac_guard import require_role
 from middleware.audit_logger import log_audit_trail
 
@@ -1468,15 +1470,537 @@ def form_import_csv(session_state: dict) -> None:
 
 
 def form_kelola_supplier(session_state: dict) -> None:
-    """Formulir manajemen mitra supplier dan utang belanja tempo.
+    """Sub-menu Kelola Data Master Supplier.
 
-    (Ref: Module Structure Bab 4.4 - Modul M.2)
+    (Ref: Module Structure Bab 4.4 - Modul M.2, SRS-F-015)
 
     Args:
         session_state (dict): Status sesi aktif pengguna.
     """
-    # TODO: Implementasi form kelola supplier
-    print("[PLACEHOLDER] Menu belum diimplementasikan.")
+    # Otorisasi manual (pemilik, kepala_percetakan, gudang)
+    role = session_state.get('role', '')
+    if role not in ['pemilik', 'kepala_percetakan', 'gudang']:
+        console.print("⛔ ERR-AUTH-003: Akses Ditolak: Hak Akses Gudang/Kepala Percetakan/Pemilik Dibutuhkan!", style="bold red")
+        input("Tekan Enter untuk melanjutkan...")
+        return
+
+    while True:
+        os.system('cls' if platform.system() == 'Windows' else 'clear')
+        console.print(Panel(
+            "[bold white]KELOLA DATA MASTER SUPPLIER[/]\n"
+            "[blue]Dashboard > M.2 Inventaris > Kelola Supplier[/]",
+            style="bold white",
+            expand=False
+        ))
+        console.print()
+        console.print("  [1] Lihat Daftar Supplier")
+        console.print("  [2] Tambah Supplier Baru")
+        console.print("  [3] Edit Data Supplier")
+        console.print("  [4] Hapus Supplier")
+        console.print("  [0] Kembali ke Menu Inventaris")
+        console.print()
+
+        try:
+            raw_pilihan = input("Pilihan Anda: ")
+            pilihan = sanitasi_input_cli(raw_pilihan).strip()
+        except (EOFError, KeyboardInterrupt):
+            return
+
+        if pilihan == '0':
+            return
+        elif pilihan == '1':
+            _lihat_daftar_supplier(session_state)
+        elif pilihan == '2':
+            _tambah_supplier(session_state)
+        elif pilihan == '3':
+            _edit_supplier(session_state)
+        elif pilihan == '4':
+            _hapus_supplier(session_state)
+        else:
+            console.print("⛔ Pilihan tidak valid.", style="bold red")
+            input("Tekan Enter untuk melanjutkan...")
+
+
+def _lihat_daftar_supplier(session_state: dict) -> None:
+    """Menampilkan daftar master supplier terdaftar."""
+    cabang_id = session_state.get('cabang_id', 1)
+    
+    os.system('cls' if platform.system() == 'Windows' else 'clear')
+    console.print(Panel(
+        "[bold white]LIHAT DAFTAR SUPPLIER[/]\n"
+        "[blue]Dashboard > M.2 > Supplier > Lihat Daftar[/]",
+        style="bold white",
+        expand=False
+    ))
+    console.print()
+    
+    conn_res = get_db_connection()
+    if not conn_res.is_success:
+        console.print(f"⛔ {conn_res.error_msg}", style="bold red")
+        input("Tekan Enter untuk melanjutkan...")
+        return
+    conn = conn_res.data
+    
+    try:
+        db_res = query_daftar_supplier(conn, cabang_id)
+        if not db_res.is_success:
+            console.print(f"⛔ {db_res.error_msg}", style="bold red")
+            input("Tekan Enter untuk melanjutkan...")
+            return
+            
+        data = db_res.data
+        if not data:
+            console.print("[yellow]Belum ada data supplier terdaftar.[/]", style="bold yellow")
+            console.print()
+            input("Tekan Enter untuk kembali...")
+            return
+            
+        rows = []
+        for idx, row in enumerate(data, start=1):
+            rows.append([
+                idx,
+                row['id'],
+                row['nama_supplier'],
+                row['alamat'],
+                row['telp'],
+                row['email']
+            ])
+            
+        headers = ["No", "ID", "Nama Supplier", "Alamat", "Telepon", "Email"]
+        table_str = tabulate(rows, headers=headers, tablefmt="grid")
+        console.print(table_str)
+        console.print()
+        input("Tekan Enter untuk kembali...")
+    finally:
+        conn.close()
+
+
+def _tambah_supplier(session_state: dict) -> None:
+    """Sub-flow untuk menambahkan supplier baru."""
+    cabang_id = session_state.get('cabang_id', 1)
+    user_id = session_state.get('user_id', 1)
+    
+    while True:
+        os.system('cls' if platform.system() == 'Windows' else 'clear')
+        console.print(Panel(
+            "[bold white]TAMBAH SUPPLIER BARU[/]\n"
+            "[blue]Dashboard > M.2 > Supplier > Tambah Supplier[/]",
+            style="bold white",
+            expand=False
+        ))
+        console.print()
+        
+        try:
+            nama = _prompt_input("Masukkan Nama Supplier [0-Batal]: ")
+            if nama == '0' or not nama:
+                return
+                
+            alamat = _prompt_input("Masukkan Alamat Supplier: ")
+            telp = _prompt_input("Masukkan Nomor Telepon Supplier: ")
+            email = _prompt_input("Masukkan Email Supplier: ")
+            
+            # TODO: DATA KOSONG — perlu konfirmasi (SRS-F-015 has email, schema.sql did not, now added)
+            data_form = {
+                'nama_supplier': nama,
+                'alamat': alamat,
+                'telp': telp,
+                'email': email
+            }
+            
+            val_res = validasi_data_supplier(data_form)
+            if not val_res.is_success:
+                console.print(val_res.error_msg, style="bold red")
+                input("Tekan Enter untuk melanjutkan...")
+                continue
+                
+            cleaned = val_res.data
+            
+            conn_res = get_db_connection()
+            if not conn_res.is_success:
+                console.print(f"⛔ {conn_res.error_msg}", style="bold red")
+                input("Tekan Enter untuk melanjutkan...")
+                return
+            conn = conn_res.data
+            
+            try:
+                # Cek duplikasi nama
+                dup_res = query_cek_nama_supplier_duplikat(conn, cleaned['nama_supplier'], cabang_id)
+                if not dup_res.is_success:
+                    console.print(f"⛔ {dup_res.error_msg}", style="bold red")
+                    input("Tekan Enter untuk melanjutkan...")
+                    continue
+                if dup_res.data:
+                    console.print(f"⛔ Nama supplier '{cleaned['nama_supplier']}' sudah terdaftar di cabang ini!", style="bold red")
+                    input("Tekan Enter untuk melanjutkan...")
+                    continue
+                    
+                # Tampilkan konfirmasi
+                console.print()
+                console.print(Panel(
+                    f"Nama Supplier  : {cleaned['nama_supplier']}\n"
+                    f"Alamat         : {cleaned['alamat']}\n"
+                    f"Telepon        : {cleaned['telp']}\n"
+                    f"Email          : {cleaned['email']}",
+                    title="Konfirmasi Tambah Supplier",
+                    expand=False
+                ))
+                
+                raw_confirm = _prompt_input("Simpan data supplier ini? [Y/N]: ")
+                if raw_confirm.upper() == 'Y':
+                    ins_res = query_insert_supplier(
+                        conn,
+                        nama_supplier=cleaned['nama_supplier'],
+                        alamat=cleaned['alamat'],
+                        telp=cleaned['telp'],
+                        email=cleaned['email'],
+                        cabang_id=cabang_id
+                    )
+                    if not ins_res.is_success:
+                        console.print(f"⛔ {ins_res.error_msg}", style="bold red")
+                        input("Tekan Enter untuk melanjutkan...")
+                        continue
+                        
+                    last_id = ins_res.data
+                    
+                    # Audit Trail
+                    log_audit_trail(
+                        pengguna_id=user_id,
+                        action_type='INSERT',
+                        target_table='supplier',
+                        old_val=None,
+                        new_val={
+                            'id': last_id,
+                            'nama_supplier': cleaned['nama_supplier'],
+                            'alamat': cleaned['alamat'],
+                            'telp': cleaned['telp'],
+                            'email': cleaned['email'],
+                            'cabang_id': cabang_id
+                        },
+                        cabang_id=cabang_id,
+                        db_connection=conn
+                    )
+                    
+                    console.print(f"[bold green]✓ Supplier baru berhasil ditambahkan dengan ID {last_id}![/]")
+                    input("Tekan Enter untuk melanjutkan...")
+                    return
+                else:
+                    console.print("[yellow]Pendaftaran supplier dibatalkan.[/]")
+                    input("Tekan Enter untuk melanjutkan...")
+                    return
+            finally:
+                conn.close()
+        except (EOFError, KeyboardInterrupt):
+            return
+
+
+def _edit_supplier(session_state: dict) -> None:
+    """Sub-flow untuk mengedit data supplier yang sudah ada."""
+    cabang_id = session_state.get('cabang_id', 1)
+    user_id = session_state.get('user_id', 1)
+    
+    while True:
+        os.system('cls' if platform.system() == 'Windows' else 'clear')
+        console.print(Panel(
+            "[bold white]EDIT DATA MASTER SUPPLIER[/]\n"
+            "[blue]Dashboard > M.2 > Supplier > Edit Supplier[/]",
+            style="bold white",
+            expand=False
+        ))
+        console.print()
+        
+        # Ambil koneksi database
+        conn_res = get_db_connection()
+        if not conn_res.is_success:
+            console.print(f"⛔ {conn_res.error_msg}", style="bold red")
+            input("Tekan Enter untuk melanjutkan...")
+            return
+        conn = conn_res.data
+        
+        try:
+            # Tampilkan daftar supplier agar user tahu ID-nya
+            list_res = query_daftar_supplier(conn, cabang_id)
+            if list_res.is_success and list_res.data:
+                rows = []
+                for row in list_res.data:
+                    rows.append([row['id'], row['nama_supplier'], row['alamat'], row['telp'], row['email']])
+                console.print(tabulate(rows, headers=["ID", "Nama Supplier", "Alamat", "Telepon", "Email"], tablefmt="grid"))
+                console.print()
+            
+            raw_id = _prompt_input("Masukkan ID Supplier yang akan diedit [0-Batal]: ")
+            if raw_id == '0' or not raw_id:
+                return
+                
+            val_id_res = validasi_supplier_id(raw_id)
+            if not val_id_res.is_valid:
+                console.print(val_id_res.error_msg, style="bold red")
+                input("Tekan Enter untuk melanjutkan...")
+                continue
+                
+            supplier_id = val_id_res.sanitized_data
+            
+            # Ambil data lama
+            detail_res = query_detail_supplier(conn, supplier_id, cabang_id)
+            if not detail_res.is_success or not detail_res.data:
+                err = detail_res.error_msg if detail_res.error_msg else "⛔ ERR-VAL-013: ID supplier tidak ditemukan."
+                console.print(err, style="bold red")
+                input("Tekan Enter untuk melanjutkan...")
+                continue
+                
+            old_supplier = detail_res.data
+            
+            # Tampilkan data saat ini
+            console.print()
+            console.print(Panel(
+                f"Nama Supplier  : {old_supplier['nama_supplier']}\n"
+                f"Alamat         : {old_supplier['alamat']}\n"
+                f"Telepon        : {old_supplier['telp']}\n"
+                f"Email          : {old_supplier['email']}",
+                title="Data Supplier Saat Ini",
+                expand=False
+            ))
+            console.print()
+            
+            # Input data baru
+            new_nama = _prompt_input(f"Nama Supplier [Enter=tetap '{old_supplier['nama_supplier']}']: ")
+            if not new_nama:
+                new_nama = old_supplier['nama_supplier']
+                
+            new_alamat = _prompt_input(f"Alamat [Enter=tetap '{old_supplier['alamat']}']: ")
+            if not new_alamat:
+                new_alamat = old_supplier['alamat']
+                
+            new_telp = _prompt_input(f"Telepon [Enter=tetap '{old_supplier['telp']}']: ")
+            if not new_telp:
+                new_telp = old_supplier['telp']
+                
+            new_email = _prompt_input(f"Email [Enter=tetap '{old_supplier['email']}']: ")
+            if not new_email:
+                new_email = old_supplier['email']
+                
+            # Cek jika tidak ada perubahan
+            if (new_nama == old_supplier['nama_supplier'] and
+                new_alamat == old_supplier['alamat'] and
+                new_telp == old_supplier['telp'] and
+                new_email == old_supplier['email']):
+                console.print("[yellow]Tidak ada perubahan data yang dilakukan.[/]")
+                input("Tekan Enter untuk melanjutkan...")
+                return
+                
+            # Validasi input baru
+            data_form = {
+                'nama_supplier': new_nama,
+                'alamat': new_alamat,
+                'telp': new_telp,
+                'email': new_email
+            }
+            
+            val_res = validasi_data_supplier(data_form)
+            if not val_res.is_success:
+                console.print(val_res.error_msg, style="bold red")
+                input("Tekan Enter untuk melanjutkan...")
+                continue
+                
+            cleaned = val_res.data
+            
+            # Cek duplikasi nama jika nama diubah
+            if cleaned['nama_supplier'].lower() != old_supplier['nama_supplier'].lower():
+                dup_res = query_cek_nama_supplier_duplikat(conn, cleaned['nama_supplier'], cabang_id, exclude_id=supplier_id)
+                if not dup_res.is_success:
+                    console.print(f"⛔ {dup_res.error_msg}", style="bold red")
+                    input("Tekan Enter untuk melanjutkan...")
+                    continue
+                if dup_res.data:
+                    console.print(f"⛔ Nama supplier '{cleaned['nama_supplier']}' sudah terdaftar di cabang ini!", style="bold red")
+                    input("Tekan Enter untuk melanjutkan...")
+                    continue
+                    
+            # Tampilkan diff
+            diff_lines = []
+            if old_supplier['nama_supplier'] != cleaned['nama_supplier']:
+                diff_lines.append(f"• Nama: '{old_supplier['nama_supplier']}' -> '{cleaned['nama_supplier']}'")
+            if old_supplier['alamat'] != cleaned['alamat']:
+                diff_lines.append(f"• Alamat: '{old_supplier['alamat']}' -> '{cleaned['alamat']}'")
+            if old_supplier['telp'] != cleaned['telp']:
+                diff_lines.append(f"• Telepon: '{old_supplier['telp']}' -> '{cleaned['telp']}'")
+            if old_supplier['email'] != cleaned['email']:
+                diff_lines.append(f"• Email: '{old_supplier['email']}' -> '{cleaned['email']}'")
+                
+            console.print()
+            console.print(Panel(
+                "\n".join(diff_lines),
+                title="Perubahan Data Supplier",
+                style="yellow",
+                expand=False
+            ))
+            
+            raw_confirm = _prompt_input("Simpan perubahan data supplier? [Y/N]: ")
+            if raw_confirm.upper() == 'Y':
+                upd_res = query_update_supplier(
+                    conn,
+                    supplier_id=supplier_id,
+                    nama_supplier=cleaned['nama_supplier'],
+                    alamat=cleaned['alamat'],
+                    telp=cleaned['telp'],
+                    email=cleaned['email'],
+                    cabang_id=cabang_id
+                )
+                if not upd_res.is_success:
+                    console.print(f"⛔ {upd_res.error_msg}", style="bold red")
+                    input("Tekan Enter untuk melanjutkan...")
+                    continue
+                    
+                # Audit Trail
+                log_audit_trail(
+                    pengguna_id=user_id,
+                    action_type='UPDATE',
+                    target_table='supplier',
+                    old_val={
+                        'id': supplier_id,
+                        'nama_supplier': old_supplier['nama_supplier'],
+                        'alamat': old_supplier['alamat'],
+                        'telp': old_supplier['telp'],
+                        'email': old_supplier['email'],
+                        'cabang_id': cabang_id
+                    },
+                    new_val={
+                        'id': supplier_id,
+                        'nama_supplier': cleaned['nama_supplier'],
+                        'alamat': cleaned['alamat'],
+                        'telp': cleaned['telp'],
+                        'email': cleaned['email'],
+                        'cabang_id': cabang_id
+                    },
+                    cabang_id=cabang_id,
+                    db_connection=conn
+                )
+                
+                console.print("[bold green]✓ Perubahan data supplier berhasil disimpan ke database.[/]")
+                input("Tekan Enter untuk melanjutkan...")
+                return
+            else:
+                console.print("[yellow]Perubahan data supplier dibatalkan.[/]")
+                input("Tekan Enter untuk melanjutkan...")
+                return
+        finally:
+            conn.close()
+
+
+def _hapus_supplier(session_state: dict) -> None:
+    """Sub-flow untuk menghapus supplier secara permanen."""
+    cabang_id = session_state.get('cabang_id', 1)
+    user_id = session_state.get('user_id', 1)
+    
+    while True:
+        os.system('cls' if platform.system() == 'Windows' else 'clear')
+        console.print(Panel(
+            "[bold red]HAPUS SUPPLIER[/]\n"
+            "[blue]Dashboard > M.2 > Supplier > Hapus Supplier[/]",
+            style="bold red",
+            expand=False
+        ))
+        console.print()
+        
+        conn_res = get_db_connection()
+        if not conn_res.is_success:
+            console.print(f"⛔ {conn_res.error_msg}", style="bold red")
+            input("Tekan Enter untuk melanjutkan...")
+            return
+        conn = conn_res.data
+        
+        try:
+            # Tampilkan daftar supplier
+            list_res = query_daftar_supplier(conn, cabang_id)
+            if list_res.is_success and list_res.data:
+                rows = []
+                for row in list_res.data:
+                    rows.append([row['id'], row['nama_supplier'], row['alamat'], row['telp'], row['email']])
+                console.print(tabulate(rows, headers=["ID", "Nama Supplier", "Alamat", "Telepon", "Email"], tablefmt="grid"))
+                console.print()
+                
+            raw_id = _prompt_input("Masukkan ID Supplier yang akan dihapus [0-Batal]: ")
+            if raw_id == '0' or not raw_id:
+                return
+                
+            val_id_res = validasi_supplier_id(raw_id)
+            if not val_id_res.is_valid:
+                console.print(val_id_res.error_msg, style="bold red")
+                input("Tekan Enter untuk melanjutkan...")
+                continue
+                
+            supplier_id = val_id_res.sanitized_data
+            
+            # Ambil data supplier yang akan dihapus
+            detail_res = query_detail_supplier(conn, supplier_id, cabang_id)
+            if not detail_res.is_success or not detail_res.data:
+                err = detail_res.error_msg if detail_res.error_msg else "⛔ ERR-VAL-013: ID supplier tidak ditemukan."
+                console.print(err, style="bold red")
+                input("Tekan Enter untuk melanjutkan...")
+                continue
+                
+            supplier = detail_res.data
+            
+            # Tampilkan data yang akan dihapus
+            console.print(Panel(
+                f"Nama Supplier : {supplier['nama_supplier']}\n"
+                f"Alamat        : {supplier['alamat']}\n"
+                f"Telepon       : {supplier['telp']}\n"
+                f"Email         : {supplier['email']}",
+                title="Supplier yang Akan Dihapus",
+                expand=False
+            ))
+            
+            # Cek relasi ke riwayat_harga_supplier first for warnings
+            has_riwayat = False
+            try:
+                cursor_check = conn.cursor(dictionary=True)
+                cursor_check.execute("SELECT COUNT(*) as count FROM riwayat_harga_supplier WHERE supplier_id = %s", (supplier_id,))
+                res_riwayat = cursor_check.fetchone()
+                if res_riwayat and res_riwayat['count'] > 0:
+                    has_riwayat = True
+                cursor_check.close()
+            except Exception:
+                pass
+                
+            if has_riwayat:
+                console.print("[yellow]⚠️ PERINGATAN: Supplier ini memiliki riwayat harga beli. Penghapusan akan menghapus relasi riwayat tersebut.[/]")
+                
+            console.print("[bold red]⚠️ PERINGATAN: Penghapusan supplier bersifat PERMANEN![/]")
+            
+            raw_confirm = _prompt_input("Konfirmasi hapus? [Y/N]: ")
+            if raw_confirm.upper() == 'Y':
+                del_res = query_delete_supplier(conn, supplier_id, cabang_id)
+                if not del_res.is_success:
+                    console.print(del_res.error_msg, style="bold red")
+                    input("Tekan Enter untuk melanjutkan...")
+                    continue
+                    
+                # Audit Trail
+                log_audit_trail(
+                    pengguna_id=user_id,
+                    action_type='DELETE',
+                    target_table='supplier',
+                    old_val={
+                        'id': supplier_id,
+                        'nama_supplier': supplier['nama_supplier'],
+                        'alamat': supplier['alamat'],
+                        'telp': supplier['telp'],
+                        'email': supplier['email'],
+                        'cabang_id': cabang_id
+                    },
+                    new_val=None,
+                    cabang_id=cabang_id,
+                    db_connection=conn
+                )
+                
+                console.print("[bold green]✓ Supplier berhasil dihapus secara permanen dari database.[/]")
+                input("Tekan Enter untuk melanjutkan...")
+                return
+            else:
+                console.print("[yellow]Penghapusan supplier dibatalkan.[/]")
+                input("Tekan Enter untuk melanjutkan...")
+                return
+        finally:
+            conn.close()
 
 
 def trigger_backup_restore(session_state: dict) -> None:
