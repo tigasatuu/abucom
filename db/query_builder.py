@@ -1931,4 +1931,306 @@ def check_supplier_exists(db_connection, supplier_id: int, cabang_id: int) -> bo
     return False
 
 
+def insert_pelanggan_baru(
+    db_connection,
+    nama_pelanggan: str,
+    whatsapp_encrypted: str,
+    cabang_id: int
+) -> Result:
+    """Menyisipkan data pelanggan baru ke tabel pelanggan MySQL.
+
+    (Ref: SRS-F-038, Schema DDL TABEL 03)
+
+    Args:
+        db_connection: Objek koneksi database aktif.
+        nama_pelanggan (str): Nama pelanggan CRM.
+        whatsapp_encrypted (str): Nomor WhatsApp terenkripsi Fernet.
+        cabang_id (int): ID cabang pendaftaran.
+
+    Returns:
+        Result: Tuple (is_success, data=id_pelanggan_baru, error_msg).
+    """
+    cursor = None
+    try:
+        cursor = db_connection.cursor()
+        query = (
+            "INSERT INTO pelanggan (nama_pelanggan, whatsapp, cabang_id) "
+            "VALUES (%s, %s, %s)"
+        )
+        cursor.execute(query, (nama_pelanggan, whatsapp_encrypted, cabang_id))
+        db_connection.commit()
+        last_id = cursor.lastrowid
+        return Result(True, last_id, None)
+    except mysql.connector.Error as e:
+        try:
+            db_connection.rollback()
+        except Exception:
+            pass
+        if e.errno == 1062:  # Duplicate entry
+            # Cari nama pelanggan pemilik whatsapp ini
+            nama_existing = "[Tidak Diketahui]"
+            cursor_find = None
+            try:
+                cursor_find = db_connection.cursor()
+                cursor_find.execute(
+                    "SELECT nama_pelanggan FROM pelanggan WHERE whatsapp = %s AND cabang_id = %s",
+                    (whatsapp_encrypted, cabang_id)
+                )
+                row = cursor_find.fetchone()
+                if row:
+                    nama_existing = row[0]
+            except Exception:
+                pass
+            finally:
+                if cursor_find:
+                    try:
+                        cursor_find.close()
+                    except Exception:
+                        pass
+            
+            return Result(
+                False,
+                None,
+                f"⛔ ERR-CRM-036: Nomor WhatsApp sudah terdaftar atas nama pelanggan {nama_existing}!"
+            )
+        error_msg = f"ERR-DB-002: Eksekusi INSERT pelanggan gagal (Detail Error: MySQL Error {e.errno}: {e.msg})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    except Exception as e:
+        try:
+            db_connection.rollback()
+        except Exception:
+            pass
+        error_msg = f"ERR-DB-002: Eksekusi INSERT pelanggan gagal (Detail Error: {str(e)})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    finally:
+        if cursor:
+            cursor.close()
+
+
+def cari_pelanggan_by_whatsapp(
+    db_connection,
+    whatsapp_encrypted: str,
+    cabang_id: int
+) -> Result:
+    """Mencari pelanggan berdasarkan nomor WhatsApp terenkripsi.
+
+    Args:
+        db_connection: Objek koneksi database aktif.
+        whatsapp_encrypted (str): Nomor WhatsApp terenkripsi Fernet.
+        cabang_id (int): ID cabang.
+
+    Returns:
+        Result: Tuple (is_success, data=dict_pelanggan|None, error_msg).
+    """
+    cursor = None
+    try:
+        cursor = db_connection.cursor(dictionary=True)
+        query = (
+            "SELECT id, nama_pelanggan, whatsapp, tanggal_terdaftar "
+            "FROM pelanggan "
+            "WHERE whatsapp = %s AND cabang_id = %s"
+        )
+        cursor.execute(query, (whatsapp_encrypted, cabang_id))
+        row = cursor.fetchone()
+        return Result(True, row, None)
+    except mysql.connector.Error as e:
+        error_msg = f"ERR-DB-002: Pencarian pelanggan gagal (Detail Error: MySQL Error {e.errno}: {e.msg})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    except Exception as e:
+        error_msg = f"ERR-DB-002: Pencarian pelanggan gagal (Detail Error: {str(e)})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    finally:
+        if cursor:
+            cursor.close()
+
+
+def get_daftar_pelanggan(
+    db_connection,
+    cabang_id: int,
+    limit: int = 50,
+    offset: int = 0
+) -> Result:
+    """Mengambil daftar pelanggan CRM per cabang.
+
+    Args:
+        db_connection: Objek koneksi database aktif.
+        cabang_id (int): ID cabang.
+        limit (int): Jumlah maksimal data.
+        offset (int): Offset data untuk paginasi.
+
+    Returns:
+        Result: Tuple (is_success, data=list[dict], error_msg).
+    """
+    cursor = None
+    try:
+        cursor = db_connection.cursor(dictionary=True)
+        query = (
+            "SELECT id, nama_pelanggan, whatsapp, tanggal_terdaftar "
+            "FROM pelanggan "
+            "WHERE cabang_id = %s "
+            "ORDER BY id DESC "
+            "LIMIT %s OFFSET %s"
+        )
+        cursor.execute(query, (cabang_id, limit, offset))
+        rows = cursor.fetchall()
+        return Result(True, rows, None)
+    except mysql.connector.Error as e:
+        error_msg = f"ERR-DB-002: Gagal mengambil daftar pelanggan (Detail Error: MySQL Error {e.errno}: {e.msg})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    except Exception as e:
+        error_msg = f"ERR-DB-002: Gagal mengambil daftar pelanggan (Detail Error: {str(e)})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    finally:
+        if cursor:
+            cursor.close()
+
+
+def get_riwayat_transaksi_pelanggan(
+    db_connection,
+    pelanggan_id: int,
+    cabang_id: int
+) -> Result:
+    """Mengambil riwayat transaksi terkait pelanggan CRM.
+
+    Args:
+        db_connection: Objek koneksi database aktif.
+        pelanggan_id (int): ID pelanggan.
+        cabang_id (int): ID cabang.
+
+    Returns:
+        Result: Tuple (is_success, data=list[dict], error_msg).
+    """
+    cursor = None
+    try:
+        cursor = db_connection.cursor(dictionary=True)
+        query = (
+            "SELECT id, no_invoice, tanggal_transaksi, total_bayar, "
+            "status_pembayaran, tipe_pelanggan "
+            "FROM transaksi "
+            "WHERE pelanggan_id = %s AND cabang_id = %s "
+            "ORDER BY tanggal_transaksi DESC "
+            "LIMIT 20"
+        )
+        cursor.execute(query, (pelanggan_id, cabang_id))
+        rows = cursor.fetchall()
+        
+        # Mengonversi total_bayar ke Decimal
+        for row in rows:
+            if row.get('total_bayar') is not None:
+                row['total_bayar'] = Decimal(str(row['total_bayar']))
+                
+        return Result(True, rows, None)
+    except mysql.connector.Error as e:
+        error_msg = f"ERR-DB-002: Gagal mengambil riwayat transaksi (Detail Error: MySQL Error {e.errno}: {e.msg})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    except Exception as e:
+        error_msg = f"ERR-DB-002: Gagal mengambil riwayat transaksi (Detail Error: {str(e)})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    finally:
+        if cursor:
+            cursor.close()
+
+
+def update_pelanggan(
+    db_connection,
+    pelanggan_id: int,
+    nama_pelanggan: str | None,
+    whatsapp_encrypted: str | None,
+    cabang_id: int
+) -> Result:
+    """Memperbarui data profil pelanggan CRM.
+
+    Args:
+        db_connection: Objek koneksi database aktif.
+        pelanggan_id (int): ID pelanggan yang akan diperbarui.
+        nama_pelanggan (str | None): Nama baru pelanggan.
+        whatsapp_encrypted (str | None): WhatsApp baru terenkripsi.
+        cabang_id (int): ID cabang.
+
+    Returns:
+        Result: Tuple (is_success, data=None, error_msg).
+    """
+    if nama_pelanggan is None and whatsapp_encrypted is None:
+        return Result(True, None, None)
+
+    cursor = None
+    try:
+        cursor = db_connection.cursor()
+        
+        updates = []
+        params = []
+        
+        if nama_pelanggan is not None:
+            updates.append("nama_pelanggan = %s")
+            params.append(nama_pelanggan)
+            
+        if whatsapp_encrypted is not None:
+            updates.append("whatsapp = %s")
+            params.append(whatsapp_encrypted)
+            
+        params.extend([pelanggan_id, cabang_id])
+        
+        updates_str = ", ".join(updates)
+        query = "UPDATE pelanggan SET " + updates_str + " WHERE id = %s AND cabang_id = %s"
+        
+        cursor.execute(query, tuple(params))
+        db_connection.commit()
+        return Result(True, None, None)
+    except mysql.connector.Error as e:
+        try:
+            db_connection.rollback()
+        except Exception:
+            pass
+        if e.errno == 1062:  # Duplicate entry
+            # Cari nama pelanggan pemilik whatsapp ini
+            nama_existing = "[Tidak Diketahui]"
+            cursor_find = None
+            try:
+                cursor_find = db_connection.cursor()
+                cursor_find.execute(
+                    "SELECT nama_pelanggan FROM pelanggan WHERE whatsapp = %s AND cabang_id = %s",
+                    (whatsapp_encrypted, cabang_id)
+                )
+                row = cursor_find.fetchone()
+                if row:
+                    nama_existing = row[0]
+            except Exception:
+                pass
+            finally:
+                if cursor_find:
+                    try:
+                        cursor_find.close()
+                    except Exception:
+                        pass
+            
+            return Result(
+                False,
+                None,
+                f"⛔ ERR-CRM-036: Nomor WhatsApp sudah terdaftar atas nama pelanggan {nama_existing}!"
+            )
+        error_msg = f"ERR-DB-002: Gagal memperbarui data pelanggan (Detail Error: MySQL Error {e.errno}: {e.msg})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    except Exception as e:
+        try:
+            db_connection.rollback()
+        except Exception:
+            pass
+        error_msg = f"ERR-DB-002: Gagal memperbarui data pelanggan (Detail Error: {str(e)})"
+        _logger.error(error_msg)
+        return Result(False, None, error_msg)
+    finally:
+        if cursor:
+            cursor.close()
+
+
+
 
