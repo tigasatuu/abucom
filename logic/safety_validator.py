@@ -15,6 +15,7 @@ from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
 ValidationStatus = namedtuple('ValidationStatus', ['is_valid', 'sanitized_data', 'error_msg'])
 SanitizedInput = namedtuple('SanitizedInput', ['is_valid', 'cleaned_value', 'error_msg'])
 Result = namedtuple('Result', ['is_success', 'data', 'error_msg'])
+ValidationResult = namedtuple('ValidationResult', ['is_valid', 'sanitized_data', 'error_msg'])
 
 
 # ============================================================
@@ -477,5 +478,86 @@ def validasi_supplier_id(raw_input: str) -> ValidationStatus:
         return ValidationStatus(False, None, "⛔ ERR-VAL-013: ID supplier harus berupa angka bulat positif!")
         
     return ValidationStatus(True, val, None)
+
+
+def validasi_nomor_whatsapp(wa_input: str) -> ValidationResult:
+    """Memvalidasi format nomor WhatsApp pelanggan ke standar Indonesia.
+
+    (Ref: SRS-F-038 — Validasi regex ^628[0-9]{8,11}$)
+
+    Args:
+        wa_input (str): Input mentah nomor WA dari keyboard CLI.
+
+    Returns:
+        ValidationResult: Tuple berisi status validasi, data tersanitasi, dan pesan error.
+    """
+    if not isinstance(wa_input, str):
+        return ValidationResult(
+            False,
+            "",
+            "⛔ ERR-VAL-036: WhatsApp Tidak Valid: Tipe data nomor WhatsApp harus berupa string!"
+        )
+
+    # 1. Sanitasi input (buang karakter kontrol, spasi, tanda hubung)
+    cleaned = "".join(char for char in wa_input if ord(char) >= 0x20)
+    cleaned = cleaned.replace(" ", "").replace("-", "")
+
+    # 2. Jika diawali '+62', buang '+'
+    if cleaned.startswith("+62"):
+        cleaned = cleaned[1:]
+    # 3. Jika diawali '0' (format lokal), konversi ke '62'
+    elif cleaned.startswith("08"):
+        cleaned = "62" + cleaned[1:]
+
+    # 4. Validasi regex final: ^628[0-9]{8,11}$
+    if not re.fullmatch(r"^628[0-9]{8,11}$", cleaned):
+        return ValidationResult(
+            False,
+            "",
+            "⛔ ERR-VAL-036: WhatsApp Tidak Valid: Nomor WhatsApp pelanggan minimal 10 digit angka numerik!"
+        )
+
+    return ValidationResult(True, cleaned, None)
+
+
+def validasi_nama_pelanggan(nama_input: str) -> ValidationResult:
+    """Memvalidasi dan membersihkan nama pelanggan CRM.
+
+    Args:
+        nama_input (str): Input mentah nama pelanggan dari keyboard CLI.
+
+    Returns:
+        ValidationResult: Tuple berisi status, data bersih (title case), dan error.
+    """
+    if not isinstance(nama_input, str):
+        return ValidationResult(
+            False,
+            "",
+            "⛔ ERR-VAL-036: Nama Tidak Valid: Tipe data nama harus berupa string!"
+        )
+
+    # 1. Sanitasi input (buang karakter kontrol ASCII < 0x20)
+    cleaned = "".join(char for char in nama_input if ord(char) >= 0x20).strip()
+
+    # 2. Validasi panjang: minimal 2, maksimal 100
+    if not (2 <= len(cleaned) <= 100):
+        return ValidationResult(
+            False,
+            "",
+            "⛔ ERR-VAL-036: Nama Tidak Valid: Nama pelanggan harus memiliki panjang 2-100 karakter!"
+        )
+
+    # 3. Validasi karakter: hanya huruf, spasi, titik, apostrof
+    if not re.fullmatch(r"^[a-zA-Z\s\.\'`’]+$", cleaned):
+        return ValidationResult(
+            False,
+            "",
+            "⛔ ERR-VAL-036: Nama Tidak Valid: Nama hanya boleh mengandung huruf, spasi, titik, dan apostrof!"
+        )
+
+    # 4. Normalisasi ke title case
+    title_name = cleaned.title()
+    return ValidationResult(True, title_name, None)
+
 
 
