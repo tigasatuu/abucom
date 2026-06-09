@@ -7,7 +7,9 @@ Deskripsi: Utilitas enkripsi simetris menggunakan Fernet Cryptography.
 Author: GPT-OSS 120B (STK-014)
 Tanggal: 2026-06-03
 """
-
+# WARNING: Jika FERNET_KEY dirotasi, seluruh data whatsapp terenkripsi
+# di tabel pelanggan harus di-re-enkripsi menggunakan utilitas migrasi.
+# Lihat: Security Design Bab 6.5 — Kebijakan Rotasi Kredensial.
 
 import logging
 from cryptography.fernet import Fernet
@@ -19,6 +21,11 @@ def encrypt_whatsapp_number(wa_number: str, fernet_key: str) -> str:
     """Mengenkripsi nomor WhatsApp ke dalam format cipher text base64.
 
     (Ref: Security Design Bab 6.1 — UU PDP No. 27/2022)
+
+    CATATAN: Validasi format nomor WA dilakukan di layer CLI
+    (logic/safety_validator.py -> validasi_nomor_whatsapp)
+    sebelum memanggil fungsi ini. Fungsi ini hanya bertanggung jawab
+    atas operasi kriptografi, bukan validasi bisnis.
 
     Args:
         wa_number (str): Nomor WhatsApp pelanggan dalam teks polos.

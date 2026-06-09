@@ -63,3 +63,42 @@ def test_encrypt_with_invalid_key_format():
     """Menguji format kunci Fernet tidak valid."""
     assert encrypt_whatsapp_number("6285678901234", "kunci_tidak_valid_32_bytes_bukan_base64!!!") == ""
     assert decrypt_whatsapp_number("some_encrypted_data", "kunci_tidak_valid_32_bytes_bukan_base64!!!") == ""
+
+
+def test_encrypt_whatsapp_number_long():
+    """Menguji nomor WA yang panjang (batas 20 karakter)."""
+    key = Fernet.generate_key().decode('utf-8')
+    wa_long = "12345678901234567890"  # 20 chars
+    encrypted = encrypt_whatsapp_number(wa_long, key)
+    assert encrypted != ""
+    assert decrypt_whatsapp_number(encrypted, key) == wa_long
+
+
+def test_encrypt_whatsapp_number_non_numeric():
+    """Menguji enkripsi dengan karakter non-numerik (crypto layer harus tetap mengenkripsi)."""
+    key = Fernet.generate_key().decode('utf-8')
+    wa_non_num = "abc-1234_xyz!"
+    encrypted = encrypt_whatsapp_number(wa_non_num, key)
+    assert encrypted != ""
+    assert decrypt_whatsapp_number(encrypted, key) == wa_non_num
+
+
+def test_decrypt_corrupted_ciphertext():
+    """Menguji dekripsi ciphertext yang rusak agar mengembalikan string kosong secara aman."""
+    key = Fernet.generate_key().decode('utf-8')
+    wa = "6285678901234"
+    encrypted = encrypt_whatsapp_number(wa, key)
+    
+    # Korupsi ciphertext dengan mengganti beberapa karakter di tengah
+    corrupted = encrypted[:20] + "xyz" + encrypted[23:]
+    assert decrypt_whatsapp_number(corrupted, key) == ""
+
+
+def test_encrypt_decrypt_multiple_roundtrips():
+    """Menguji reliabilitas roundtrip dengan 100 nomor acak yang berbeda."""
+    key = Fernet.generate_key().decode('utf-8')
+    for i in range(100):
+        wa = f"62856789{i:05d}"
+        encrypted = encrypt_whatsapp_number(wa, key)
+        assert encrypted != ""
+        assert decrypt_whatsapp_number(encrypted, key) == wa

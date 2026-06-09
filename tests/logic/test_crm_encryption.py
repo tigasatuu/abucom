@@ -12,7 +12,7 @@ from cryptography.fernet import Fernet, InvalidToken
 
 from logic.safety_validator import validasi_nomor_whatsapp
 from utils.crypto import encrypt_whatsapp_number, decrypt_whatsapp_number
-from db.query_builder import insert_pelanggan_baru, query_delete_pelanggan
+from db.query_builder import insert_pelanggan_baru, query_delete_pelanggan, cari_pelanggan_by_whatsapp
 
 
 @pytest.fixture
@@ -211,3 +211,83 @@ def test_delete_customer_not_found(clean_mock_env):
     assert res.is_success is True
     assert res.data == 0
     assert res.error_msg is None
+
+
+def test_cari_pelanggan_by_whatsapp_in_memory_match(dummy_fernet_key):
+    """Memverifikasi pencarian in-memory matching pada cari_pelanggan_by_whatsapp."""
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_conn.cursor.return_value = mock_cursor
+    
+    wa_plain = "6285678901234"
+    wa_encrypted = encrypt_whatsapp_number(wa_plain, dummy_fernet_key)
+    
+    # Mock data returned by cursor.fetchall()
+    wa_encrypted_db = encrypt_whatsapp_number(wa_plain, dummy_fernet_key)
+    mock_cursor.fetchall.return_value = [
+        {"id": 1, "nama_pelanggan": "Lain", "whatsapp": "some_other_encrypted", "tanggal_terdaftar": "2026-06-01"},
+        {"id": 2, "nama_pelanggan": "Roni", "whatsapp": wa_encrypted_db, "tanggal_terdaftar": "2026-06-02"},
+    ]
+    
+    # Test dengan kunci yang benar
+    res = cari_pelanggan_by_whatsapp(mock_conn, wa_encrypted, cabang_id=1, fernet_key=dummy_fernet_key)
+    assert res.is_success is True
+    assert res.data is not None
+    assert res.data["id"] == 2
+    assert res.data["nama_pelanggan"] == "Roni"
+    
+    # Test dengan kunci yang salah (harus gagal mencocokkan)
+    wrong_key = Fernet.generate_key().decode('utf-8')
+    res_wrong = cari_pelanggan_by_whatsapp(mock_conn, wa_encrypted, cabang_id=1, fernet_key=wrong_key)
+    assert res_wrong.is_success is True
+    assert res_wrong.data is None
+
+
+@patch('cli.menu_transaksi.query_delete_pelanggan')
+@patch('cli.menu_transaksi.log_audit_trail')
+@patch('cli.menu_transaksi.get_db_connection')
+@patch('cli.menu_transaksi.execute_query')
+def test_delete_customer_audit_log(mock_execute_query, mock_get_db_connection, mock_log_audit_trail, mock_query_delete_pelanggan, clean_mock_env, dummy_fernet_key):
+    """Memverifikasi bahwa proses penghapusan pelanggan memicu log audit dengan format yang benar."""
+    from cli.menu_transaksi import _form_hapus_pelanggan
+    
+    mock_conn = MagicMock()
+    mock_get_db_connection.return_value.is_success = True
+    mock_get_db_connection.return_value.data = mock_conn
+    
+    # Mock finding the customer
+    mock_execute_query.return_value.is_success = True
+    mock_execute_query.return_value.data = {
+        "id": 5,
+        "nama_pelanggan": "Roni",
+        "whatsapp": encrypt_whatsapp_number("6285678901234", dummy_fernet_key),
+        "tanggal_terdaftar": "2026-06-02"
+    }
+    
+    # Mock deletion success
+    mock_query_delete_pelanggan.return_value.is_success = True
+    mock_query_delete_pelanggan.return_value.data = 1
+    
+    # Mock load_settings
+    with patch('cli.menu_transaksi.load_settings') as mock_load_settings:
+        mock_settings = MagicMock()
+        mock_settings.fernet_key = dummy_fernet_key
+        mock_load_settings.return_value = mock_settings
+        
+        # Mock inputs: ID, dan konfirmasi 'y'
+        with patch('builtins.input', side_effect=["5", "y", ""]) as mock_input:
+            session_state = {"role": "pemilik", "cabang_id": 1, "user_id": 10}
+            _form_hapus_pelanggan(session_state)
+            
+            # Verify deletion called
+            mock_query_delete_pelanggan.assert_called_once_with(mock_conn, 5, 1)
+            
+            # Verify log_audit_trail called
+            mock_log_audit_trail.assert_called_once()
+            _, kwargs = mock_log_audit_trail.call_args
+            assert kwargs['pengguna_id'] == 10
+            assert kwargs['action_type'] == 'DELETE'
+            assert kwargs['target_table'] == 'pelanggan'
+            assert kwargs['old_val']['nama_pelanggan'] == 'Roni'
+            assert kwargs['old_val']['whatsapp'] == '[ENCRYPTED]'
+            assert kwargs['new_val'] is None
