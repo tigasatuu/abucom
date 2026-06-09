@@ -19,6 +19,7 @@ import mysql.connector
 
 # 3. Local Modules
 from db.db_connector import get_db_connection
+from utils.crypto import decrypt_whatsapp_number
 
 # Logger configuration
 _logger = logging.getLogger('abucom.db.query')
@@ -2012,14 +2013,22 @@ def insert_pelanggan_baru(
 def cari_pelanggan_by_whatsapp(
     db_connection,
     whatsapp_encrypted: str,
-    cabang_id: int
+    cabang_id: int,
+    fernet_key: str | None = None
 ) -> Result:
     """Mencari pelanggan berdasarkan nomor WhatsApp terenkripsi.
 
+    (Ref: Security Design Bab 8.1 - Pencarian Terenkripsi)
+    CATATAN: Pencarian dilakukan via dekripsi di memori karena Fernet
+    menghasilkan ciphertext non-deterministik. Untuk skala > 10.000
+    pelanggan, pertimbangkan menambah kolom whatsapp_hash (SHA-256)
+    untuk pencarian O(1).
+
     Args:
         db_connection: Objek koneksi database aktif.
-        whatsapp_encrypted (str): Nomor WhatsApp terenkripsi Fernet.
+        whatsapp_encrypted (str): Nomor WhatsApp terenkripsi Fernet atau plaintext.
         cabang_id (int): ID cabang.
+        fernet_key (str | None): Kunci enkripsi simetris Fernet 32-byte.
 
     Returns:
         Result: Tuple (is_success, data=dict_pelanggan|None, error_msg).
@@ -2027,14 +2036,37 @@ def cari_pelanggan_by_whatsapp(
     cursor = None
     try:
         cursor = db_connection.cursor(dictionary=True)
+        
+        # 1. Dapatkan target plaintext
+        target_plain = ""
+        if fernet_key:
+            target_plain = decrypt_whatsapp_number(whatsapp_encrypted, fernet_key)
+        if not target_plain:
+            target_plain = whatsapp_encrypted
+            
+        # 2. Ambil seluruh data pelanggan di cabang ini
         query = (
             "SELECT id, nama_pelanggan, whatsapp, tanggal_terdaftar "
             "FROM pelanggan "
-            "WHERE whatsapp = %s AND cabang_id = %s"
+            "WHERE cabang_id = %s"
         )
-        cursor.execute(query, (whatsapp_encrypted, cabang_id))
-        row = cursor.fetchone()
-        return Result(True, row, None)
+        cursor.execute(query, (cabang_id,))
+        rows = cursor.fetchall()
+        
+        # 3. Cocokkan di memori
+        matched_row = None
+        for row in rows:
+            row_plain = ""
+            if fernet_key:
+                row_plain = decrypt_whatsapp_number(row['whatsapp'], fernet_key)
+            if not row_plain:
+                row_plain = row['whatsapp']
+                
+            if row_plain == target_plain:
+                matched_row = row
+                break
+                
+        return Result(True, matched_row, None)
     except mysql.connector.Error as e:
         error_msg = f"ERR-DB-002: Pencarian pelanggan gagal (Detail Error: MySQL Error {e.errno}: {e.msg})"
         _logger.error(error_msg)

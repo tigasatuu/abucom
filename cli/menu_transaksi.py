@@ -25,9 +25,11 @@ from middleware.audit_logger import log_audit_trail
 from db.db_connector import get_db_connection
 from db.query_builder import (
     execute_query, insert_pelanggan_baru, cari_pelanggan_by_whatsapp,
-    get_daftar_pelanggan, get_riwayat_transaksi_pelanggan, update_pelanggan
+    get_daftar_pelanggan, get_riwayat_transaksi_pelanggan, update_pelanggan,
+    query_delete_pelanggan
 )
 from config.settings import load_settings
+from utils.crypto import encrypt_whatsapp_number, decrypt_whatsapp_number
 
 console = Console()
 
@@ -174,11 +176,13 @@ def form_crm_pelanggan(session_state: dict) -> None:
         console.print("  [2] Cari Riwayat Transaksi Pelanggan")
         console.print("  [3] Lihat Daftar Semua Pelanggan")
         console.print("  [4] Edit Data Pelanggan")
+        if session_state.get('role', '') == 'pemilik':
+            console.print("  [5] Hapus Data Pelanggan (Permanen)")
         console.print("  [0] Kembali ke Menu Transaksi")
         console.print()
 
         try:
-            raw_pilihan = input("Pilihan Anda [0-4]: ")
+            raw_pilihan = input("Pilihan Anda: ")
             pilihan = sanitasi_input_cli(raw_pilihan).strip()
         except (EOFError, KeyboardInterrupt):
             return
@@ -194,8 +198,11 @@ def form_crm_pelanggan(session_state: dict) -> None:
             _form_lihat_daftar_pelanggan(session_state)
         elif pilihan == '4':
             _form_edit_pelanggan(session_state)
+        elif pilihan == '5' and session_state.get('role', '') == 'pemilik':
+            _form_hapus_pelanggan(session_state)
         else:
-            console.print("⛔ Pilihan tidak valid. Harap masukkan angka 0-4.", style="bold red")
+            max_opt = "5" if session_state.get('role', '') == 'pemilik' else "4"
+            console.print(f"⛔ Pilihan tidak valid. Harap masukkan angka 0-{max_opt}.", style="bold red")
             input("Tekan Enter untuk melanjutkan...")
 
 
@@ -324,6 +331,10 @@ def _form_cari_riwayat_pelanggan(session_state: dict) -> None:
 
     wa_sanitized = val_wa.sanitized_data
     wa_encrypted = encrypt_whatsapp_number(wa_sanitized, fernet_key)
+    if not wa_encrypted:
+        console.print("⛔ ERR-CRM-CRYPTO: Gagal mengenkripsi nomor WhatsApp pelanggan!", style="bold red")
+        input("Tekan Enter untuk kembali...")
+        return
 
     # 2. Cari di database
     conn_res = get_db_connection()
@@ -334,7 +345,7 @@ def _form_cari_riwayat_pelanggan(session_state: dict) -> None:
     conn = conn_res.data
 
     try:
-        db_res = cari_pelanggan_by_whatsapp(conn, wa_encrypted, cabang_id)
+        db_res = cari_pelanggan_by_whatsapp(conn, wa_encrypted, cabang_id, fernet_key)
         if not db_res.is_success:
             console.print(f"⛔ {db_res.error_msg}", style="bold red")
             input("Tekan Enter untuk kembali...")
@@ -347,7 +358,7 @@ def _form_cari_riwayat_pelanggan(session_state: dict) -> None:
             return
 
         # Dekripsi WA untuk ditampilkan
-        wa_decrypted = decrypt_whatsapp_number(pelanggan['whatsapp'], fernet_key)
+        wa_decrypted = decrypt_whatsapp_number(pelanggan['whatsapp'], fernet_key) or '[GAGAL DEKRIPSI]'
         client_code = f"CRM-{pelanggan['id']:03d}" if pelanggan['id'] < 1000 else f"CRM-{pelanggan['id']}"
 
         console.print(Panel(
@@ -446,7 +457,7 @@ def _form_lihat_daftar_pelanggan(session_state: dict) -> None:
         headers = ["ID Klien", "Nama Pelanggan", "WhatsApp", "Tanggal Daftar"]
         table_rows = []
         for cust in customers:
-            wa_decrypted = decrypt_whatsapp_number(cust['whatsapp'], fernet_key)
+            wa_decrypted = decrypt_whatsapp_number(cust['whatsapp'], fernet_key) or '[GAGAL DEKRIPSI]'
             client_code = f"CRM-{cust['id']:03d}" if cust['id'] < 1000 else f"CRM-{cust['id']}"
             table_rows.append([
                 client_code,
@@ -523,7 +534,7 @@ def _form_edit_pelanggan(session_state: dict) -> None:
             return
 
         cust = cust_res.data
-        wa_decrypted = decrypt_whatsapp_number(cust['whatsapp'], fernet_key)
+        wa_decrypted = decrypt_whatsapp_number(cust['whatsapp'], fernet_key) or '[GAGAL DEKRIPSI]'
 
         console.print(Panel(
             f"Nama Pelanggan: {cust['nama_pelanggan']}\n"
@@ -555,6 +566,10 @@ def _form_edit_pelanggan(session_state: dict) -> None:
                 input("Tekan Enter untuk kembali...")
                 return
             wa_encrypted_to_update = encrypt_whatsapp_number(val_wa.sanitized_data, fernet_key)
+            if not wa_encrypted_to_update:
+                console.print("⛔ ERR-CRM-CRYPTO: Gagal mengenkripsi nomor WhatsApp pelanggan!", style="bold red")
+                input("Tekan Enter untuk kembali...")
+                return
 
         if nama_to_update is None and wa_encrypted_to_update is None:
             console.print("[yellow]Tidak ada perubahan data yang dilakukan.[/]")
@@ -590,6 +605,121 @@ def _form_edit_pelanggan(session_state: dict) -> None:
         )
 
         console.print("[bold green]✓ Perubahan data profil pelanggan berhasil disimpan.[/]")
+        input("Tekan Enter untuk melanjutkan...")
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+def _form_hapus_pelanggan(session_state: dict) -> None:
+    """Sub-menu: Hapus data pelanggan secara fisik dari database CRM (Right to Erasure).
+
+    (Ref: Modul M.8, UU PDP No. 27/2022)
+    """
+    if session_state.get('role', '') != 'pemilik':
+        console.print("⛔ ERR-AUTH-003: Akses ditolak. Hanya Pemilik yang dapat menghapus data pelanggan.", style="bold red")
+        input("Tekan Enter untuk kembali...")
+        return
+
+    os.system('cls' if platform.system() == 'Windows' else 'clear')
+
+    console.print(Panel(
+        "[bold red]HAPUS DATA PELANGGAN (PERMANEN)[/]\n"
+        "[blue]Dashboard > M.8 CRM > Database CRM > Hapus Pelanggan[/]",
+        style="bold red",
+        expand=False
+    ))
+    console.print()
+
+    # Load settings to get FERNET_KEY
+    try:
+        app_settings = load_settings()
+        fernet_key = app_settings.fernet_key
+    except Exception as e:
+        console.print(f"⛔ Gagal memuat konfigurasi: {str(e)}", style="bold red")
+        input("Tekan Enter untuk kembali...")
+        return
+
+    cabang_id = session_state.get('cabang_id', 1)
+    user_id = session_state.get('user_id', 1)
+
+    raw_id = input("Masukkan ID Pelanggan yang ingin dihapus (misal: 54 atau CRM-054): ").strip()
+    if not raw_id:
+        return
+
+    # Parse ID if starts with 'CRM-'
+    parsed_id = raw_id
+    if raw_id.upper().startswith("CRM-"):
+        parsed_id = raw_id[4:]
+
+    try:
+        pelanggan_id = int(parsed_id)
+    except ValueError:
+        console.print("⛔ ID pelanggan harus berupa angka!", style="bold red")
+        input("Tekan Enter untuk kembali...")
+        return
+
+    conn_res = get_db_connection()
+    if not conn_res.is_success:
+        console.print(f"⛔ {conn_res.error_msg}", style="bold red")
+        input("Tekan Enter untuk kembali...")
+        return
+    conn = conn_res.data
+
+    try:
+        # 1. Fetch current data to verify existence and show detail
+        query = "SELECT id, nama_pelanggan, whatsapp, tanggal_terdaftar FROM pelanggan WHERE id = %s AND cabang_id = %s"
+        cust_res = execute_query(conn, query, (pelanggan_id, cabang_id), fetch_one=True)
+        if not cust_res.is_success or not cust_res.data:
+            console.print("⛔ ID pelanggan tidak ditemukan di cabang ini.", style="bold red")
+            input("Tekan Enter untuk kembali...")
+            return
+
+        cust = cust_res.data
+        wa_decrypted = decrypt_whatsapp_number(cust['whatsapp'], fernet_key) or '[GAGAL DEKRIPSI]'
+
+        console.print(Panel(
+            f"Nama Pelanggan: {cust['nama_pelanggan']}\n"
+            f"WhatsApp      : {wa_decrypted}\n"
+            f"Tgl Terdaftar : {cust['tanggal_terdaftar']}",
+            title="Konfirmasi Data Pelanggan yang akan Dihapus",
+            expand=False
+        ))
+        console.print()
+
+        # 2. Confirm deletion
+        confirm = input(f"Apakah Anda yakin ingin menghapus pelanggan '{cust['nama_pelanggan']}' secara PERMANEN? [y/N]: ").strip().lower()
+        if confirm != 'y':
+            console.print("[yellow]Penghapusan pelanggan dibatalkan.[/]")
+            input("Tekan Enter untuk kembali...")
+            return
+
+        # 3. Hard-delete from database
+        del_res = query_delete_pelanggan(conn, pelanggan_id, cabang_id)
+        if not del_res.is_success:
+            console.print(f"{del_res.error_msg}", style="bold red")
+            input("Tekan Enter untuk kembali...")
+            return
+
+        # 4. Log Audit Trail
+        old_val_dict = {
+            'nama_pelanggan': cust['nama_pelanggan'],
+            'whatsapp': '[ENCRYPTED]',
+            'cabang_id': cabang_id
+        }
+        log_audit_trail(
+            pengguna_id=user_id,
+            action_type='DELETE',
+            target_table='pelanggan',
+            old_val=old_val_dict,
+            new_val=None,
+            cabang_id=cabang_id,
+            db_connection=conn
+        )
+
+        console.print("[bold green]✓ Data pelanggan berhasil dihapus secara permanen sesuai regulasi UU PDP (Right to Erasure).[/]")
         input("Tekan Enter untuk melanjutkan...")
     finally:
         try:
